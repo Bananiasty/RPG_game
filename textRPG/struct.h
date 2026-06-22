@@ -36,6 +36,7 @@ public:
 	~chest();
 };
 
+class Event;
 struct Node
 {
 	std::string description;
@@ -48,7 +49,7 @@ struct Node
 	int positionX;
 	int positionY;
 
-
+	Event* current_event = nullptr;
 	enemy* enemy;
 	chest* spawn_chest;
 };

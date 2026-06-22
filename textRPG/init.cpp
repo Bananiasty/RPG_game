@@ -67,7 +67,6 @@ void exploration::world_map_init()
 	player_stats_init(&bohater);
 	loot_init();
 	enemies_init();
-	
 
 	enemy* szkielet = enemy_pool[0]->clone();
 	enemy* goblin = enemy_pool[1]->clone();

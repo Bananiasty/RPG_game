@@ -38,6 +38,11 @@ map_state::map_state(gamestate* back_to) :previous_state(back_to), back_requeste
     can_save_game = false;
 }
 
+chest_drop::chest_drop(player& p, chest* chest) : Event(), chest_ptr(chest)
+{ 
+    can_save_game = true; 
+}
+
 
 
 
@@ -137,7 +142,14 @@ int map_state::update_state()
     return 4;
 }
 
-
+void exploration::event_check()
+{
+    Node* current = get_current_node();
+    if (current->spawn_chest != nullptr && current->current_event == nullptr)
+    {
+        current->current_event = new chest_drop(bohater, current->spawn_chest);
+    }
+}
 
 
 void exploration::move_left()
@@ -159,7 +171,7 @@ void exploration::move_left()
             world_map[current_Node->left_id].discovered = true;
             world_map[current_Node->right_id].discovered = true;
         }
-        
+        event_check();
     }
 }
 
@@ -182,6 +194,7 @@ void exploration::move_right()
             world_map[current_Node->left_id].discovered = true;
             world_map[current_Node->right_id].discovered = true;
         }
+        event_check();
     }
 }
 
@@ -191,16 +204,28 @@ void exploration::move_back()
     {
         current_node_id = world_map[current_node_id].previous_id;
     }
+    event_check();
 }
 
 
-
+void chest_drop::draw_event(exploration* exp)
+{
+    this->exp = exp;
+    draw_chest_drop(exp, this);
+}
 
 void exploration::draw() 
 {
     draw_game_scene(this);
     draw_buttons(this);
     draw_menu();
+
+    Node* current = get_current_node();
+
+    if (current->current_event != nullptr)
+    {
+        current->current_event->draw_event(this);
+    }
 }
 void battle::draw() 
 {
@@ -224,4 +249,5 @@ void map_state::draw()
     draw_map(this, exp);
     draw_menu();
 }
+
 

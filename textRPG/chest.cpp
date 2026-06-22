@@ -46,23 +46,28 @@ chest::~chest()
     chest_loot.clear();
 }
 
-void exploration::collect_loot()
+void chest_drop::collect_loot()
 {
-    chest* current_chest = world_map[current_node_id].spawn_chest;
+    chest* current_chest = exp->world_map[exp->current_node_id].spawn_chest;
     if (current_chest != nullptr)
     {
-        bohater.take_all_loot(current_chest);
-        delete world_map[current_node_id].spawn_chest;
-        world_map[current_node_id].spawn_chest = nullptr;
+        exp->bohater.take_all_loot(current_chest);
+        delete current_chest;
+        exp->world_map[exp->current_node_id].spawn_chest = nullptr;
     }
+    exp->world_map[exp->current_node_id].current_event = nullptr;
+    delete this;
 }
 
-void exploration::discard_chest()
+void chest_drop::discard_chest()
 {
-    if (world_map[current_node_id].spawn_chest != nullptr)
+    chest* current_chest = exp->world_map[exp->current_node_id].spawn_chest;
+    if (current_chest != nullptr)
     {
-        delete world_map[current_node_id].spawn_chest;
-        world_map[current_node_id].spawn_chest = nullptr;
+        delete current_chest;
+        exp->world_map[exp->current_node_id].spawn_chest = nullptr;
     }
+    exp->world_map[exp->current_node_id].current_event = nullptr;
+    delete this;
 }
 	

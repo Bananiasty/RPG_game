@@ -39,9 +39,8 @@ private:
 
 	
 public:
-	std::map<int, Node> world_map;
-
 	std::vector<item*>item_pool;
+	std::map<int, Node> world_map;
 	std::vector<enemy*> enemy_pool;
 	player& bohater;
 	int current_node_id;
@@ -62,12 +61,12 @@ public:
 	enemy* get_current_enemy();
 	int get_enemy_dif();
 
-	chest* rand_loot(enemy* e);
 	int rand_chest_slots(enemy* e);
-	void collect_loot();
-	void discard_chest();
+	chest* rand_loot(enemy* e);
 
 	void delete_dead_enemies();
+
+	void event_check();
 
 	void move_left();
 	void move_right();
@@ -168,6 +167,41 @@ public:
 	gamestate* get_previous_state() { return previous_state; }
 
 };
+
+
+class Event
+{
+protected:
+	exploration* exp;
+	bool can_save_game = false;
+
+public:
+	virtual ~Event() {}
+	virtual void draw_event(exploration* exp) = 0;
+};
+
+class chest_drop : public Event
+{
+private:
+	chest* chest_ptr;
+public:
+
+	void discard_chest();
+	void collect_loot();
+	
+	chest_drop(player& p, chest* chest);
+
+	void draw_event(exploration* exp) override;
+};
+
+
+
+
+
+
+
+
+
 
 
 

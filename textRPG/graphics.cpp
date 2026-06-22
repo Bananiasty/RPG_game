@@ -28,6 +28,8 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 	}
 }
 
+
+
 void draw_game_scene(exploration* exp)
 {
 
@@ -71,6 +73,24 @@ void draw_game_scene(exploration* exp)
 
 
 }
+void draw_chest_drop(exploration* exp, chest_drop* chest)
+{
+	if (chest != nullptr) {
+
+		DrawText("ZNALAZLES  SKRZYNIE!", 400, 200, 30, GOLD);
+
+		if (GuiButton({ 400, 300, 200, 50 }, "WEZ  WSZYSTKO")) {
+			chest->collect_loot();
+		}
+
+
+		if (GuiButton({ 400, 360, 200, 50 }, "ZOSTAW")) {
+			chest->discard_chest();
+		}
+	}
+}
+
+
 //RANGES
 void draw_commentary()
 {
@@ -130,24 +150,14 @@ void draw_map(map_state* map, exploration* exp)
 		}
 }
 
+
+
 void draw_buttons(exploration* e) 
 {
 	GuiSetFont(arial_font);
 	GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 	Node* current = e->get_current_node();
-	if (current->spawn_chest != nullptr) {
-		
-		DrawText("ZNALAZLES  SKRZYNIE!", 400, 200, 30, GOLD);
-
-		if (GuiButton({ 400, 300, 200, 50 }, "WEZ  WSZYSTKO")) {
-			e->collect_loot();
-		}
-
-		
-		if (GuiButton({ 400, 360, 200, 50 }, "ZOSTAW")) {
-			e->discard_chest();
-		}
-	}
+	
 	if (GuiButton({ 1000, 350, 280, 150 }, "EKWIPUNEK")) {
 		e->showInventory = true;
 	}
