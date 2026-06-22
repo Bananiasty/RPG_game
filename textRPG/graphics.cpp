@@ -249,7 +249,7 @@ void draw_battle_ui(battle* fight) {
 			enemy_texture = textures.goblin;
 			scale = 0.47;
 		}
-
+		
 		float przeskalowana_szerokosc_wroga = (float)enemy_texture.width * scale;
 		float posX = 670.0 - (przeskalowana_szerokosc_wroga / 2.0);
 		float posY = 55.0;
