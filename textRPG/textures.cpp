@@ -26,4 +26,8 @@ void LoadGameTextures()
 
 	textures.dragon = LoadTexture("graphics/smok.png");
 	SetTextureFilter(textures.dragon, TEXTURE_FILTER_BILINEAR);
+
+	textures.chest_t = LoadTexture("graphics/chest.png");
+	SetTextureFilter(textures.dragon, TEXTURE_FILTER_BILINEAR);
+
 }

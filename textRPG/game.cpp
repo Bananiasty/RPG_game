@@ -211,7 +211,7 @@ void exploration::move_back()
 void chest_drop::draw_event(exploration* exp)
 {
     this->exp = exp;
-    draw_chest_drop(exp, this);
+    draw_chest_drop(exp);
 }
 
 void exploration::draw() 
@@ -222,7 +222,7 @@ void exploration::draw()
 
     Node* current = get_current_node();
 
-    if (current->current_event != nullptr)
+    if (current->current_event != nullptr && get_current_enemy() == nullptr)
     {
         current->current_event->draw_event(this);
     }

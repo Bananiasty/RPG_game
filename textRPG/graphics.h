@@ -12,4 +12,4 @@ void draw_commentary();
 void draw_game_won();
 void draw_game_over();
 void draw_map(map_state* map, exploration* exp);
-void draw_chest_drop(exploration* exp, chest_drop* chest);
+void draw_chest_drop(exploration* exp);

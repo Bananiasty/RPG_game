@@ -182,10 +182,10 @@ public:
 
 class chest_drop : public Event
 {
-private:
-	chest* chest_ptr;
-public:
 
+public:
+	chest* chest_ptr;
+	bool is_chest_open=false;
 	void discard_chest();
 	void collect_loot();
 	

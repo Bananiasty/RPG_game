@@ -12,6 +12,7 @@ struct textureManager {
 	Texture2D bandits;
 	Texture2D guard;
 	Texture2D dragon;
+	Texture2D chest_t;
 };
 
 extern textureManager textures;

@@ -133,6 +133,13 @@ void player::take_all_loot(chest* c)
     c->chest_loot.clear();
 }
 
+void player::take_item(chest* c, item* item)
+{
+    bag->add_item(item);
+    std::erase(c->chest_loot, item);
+    
+}
+
 enemy* enemy::clone() const
 {
     return new enemy(*this);

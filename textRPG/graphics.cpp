@@ -80,22 +80,84 @@ void draw_game_scene(exploration* exp)
 
 
 }
-void draw_chest_drop(exploration* exp, chest_drop* chest)
+void draw_chest_drop(exploration* exp)
 {
-	if (chest != nullptr) {
-
+	chest_drop* chest = dynamic_cast<chest_drop*>(exp->world_map[exp->current_node_id].current_event);
+	if (chest != nullptr) 
+	{
+		Texture2D chest_texture = textures.chest_t;
+		std::vector<item*>& chest_loot = chest->chest_ptr->chest_loot;
+		DrawTextureEx(chest_texture, { 500, 260 }, 0, 0.10, WHITE);
 		DrawText("ZNALAZLES  SKRZYNIE!", 400, 200, 30, GOLD);
+		
+		
+		if (chest->is_chest_open == true)
+		{
+			if (chest_loot.empty())
+			{
+				chest->is_chest_open = false;
+				chest->discard_chest();
+				return;
+			}
+			else
+			{
+				DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
+				DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
+				int startX = 140;
+				int startY = 180;
+				int btnWidth = 180;
+				int btnHeight = 60;
+				int padding = 15;
+				if (GuiButton({ 520,550,200,60 }, "Wez wszystko")) {
+					chest->collect_loot();
+					chest->discard_chest();
 
-		if (GuiButton({ 400, 300, 200, 50 }, "WEZ  WSZYSTKO")) {
-			chest->collect_loot();
+					return;
+				}
+				if (GuiButton({ 1000,100,50,50 }, "X")) {
+					chest->is_chest_open = false;	
+				}
+				for (int i = 0; i < chest_loot.size(); i++) 
+				{
+
+					int row = i / 5;
+					int col = i % 5;
+					Rectangle itemRect = {
+						(float)(startX + col * (btnWidth + padding)),
+						(float)(startY + row * (btnHeight + padding)),
+						(float)btnWidth,
+						(float)btnHeight
+					};
+
+
+					std::string label = chest_loot[i]->get_name();
+
+					if (GuiButton(itemRect, label.c_str())) {
+						exp->bohater.take_item(chest->chest_ptr, chest_loot[i]);
+						if (chest_loot.empty()) {
+							chest->is_chest_open = false;
+							chest->discard_chest();
+							return;
+						}
+					}
+
+				}
+			}
 		}
+			else
+			{
+				if (GuiButton({ 400, 300, 200, 50 }, "Otworz")) 
+				{
+					chest->is_chest_open = true;
+				}
+			}
 
-
-		if (GuiButton({ 400, 360, 200, 50 }, "ZOSTAW")) {
-			chest->discard_chest();
-		}
+		
+			
 	}
+		
 }
+
 
 
 //RANGES
