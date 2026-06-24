@@ -59,8 +59,8 @@ void exploration::enemies_init()
 	enemy_pool.push_back(new enemy("Goblin", 30, 0, 4, 7, 5, 10, 15, textures.goblin, 1, "Z krzaka wyskoczyl wsciekly Goblin!!!"));
 	enemy_pool.push_back(new enemy("Troll", 80, 0, 0, 12, 15, 25, 0, textures.troll, 2, "Troll... wyglada na twardego."));
 	enemy_pool.push_back(new enemy("Bandyci", 50, 0, 2, 10, 0, 25, 30, textures.bandits, 2, "Bandyci chca cie ograbic!!!"));
-	enemy_pool.push_back(new enemy("Straznik", 50, 0, 6, 10, 40, 0, 0, textures.guard, 2, "Straznik nie chce cie przepuscic przez most."));
-	enemy_pool.push_back(new enemy("Smok", 80, 0, 10, 15, 0, 0, 0, textures.dragon, 3, "Final boss!!!"));
+	enemy_pool.push_back(new enemy("Straznik", 50, 0, 6, 10, 40, 0, 0, textures.guard, 4, "Straznik nie chce cie przepuscic przez most."));
+	enemy_pool.push_back(new enemy("Smok", 80, 0, 10, 15, 0, 0, 0, textures.dragon, 10, "Final boss!!!"));
 }
 void exploration::world_map_init()
 {

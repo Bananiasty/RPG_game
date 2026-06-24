@@ -24,7 +24,7 @@ public:
 	bool boots_slot = false;
 	bool weapon_slot = false;
 
-	character(std::string n, int h, int m, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g);
+	character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g);
 
 	bool is_dead();
 	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit);
@@ -43,26 +43,39 @@ public:
 	int get_mana() { return mana; }
 
 	void set_max_health(int val) { max_health = val; }
-		void set_max_mana(int val) { max_mana = val; }
+	void set_max_mana(int val) { max_mana = val; }
 	
 };
 class player :public character
 {
 private:
 	int gold;
-	int experience;
+	int xp;
+	int level;
+	int xp_to_level_up=1;
 
+	
+	
 public:
 	enemy* current_enemy = nullptr;
 	inventory* bag;
 
-	player(std::string n, int h, int m, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika);
+	int xp_from_enemy_dif;
+	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika);
 
 	bool validate_and_set_name(const std::string& new_name);
+
+	int get_xp() { return xp; }
+	int get_xp_to_level_up() { return xp_to_level_up; }
+	int get_level() { return level; }
 
 	void set_name(const std::string& new_name);
 
 	void take_all_loot(chest* c);
+
+	void grant_xp();
+
+	void check_level_up();
 };
 
 class enemy :public character
@@ -75,7 +88,7 @@ public:
 
 	std::string get_intro_text() { return intro_text; }
 
-	enemy(std::string n, int h, int m, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, int dif, std::string intro);
+	enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, int dif, std::string intro);
 
 	
 	enemy* clone() const;

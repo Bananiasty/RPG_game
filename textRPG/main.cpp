@@ -18,7 +18,7 @@ int main()
 {
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
-    player bohater("", 100, 100, 0, 30, 25, 25, 25, textures.player);
+    player bohater("", 100, 100, 0, 100, 25, 25, 25, 0, 0, textures.player);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -99,6 +99,7 @@ int main()
         {
             current_state = 2;
             current_fight = new battle(bohater, *world.get_current_enemy());
+            bohater.xp_from_enemy_dif = world.get_current_enemy()->get_dif();
 
             current_fight->exp = &world;
 
@@ -165,12 +166,16 @@ int main()
             {
                 if (your_opponent->get_name() == "Smok")
                 {
+                    bohater.grant_xp();
+                    bohater.check_level_up();
                     delete current_fight;
                     current_fight = nullptr;
                     current_state = 6;
                 }
                 else
                 {
+                    bohater.grant_xp();
+                    bohater.check_level_up();
                     world.delete_dead_enemies();
                     active_state = &world;
                     current_state = 1;

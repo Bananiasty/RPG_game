@@ -66,10 +66,17 @@ void draw_game_scene(exploration* exp)
 	DrawRectangle(0, 400, 1000, 80, Color{ 245, 245, 220, 255 });
 	DrawRectangleLinesEx({ 0, 400, 1000, 80 }, 5, Color{ 133, 94, 66, 255 });
 
-	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", exp->bohater.get_health()), { 50, 620 }, 20, 2, MAROON);
-	DrawRectangle(50, 650, 300, 30, DARKGRAY);
-	float hp_width = (float)exp->bohater.get_health() / exp->bohater.get_max_health() * 300;
-	DrawRectangle(50, 650, (int)hp_width, 30, RED);
+	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", exp->bohater.get_health()), { 70, 620 }, 20, 2, MAROON);
+	DrawRectangle(70, 650, 300, 30, DARKGRAY);
+	float hp_width = ((float)exp->bohater.get_health() / exp->bohater.get_max_health()) * 300;
+	DrawRectangle(70, 650, (int)hp_width, 30, RED);
+
+	DrawTextEx(arial_font, TextFormat("LvL %d", exp->bohater.get_level()), { 10, 530 }, 20, 2, WHITE);
+	DrawTextEx(arial_font, TextFormat("XP: %d/%d", exp->bohater.get_xp(), exp->bohater.get_xp_to_level_up()), { 10, 500 }, 20, 2, WHITE);
+	DrawRectangle(10, 600, 30, 100, DARKBLUE);
+	float xp_height = (float)exp->bohater.get_xp() / exp->bohater.get_xp_to_level_up() * 100;
+	DrawRectangle(10, 700-xp_height, 30, xp_height, WHITE);
+
 
 
 }
@@ -166,7 +173,7 @@ void draw_buttons(exploration* e)
 	}
 	Rectangle btnLeft = { 400, 520, 200, 70 };
 	Rectangle btnRight = { 750, 520, 200, 70 };
-	Rectangle btnBack = { 50, 520, 200, 70 };
+	Rectangle btnBack = { 90, 520, 200, 70 };
 	
 
 	if (current->left_id != -1) {
@@ -284,7 +291,7 @@ void draw_battle_ui(battle* fight) {
 		
 		if (!fight->showInventory) {
 			
-			if (GuiButton({ 50, 500, 250, 50 }, "SZYBKI ATAK")) {
+			if (GuiButton({ 90, 500, 250, 50 }, "SZYBKI ATAK")) {
 				
 				if (fight->player_cooldown <= 0)
 				{

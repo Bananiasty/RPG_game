@@ -9,23 +9,24 @@
 
 
 
-character::character(std::string n, int h, int m, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g)
-    : name(n), health(h), mana(m), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), grafika(g)
+character::character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g)
+    : name(n), health(hp), mana(mana), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), grafika(g)
 {
-    max_health = h;
-    max_mana = m;
+    max_health = hp;
+    max_mana = mana;
 };
 
-player::player(std::string n, int h, int m, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g)
-    : character(n, h, m, bdef, bdmg, b_ch, c_ch, d_ch, g)
+player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D g)
+    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g)
 {
     bag = new inventory();
-    experience = 0;
+    this->level = 1;
+    this->xp = 0;
     gold = 0;
 };
 
-enemy::enemy(std::string n, int h, int m, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, int dif, std::string intro)
-    : character(n, h, m, bdef, bdmg, b_ch, c_ch, d_ch, g), difficulty(dif), intro_text(intro){};
+enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, int dif, std::string intro)
+    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g), difficulty(dif), intro_text(intro){};
 
 void player::set_name(const std::string& new_name)
 {
@@ -34,8 +35,6 @@ void player::set_name(const std::string& new_name)
 
 
 
-
-//REGEX
 bool player::validate_and_set_name(const std::string& new_name)
 {
     std::regex nick_pattern("^[a-zA-Z0-9]{3,12}$");
@@ -125,8 +124,6 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
 }
 
 
-
-
 void player::take_all_loot(chest* c)
 {
     for (item* i : c->chest_loot)
@@ -139,4 +136,22 @@ void player::take_all_loot(chest* c)
 enemy* enemy::clone() const
 {
     return new enemy(*this);
+}
+
+void player::grant_xp()
+{
+    int xp_grant = this->xp_from_enemy_dif;
+    this->xp += xp_grant;
+
+}
+
+void player::check_level_up()
+{
+    if (xp >= xp_to_level_up)
+    {
+        this->level += 1;
+        int rest_xp = xp - xp_to_level_up;
+        xp_to_level_up = this->level * 2;
+        this->xp = rest_xp;
+    }
 }
