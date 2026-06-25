@@ -47,11 +47,21 @@ void exploration::loot_init()
 
 	item_pool.push_back(new health_potion("Mikstura Zycia", "Zwykły", 20, 50));
 
+	item_pool.push_back(new combat_scroll("Blyskawica", "Rzadki", 120, 40, &textures.lightning_bolt, 10, 0.10));
+
 	bohater.bag->add_item(new weapon("Miecz bohatera", "Zwykły", 160, 0, 6));
 	bohater.bag->add_item(new vest("Luskowa zbroja", "Zwykły", 110, 4, 8));
 	bohater.bag->add_item(new health_potion("Mikstura Zycia", "Zwykły", 20, 50));
 	bohater.bag->add_item(new health_potion("Mikstura Zycia", "Zwykły", 20, 50));
 
+	bohater.bag->add_item(new combat_scroll("Thunder bolt", "Rzadki", 120, 40, &textures.lightning_bolt, 10, 0.10));
+	bohater.bag->add_item(new combat_scroll("Sun Strike", "Rzadki", 120, 40, &textures.sun_strike, 10, 0.10));
+	bohater.bag->add_item(new combat_scroll("Explosion", "Rzadki", 120, 40, &textures.explosion, 10, 0.10));
+	bohater.bag->add_item(new combat_scroll("Spikes", "Rzadki", 120, 40, &textures.spikes, 10, 0.10));
+	bohater.bag->add_item(new combat_scroll("Fire ball", "Rzadki", 120, 40, &textures.fireball, 8, 0.10));
+	bohater.bag->add_item(new combat_scroll("Ignite", "Rzadki", 120, 40, &textures.ignite, 10, 0.10));
+	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rzadki", 120, 40, &textures.lightning_bolt, 10, 0.10));
+	
 	bohater.sort_bag();
 
 }

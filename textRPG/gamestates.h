@@ -94,8 +94,10 @@ private:
 	enemy& e_ref;
 	
 
+
 	
 public:
+
 	battle(player& p, enemy& e);
 
 	exploration* exp;
@@ -108,6 +110,8 @@ public:
 
 	float enemy_cooldown = 0.0;
 	float player_cooldown = 0.0;
+
+
 	
 
 	void draw() override;
@@ -138,7 +142,9 @@ public:
 	exploration* exp;
 	battle* fight;
 	bool equipment_tab = false;
-	bool potions_tab = false;
+	bool usables_tab = false;
+	bool scrolls_tab = false;
+	bool other_tab = false;
 
 	inventory_state(player& p, gamestate* back_to);
 

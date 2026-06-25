@@ -16,6 +16,11 @@ item_type usable::get_type()
     return item_type::USABLE;
 }
 
+item_type scroll::get_type()
+{
+    return item_type::SCROLL;
+}
+
 bool armor::is_equipped()
 {
     return this->item_equipped;
@@ -177,16 +182,18 @@ void mana_potion::use(player* c, int index)
     usable::use(c, index);
 }
 
-void scroll::use(player* c, int index)
+void combat_scroll::use(player* c, int index)
 {
-    if (c->current_enemy != nullptr)
+    if (c->current_enemy != nullptr && c->spell_queued==false)
     {
-        if (c->get_mana() >= this->mana_cost)
-        {
-            reduce_player_mana(c, this->mana_cost);
-            c->current_enemy->take_damage(this->damage, c, false);
-            usable::use(c, index);
-        }
+        c->spell_queued = true;
+        c->queued_damage = this->damage;
+
+        c->queued_animation_texture = this->animation_texture;
+        c->queued_frame_count = this->frame_count;
+        c->queued_frame_time = this->frame_time;
+        
+        usable::use(c, index);       
     }
 }
 
@@ -210,4 +217,4 @@ item* weapon::clone() const { return new weapon(*this); }
 item* boots::clone() const { return new boots(*this); }
 item* health_potion::clone() const { return new health_potion(*this); }
 item* mana_potion::clone() const { return new mana_potion(*this); }
-item* scroll::clone() const { return new scroll(*this); }
+item* combat_scroll::clone() const { return new combat_scroll(*this); }

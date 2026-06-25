@@ -266,7 +266,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	
 	auto& items = p.bag->items;
 	auto& equipment = p.equipment->items;
-	auto& potions = p.potions->items;
+	auto& usables = p.usables->items;
+	auto& scrolls = p.scrolls->items;
 
 	int startX = 140;
 	int startY = 400;
@@ -277,12 +278,21 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	if (GuiButton({ 200, 180, 150, 80 }, "Equipment"))
 	{
 		inv->equipment_tab = true;
-		inv->potions_tab = false;
+		inv->usables_tab = false;
+		inv->scrolls_tab = false;
+
 	}
-	if (GuiButton({ 600, 180, 150, 80 }, "Potions"))
+	if (GuiButton({ 500, 180, 150, 80 }, "Usables"))
 	{
-		inv->potions_tab = true;
+		inv->usables_tab = true;
 		inv->equipment_tab = false;
+		inv->scrolls_tab = false;
+	}
+	if (GuiButton({ 800, 180, 150, 80 }, "Scrolls"))
+	{
+		inv->usables_tab = false;
+		inv->equipment_tab = false;
+		inv->scrolls_tab = true;
 	}
 
 	if (inv->equipment_tab == true)
@@ -311,11 +321,11 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			}
 		}
 	}
-	else if (inv->potions_tab == true)
+	else if (inv->usables_tab == true)
 	{
 		int itemToUse = -1; 
 
-		for (int i = 0; i < potions.size(); i++)
+		for (int i = 0; i < usables.size(); i++)
 		{
 			int row = i / 5;
 			int col = i % 5;
@@ -326,12 +336,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				(float)btnHeight
 			};
 
-			std::string label = potions[i]->get_name();
-			if (potions[i]->is_equipped())
-			{
-				label = "[E] " + label;
-			}
-
+			std::string label = usables[i]->get_name();
 			if (GuiButton(itemRect, label.c_str()))
 			{
 				itemToUse = i;
@@ -341,17 +346,49 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 		}
 		if (itemToUse != -1)
 		{
-			potions[itemToUse]->use(&p, -1);
+			usables[itemToUse]->use(&p, -1);
 			p.sort_bag();
 			return;
 		}
 		
 	}
+	else if (inv->scrolls_tab == true)
+	{
+		int itemToUse = -1;
+
+		for (int i = 0; i < scrolls.size(); i++)
+		{
+			int row = i / 5;
+			int col = i % 5;
+			Rectangle itemRect = {
+				(float)(startX + col * (btnWidth + padding)),
+				(float)(startY + row * (btnHeight + padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+
+			std::string label = scrolls[i]->get_name();
+			if (GuiButton(itemRect, label.c_str()))
+			{
+				itemToUse = i;
+			}
+
+		}
+		if (itemToUse != -1)
+		{
+			scrolls[itemToUse]->use(&p, -1);
+			p.sort_bag();
+			return;
+		}
+
+	}
+
 	
 	if (GuiButton({ 1000,100,100,100 }, "X"))
 	{
 		inv->equipment_tab = false;
-		inv->potions_tab = false;
+		inv->usables_tab = false;
+		inv->scrolls_tab = false;
 		inv->request_back();
 	}
 }
@@ -456,7 +493,39 @@ void gamestate::draw_menu()
 		
 }
 
-	
+void DrawGlobalAnimation()
+{
+	if (!global_fx.is_playing)
+	{
+		return;
+	}
+	float frameWidth = (float)global_fx.texture.width / global_fx.frame_count;
+	float frameHeight = (float)global_fx.texture.height;
+
+	float scale = 2.5;
+
+	Rectangle sourceRec = {
+		global_fx.current_frame * frameWidth,
+		0.0,
+		frameWidth,
+		frameHeight
+	};
+
+	Rectangle destRec = {
+		global_fx.position.x,
+		global_fx.position.y,
+		frameWidth * scale,
+		frameHeight * scale
+	};
+
+	Vector2 origin = {
+		(frameWidth * scale) / 2,
+		(frameHeight * scale) / 2
+	};
+
+	DrawTexturePro(global_fx.texture, sourceRec, destRec, origin, 0.0, WHITE);
+}
+
 	
 
 void graphics_init()

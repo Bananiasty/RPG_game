@@ -18,7 +18,7 @@ int main()
 {
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
-    player bohater("", 100, 100, 0, 100, 25, 25, 25, 0, 0, textures.player);
+    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 0, textures.player);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -38,6 +38,7 @@ int main()
 
     while (!WindowShouldClose())
     {
+        global_fx.update();
         SetExitKey(KEY_NULL);
         if (current_state == 0)
         {
@@ -162,6 +163,7 @@ int main()
         if (current_state == 2)
         {
             enemy* your_opponent = world.get_current_enemy();
+            
             if (your_opponent && your_opponent->is_dead())
             {
                 if (your_opponent->get_name() == "Smok")

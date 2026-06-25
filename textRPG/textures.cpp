@@ -1,5 +1,6 @@
 #include "TextureManager.h"
 
+fx_animation global_fx;
 textureManager textures;
 
 void LoadGameTextures()
@@ -29,5 +30,13 @@ void LoadGameTextures()
 
 	textures.chest_t = LoadTexture("graphics/chest.png");
 	SetTextureFilter(textures.dragon, TEXTURE_FILTER_BILINEAR);
+
+	textures.lightning = LoadTexture("graphics/SCROLLS/1 Lightning/Lightning.png");
+	textures.lightning_bolt = LoadTexture("graphics/SCROLLS/2 Lightning bolt/Lightning-bolt.png");
+	textures.sun_strike = LoadTexture("graphics/SCROLLS/4 Sun strike/Sun-strike.png");
+	textures.explosion = LoadTexture("graphics/SCROLLS/5 Explosion/Explosion.png");
+	textures.spikes = LoadTexture("graphics/SCROLLS/6 Spikes/Spikes.png");
+	textures.fireball = LoadTexture("graphics/SCROLLS/10 Fire ball/Fire-ball.png");
+	textures.ignite = LoadTexture("graphics/SCROLLS/7 Fire wall/Fire-wall.png");
 
 }

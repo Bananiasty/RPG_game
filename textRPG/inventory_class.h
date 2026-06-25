@@ -2,12 +2,13 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include "raylib.h"
 
 class enemy;
 class player;
 struct inventory;
 
-enum class item_type { ARMOR, USABLE };
+enum class item_type { ARMOR, USABLE, SCROLL};
 class item
 {
 protected:
@@ -131,13 +132,26 @@ public:
 };
 class scroll:public usable
 {
-private:
-	int mana_cost;
-	int damage;
+protected:
+	bool scroll_used = false;
+
 public:
-	scroll(std::string n, std::string r, int c, int m_c, int d) :usable(n, r, c), mana_cost(m_c), damage(d) {};
-	item* clone() const override;
+	scroll(std::string n, std::string r, int c) :usable(n, r, c){};
+	item_type get_type() override;
+	virtual item* clone() const = 0;
+	virtual void use(player* player, int index) override = 0;
+};
+class combat_scroll : public scroll
+{
+private: 
+	float damage;
+	Texture2D* animation_texture;
+	int frame_count;
+	float frame_time;
+public:
+	combat_scroll(std::string n, std::string r, int c, float dmg, Texture2D* tex, int frames, float speed) :scroll(n, r, c) , damage(dmg), animation_texture(tex), frame_count(frames), frame_time(speed) {};
 	void use(player* player, int index) override;
+	item* clone() const override;
 };
 class potion:public usable
 {

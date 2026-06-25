@@ -61,8 +61,15 @@ public:
 	enemy* current_enemy = nullptr;
 	inventory* bag;
 	inventory* equipment;
-	inventory* potions;
+	inventory* usables;
+	inventory* scrolls;
 
+	bool spell_queued = false;
+	float queued_damage = 0.0;
+
+	Texture2D* queued_animation_texture;
+	int queued_frame_count;
+	float queued_frame_time;
 
 	int xp_from_enemy_dif;
 	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika);

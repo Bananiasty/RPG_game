@@ -7,12 +7,14 @@
 #include "struct.h"
 #include "graphics.h"
 #include "raygui.h"
+#include "textureManager.h"
 
 std::vector<std::string> gamestate::gameLogs;
 
 battle::battle(player& p, enemy& e) : p_ref(p), e_ref(e) 
 { 
     gamestate::gameLogs.clear();
+    p_ref.current_enemy = &e_ref;
 
     log_object_intro(e_ref);
     can_save_game = false;
@@ -93,18 +95,38 @@ int battle::update_state()
 
     if (!waiting_for_enemy)
     {
-
-        if (this->attack_clicked && click_cooldown == false)
+        if (p_ref.spell_queued)
         {
-            this->attack_clicked = false; 
+            std::cout << "[DEBUG] Rzucam czar!" << std::endl;
+            std::cout << "[DEBUG] Klatki: " << p_ref.queued_frame_count << " | Czas klatki: " << p_ref.queued_frame_time << std::endl;
+            std::cout << "[DEBUG] Obrazenia: " << p_ref.queued_damage << std::endl;
+
+            global_fx.texture = *(p_ref.queued_animation_texture);
+            global_fx.frame_count = p_ref.queued_frame_count;
+            global_fx.frame_time = p_ref.queued_frame_time;
+
+            Vector2 target_pos = { 680, 260 };
+            global_fx.play(target_pos);
+
+            this->waiting_for_enemy = true;
+
+            this->enemy_cooldown = (p_ref.queued_frame_count * p_ref.queued_frame_time) + 2;
+
+            p_ref.spell_queued = false;
+        }
+        else if (this->attack_clicked && click_cooldown == false)
+        {
+            this->attack_clicked = false;
             this->player_attack();
             this->waiting_for_enemy = true;
             this->click_cooldown = true;
 
             this->enemy_cooldown = 2.0;
         }
-    }
 
+            
+    }
+ 
     if (click_cooldown)
     {
         player_cooldown -= GetFrameTime();
@@ -115,8 +137,13 @@ int battle::update_state()
     }
 
     if (waiting_for_enemy) {
-        enemy_cooldown -= GetFrameTime();
-        
+        if (!global_fx.is_playing && p_ref.queued_damage > 0)
+        {
+            e_ref.take_damage(p_ref.queued_damage, &p_ref, false);
+            p_ref.queued_damage = 0.0;
+        }
+
+        enemy_cooldown -= GetFrameTime();       
         if (enemy_cooldown <= 0.0) {
             this->enemy_turn();
             waiting_for_enemy = false;
@@ -231,6 +258,7 @@ void battle::draw()
 {
     draw_game_scene(exp);
     draw_battle_ui(this);
+    DrawGlobalAnimation();
     draw_menu();
 }
 void inventory_state::draw() 

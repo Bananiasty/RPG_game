@@ -54,6 +54,8 @@ void exploration::delete_dead_enemies()
     {
         delete world_map[current_node_id].enemy;
         world_map[current_node_id].enemy = nullptr;
+
+        bohater.current_enemy = nullptr;
     }
 }
 

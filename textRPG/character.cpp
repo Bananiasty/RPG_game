@@ -21,10 +21,15 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
 {
     bag = new inventory();
     equipment = new inventory();
-    potions = new inventory();
+    usables = new inventory();
+    scrolls = new inventory();
     this->level = 1;
     this->xp = 0;
     gold = 0;
+
+    queued_animation_texture = nullptr;
+    queued_frame_count = 0;
+    queued_frame_time = 0.0;
 };
 
 enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, int dif, std::string intro)
@@ -59,7 +64,6 @@ std::pair<int, bool> character::calculate_dmg()
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> distr(1, 100);
-
     int damage_amount = this->get_damage();
     bool is_crit = false;
 
@@ -168,7 +172,8 @@ void player::check_level_up()
 void player::sort_bag()
 {
     if (equipment != nullptr) equipment->items.clear();
-    if (potions != nullptr) potions->items.clear();
+    if (usables != nullptr) usables->items.clear();
+    if (scrolls != nullptr) scrolls->items.clear();
 
     if (bag->items.empty())
     {
@@ -189,7 +194,12 @@ void player::sort_bag()
                 }
                 case item_type::USABLE:
                 {
-                    potions->add_item(it);
+                    usables->add_item(it);
+                    break;
+                }
+                case item_type::SCROLL:
+                {
+                    scrolls->add_item(it);
                     break;
                 }
                 default:
