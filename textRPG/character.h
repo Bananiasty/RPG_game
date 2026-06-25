@@ -54,11 +54,15 @@ private:
 	int level;
 	int xp_to_level_up=1;
 
+
 	
 	
 public:
 	enemy* current_enemy = nullptr;
 	inventory* bag;
+	inventory* equipment;
+	inventory* potions;
+
 
 	int xp_from_enemy_dif;
 	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika);
@@ -75,6 +79,8 @@ public:
 	void take_item(chest* c, item* item);
 
 	void grant_xp();
+
+	void sort_bag();
 
 	void check_level_up();
 };
@@ -94,7 +100,5 @@ public:
 	
 	enemy* clone() const;
 	int get_dif() { return difficulty; };
-	
-	
 };
 

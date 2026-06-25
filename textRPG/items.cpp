@@ -139,20 +139,31 @@ void weapon::use(player* c, int index)
     }
 }
 
-void inventory::del_item(int index)
-{
-    if (index >= 0 && index < items.size())
-    {
-        item* to_remove = items[index];
-        delete to_remove;
-        items.erase(items.begin() + index);
-    }
-}
+//void inventory::del_item(int index)
+//{
+//    if (index >= 0 && index < items.size())
+//    {
+//        item* to_remove = items[index];
+//        delete to_remove;
+//        items.erase(items.begin() + index);
+//    }
+//}
 
 void usable::use(player* c, int index)
 {
-    c->bag->del_item(index);
+    auto& items = c->bag->items;
+    for (auto it = items.begin(); it != items.end(); ++it)
+    {
+        if (*it == this) 
+        {
+            delete* it;       
+            items.erase(it);  
+            break;
+        }
+    }
 }
+   
+
 
 void health_potion::use(player* c, int index)
 {

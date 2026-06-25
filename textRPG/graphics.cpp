@@ -90,7 +90,6 @@ void draw_chest_drop(exploration* exp)
 		DrawTextureEx(chest_texture, { 500, 260 }, 0, 0.10, WHITE);
 		DrawText("ZNALAZLES  SKRZYNIE!", 400, 200, 30, GOLD);
 		
-		
 		if (chest->is_chest_open == true)
 		{
 			if (chest_loot.empty())
@@ -110,8 +109,9 @@ void draw_chest_drop(exploration* exp)
 				int padding = 15;
 				if (GuiButton({ 520,550,200,60 }, "Wez wszystko")) {
 					chest->collect_loot();
-					chest->discard_chest();
+					chest->discard_chest();	
 
+					exp->bohater.sort_bag();
 					return;
 				}
 				if (GuiButton({ 1000,100,50,50 }, "X")) {
@@ -257,27 +257,38 @@ void draw_buttons(exploration* e)
 	}
 	
 }
-void draw_inventory_ui(player& p, inventory_state* inv) {
-	
+void draw_inventory_ui(player& p, inventory_state* inv) 
+{
+	p.sort_bag();
 	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
 	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
 
 	
 	auto& items = p.bag->items;
+	auto& equipment = p.equipment->items;
+	auto& potions = p.potions->items;
 
-	if (items.empty()) {
-		DrawTextEx(arial_font, "Twoj plecak jest pusty...", { 500, 300 }, 20, 2, GRAY);
+	int startX = 140;
+	int startY = 400;
+	int btnWidth = 180;
+	int btnHeight = 60;
+	int padding = 15;
+
+	if (GuiButton({ 200, 180, 150, 80 }, "Equipment"))
+	{
+		inv->equipment_tab = true;
+		inv->potions_tab = false;
 	}
-	else {
-		
-		int startX = 140;
-		int startY = 180;
-		int btnWidth = 180;
-		int btnHeight = 60;
-		int padding = 15;
+	if (GuiButton({ 600, 180, 150, 80 }, "Potions"))
+	{
+		inv->potions_tab = true;
+		inv->equipment_tab = false;
+	}
 
-		for (int i = 0; i < items.size(); i++) {
-			
+	if (inv->equipment_tab == true)
+	{
+		for (int i = 0; i < equipment.size(); i++)
+		{
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -287,23 +298,66 @@ void draw_inventory_ui(player& p, inventory_state* inv) {
 				(float)btnHeight
 			};
 
-			
-			std::string label = items[i]->get_name();
-			if (items[i]->is_equipped()) {
+			std::string label = equipment[i]->get_name();
+			if (equipment[i]->is_equipped())
+			{
 				label = "[E] " + label;
 			}
 
-			
-			if (GuiButton(itemRect, label.c_str())) {
-				items[i]->use(&p, i);
+
+			if (GuiButton(itemRect, label.c_str()))
+			{				
+					equipment[i]->use(&p, -1);
+			}
+		}
+	}
+	else if (inv->potions_tab == true)
+	{
+		int itemToUse = -1; 
+
+		for (int i = 0; i < potions.size(); i++)
+		{
+			int row = i / 5;
+			int col = i % 5;
+			Rectangle itemRect = {
+				(float)(startX + col * (btnWidth + padding)),
+				(float)(startY + row * (btnHeight + padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+
+			std::string label = potions[i]->get_name();
+			if (potions[i]->is_equipped())
+			{
+				label = "[E] " + label;
+			}
+
+			if (GuiButton(itemRect, label.c_str()))
+			{
+				itemToUse = i;
+				
 			}
 			
 		}
+		if (itemToUse != -1)
+		{
+			potions[itemToUse]->use(&p, -1);
+			p.sort_bag();
+			return;
+		}
+		
 	}
-	if (GuiButton({ 1000,100,200,100 }, "Powrot")) {
+	
+	if (GuiButton({ 1000,100,100,100 }, "X"))
+	{
+		inv->equipment_tab = false;
+		inv->potions_tab = false;
 		inv->request_back();
 	}
 }
+
+	
+
 
 
 

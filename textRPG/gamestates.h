@@ -137,6 +137,8 @@ private:
 public:
 	exploration* exp;
 	battle* fight;
+	bool equipment_tab = false;
+	bool potions_tab = false;
 
 	inventory_state(player& p, gamestate* back_to);
 

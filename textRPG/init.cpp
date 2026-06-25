@@ -47,9 +47,12 @@ void exploration::loot_init()
 
 	item_pool.push_back(new health_potion("Mikstura Zycia", "Zwykły", 20, 50));
 
-	
+	bohater.bag->add_item(new weapon("Miecz bohatera", "Zwykły", 160, 0, 6));
+	bohater.bag->add_item(new vest("Luskowa zbroja", "Zwykły", 110, 4, 8));
 	bohater.bag->add_item(new health_potion("Mikstura Zycia", "Zwykły", 20, 50));
 	bohater.bag->add_item(new health_potion("Mikstura Zycia", "Zwykły", 20, 50));
+
+	bohater.sort_bag();
 
 }
 void exploration::enemies_init()

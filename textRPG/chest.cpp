@@ -41,31 +41,33 @@ chest::~chest()
 {
     for (item* i : chest_loot)
     {
-        delete i;
+        if (i != nullptr)
+        {
+            delete i;
+        }
+        
     }
     chest_loot.clear();
 }
 
 void chest_drop::collect_loot()
 {
-    if (chest_ptr == nullptr) return;
-    for (item* it : chest_ptr->chest_loot)
+    chest* real_chest = exp->world_map[exp->current_node_id].spawn_chest;
+    
+    if (real_chest == nullptr) return;
+    for (item* it : real_chest->chest_loot)
     {
-        if (it != nullptr)
-        {
-            exp->bohater.bag->add_item(it);
-        }
+        exp->bohater.bag->add_item(it);
     }
 
-    chest_ptr->chest_loot.clear();
+    real_chest->chest_loot.clear();
 }
 
 void chest_drop::discard_chest()
 {
-    chest* current_chest = exp->world_map[exp->current_node_id].spawn_chest;
-    if (current_chest != nullptr)
+    if (exp->world_map[exp->current_node_id].spawn_chest != nullptr)
     {
-        delete current_chest;
+        delete exp->world_map[exp->current_node_id].spawn_chest;
         exp->world_map[exp->current_node_id].spawn_chest = nullptr;
     }
     exp->world_map[exp->current_node_id].current_event = nullptr;

@@ -20,6 +20,8 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
     : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g)
 {
     bag = new inventory();
+    equipment = new inventory();
+    potions = new inventory();
     this->level = 1;
     this->xp = 0;
     gold = 0;
@@ -162,3 +164,40 @@ void player::check_level_up()
         this->xp = rest_xp;
     }
 }
+
+void player::sort_bag()
+{
+    if (equipment != nullptr) equipment->items.clear();
+    if (potions != nullptr) potions->items.clear();
+
+    if (bag->items.empty())
+    {
+       return;
+    }  
+    else
+    {
+        for (item* it : bag->items)
+        {
+            switch (it->get_type())
+            {
+                if (it == nullptr) continue;
+
+                case item_type::ARMOR:
+                {
+                    equipment->add_item(it);
+                    break;
+                }
+                case item_type::USABLE:
+                {
+                    potions->add_item(it);
+                    break;
+                }
+                default:
+                    break;
+
+            }
+        }
+    }
+
+}
+

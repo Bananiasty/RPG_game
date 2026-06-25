@@ -16,8 +16,6 @@ public:
 	std::vector<item*>items;
 	void add_item(item* new_item);
 	void del_item(int index);
-	void list_all(player* p);
-
 };
 
 struct chest
