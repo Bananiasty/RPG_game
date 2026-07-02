@@ -37,7 +37,6 @@ public:
 class Event;
 struct Node
 {
-	std::string description;
 	int left_id;
 	int right_id;
 	int previous_id;
@@ -57,5 +56,17 @@ struct Node
 	enemy* enemy;
 	chest* spawn_chest;
 };
+
+struct collisions
+{
+	bool blokuj_ruch_plus_x = false;
+	bool blokuj_ruch_minus_x = false;
+	bool blokuj_ruch_plus_z = false;
+	bool blokuj_ruch_minus_z = false;
+};
+
+
+
+
 
 

@@ -102,6 +102,7 @@ void draw_game_scene(exploration* exp)
 	DrawExploration(exp); 
 	EndMode3D();
 
+
 	
 
 	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", exp->bohater.get_health()), { 70, 620 }, 20, 2, MAROON);

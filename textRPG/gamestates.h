@@ -59,7 +59,7 @@ public:
 	bool showMap = false;
 	
 	void generate_map_from_graph();
-
+	void apply_collision(Vector3 stara_pos);
 
 	void draw() override;
 	int update_state() override;

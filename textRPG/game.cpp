@@ -251,6 +251,7 @@ void exploration::move_back()
 }
 
 
+
 void chest_drop::draw_event(exploration* exp)
 {
     this->exp = exp;

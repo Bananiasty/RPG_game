@@ -158,6 +158,7 @@
     <ClCompile Include="map_system.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="menu.cpp" />
+    <ClCompile Include="movement.cpp" />
     <ClCompile Include="stats.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="textures.cpp" />

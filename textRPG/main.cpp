@@ -18,7 +18,7 @@ int main()
 {
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
-    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 0, textures.player, { 0, 0, 0 }, 0);
+    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 1, textures.player, { 44.0, 2.0, 8.0 }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -26,7 +26,7 @@ int main()
     std::string player_name = "";
     bool niepoprawny_nick = false;
 
-    int current_state = 0;
+    int current_state = 1;
 
     
 
@@ -38,51 +38,56 @@ int main()
     pogrubione_arial_font = LoadFontEx("Fonts/arialbd.ttf", 32, NULL, 0);
 
     battle* current_fight = nullptr;
+    world.camera.position = { 46.0f, 2.0f, 76.0f };
 
     while (!WindowShouldClose())
     {
 
         global_fx.update();
+        Vector3 stara_pozycja = world.camera.position;
+        Vector3 stara_camera = world.camera.target;
         UpdateCamera(&world.camera, CAMERA_FIRST_PERSON);
+
+        world.apply_collision(stara_pozycja);
         SetExitKey(KEY_NULL);
 
-        if (current_state == 0)
-        {
-            int key = GetCharPressed();
-            while (key > 0)
-            {
-                if ((key >= 32) && (key <= 125) && (player_name.length() < 12))
-                {
-                    player_name += (char)key;
-                }
-                key = GetCharPressed();
-            }
+        //if (current_state == 0)
+        //{
+        //    int key = GetCharPressed();
+        //    while (key > 0)
+        //    {
+        //        if ((key >= 32) && (key <= 125) && (player_name.length() < 12))
+        //        {
+        //            player_name += (char)key;
+        //        }
+        //        key = GetCharPressed();
+        //    }
 
-            if (IsKeyPressed(KEY_BACKSPACE) && !player_name.empty())
-            {
-                player_name.pop_back();
-            }
+        //    if (IsKeyPressed(KEY_BACKSPACE) && !player_name.empty())
+        //    {
+        //        player_name.pop_back();
+        //    }
 
-            if (IsKeyPressed(KEY_ENTER))
-            {
-                if (bohater.validate_and_set_name(player_name))
-                {
-                    current_state = 1;
-                    niepoprawny_nick = false;
+        //    if (IsKeyPressed(KEY_ENTER))
+        //    {
+        //        if (bohater.validate_and_set_name(player_name))
+        //        {
+        //            current_state = 1;
+        //            niepoprawny_nick = false;
 
-                }
-                else
-                {
-                    niepoprawny_nick = true;
-                }
-            }
+        //        }
+        //        else
+        //        {
+        //            niepoprawny_nick = true;
+        //        }
+        //    }
 
-            BeginDrawing();
-            draw_login_screen(player_name, niepoprawny_nick);
-            EndDrawing();
+        //    //BeginDrawing();
+        //    ////draw_login_screen(player_name, niepoprawny_nick);
+        //    //EndDrawing();
 
-            continue;
-        }
+        //    continue;
+        //}
 
         if (bohater.is_dead()) current_state = 5;
 
