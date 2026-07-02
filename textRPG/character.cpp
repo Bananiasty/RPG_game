@@ -9,15 +9,15 @@
 
 
 
-character::character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g)
+character::character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot)
     : name(n), health(hp), mana(mana), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), grafika(g)
 {
     max_health = hp;
     max_mana = mana;
 };
 
-player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D g)
-    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g)
+player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D g, Vector3 pos, float rot)
+    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot)
 {
     bag = new inventory();
     equipment = new inventory();
@@ -32,8 +32,8 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
     queued_frame_time = 0.0;
 };
 
-enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, int dif, std::string intro)
-    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g), difficulty(dif), intro_text(intro){};
+enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot, int dif, std::string intro)
+    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot), difficulty(dif), intro_text(intro){};
 
 void player::set_name(const std::string& new_name)
 {

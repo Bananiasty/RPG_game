@@ -28,43 +28,81 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 	}
 }
 
+void DrawExploration(exploration* exp)
+{
+	
+
+	for (int cx = 0; cx < exp->szerokosc; cx++)
+	{
+		for (int cy = 0; cy < exp->dlugosc; cy++)
+		{
+			if (exp->dungeon[cx][cy] == 2)
+			{
+		
+				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
+				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
+
+				//ŒCIANA PO£UDNIOWA
+				if (cy > 0 && exp->dungeon[cx][cy - 1] == 1)
+				{
+					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					
+				}
+				//ŒCIANA PÓ£NOCNA
+				if (cy < exp->dlugosc - 1 && exp->dungeon[cx][cy + 1] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					
+				}
+				//ŒCIANA WSCHODNIA
+				if (cx > 0 && exp->dungeon[cx - 1][cy] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				
+				}
+				//ŒCIANA ZACHODNIA
+				if ( cx < exp->szerokosc - 1 && exp->dungeon[cx + 1][cy] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					
+				}
+				
+				
+				
+			}
+			if (exp->dungeon[cx][cy] == 1)
+			{
+				DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f , (float)cy * 2.0f }, 1.0f, WHITE);
+				DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f , (float)cy * 2.0f }, 1.0f, WHITE);
+				
+
+			}
+		}
+	}
+}
 
 
 void draw_game_scene(exploration* exp)
 {
 
-	DrawTextureEx(textures.kopalnia, { 0,0 }, 0, 0.32, WHITE);
 	
-	DrawTextEx(arial_font, TextFormat("LOKACJA: %s", exp->get_current_node()->description.c_str()), { 20, 20 }, 20, 2, LIGHTGRAY);
-	
-	DrawRectangle(1000, 0, 280, 400, DARKPURPLE);
-	DrawTextEx(pogrubione_arial_font, "STATYSTYKI GRACZA", { 1010, 50 }, 25, 2, GOLD);
-	DrawTextEx(arial_font, TextFormat("ATAK: %d", exp->bohater.get_damage()), { 1015, 100 }, 20, 2, YELLOW);
-	DrawTextEx(arial_font, TextFormat("OBRONA: %d", exp->bohater.get_defense()), { 1015, 130 }, 20, 2, YELLOW);
+	ClearBackground(BLACK);
 
-	DrawTextEx(arial_font, "KRYT:", { 1015, 210 }, 20, 2, YELLOW);
-	DrawTextEx(arial_font, TextFormat("%d%%", exp->bohater.get_crit_chance()), { 1090, 210 }, 20, 2, YELLOW);
-
-	DrawTextEx(arial_font, TextFormat("BLOK: %d%%", exp->bohater.get_block_chance()), { 1015, 240 }, 20, 2, YELLOW);
-	DrawTextEx(arial_font, TextFormat("UNIK: %d%%", exp->bohater.get_dodge_chance()), { 1015, 270 }, 20, 2, YELLOW);
+	BeginMode3D(exp->camera);
+	DrawExploration(exp); 
+	EndMode3D();
 
 	
-	float szerokosc_tekstu = (float)MeasureText(exp->bohater.get_name().c_str(), 24);
-	float posX = 270 - (szerokosc_tekstu / 2.0);
-	DrawTextEx(pogrubione_arial_font, exp->bohater.get_name().c_str(), { posX, 360 }, 24, 2, RAYWHITE);
-
-
-	float centerX = 50.0 + (((float)textures.player.width * 0.17) / 2.0);
-	float centerY = 100.0 + (((float)textures.player.height * 0.17) / 2.0);
-	
-	DrawCircleGradient({ centerX, centerY }, 300, Color{ 100, 200, 255, 120 }, BLANK);
-
-	DrawTextureEx(textures.player, { 50, 100 }, 0, 0.17, WHITE);
-
-
-	DrawRectangle(0, 450, 1280, 270, BLACK);
-	DrawRectangle(0, 400, 1000, 80, Color{ 245, 245, 220, 255 });
-	DrawRectangleLinesEx({ 0, 400, 1000, 80 }, 5, Color{ 133, 94, 66, 255 });
 
 	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", exp->bohater.get_health()), { 70, 620 }, 20, 2, MAROON);
 	DrawRectangle(70, 650, 300, 30, DARKGRAY);
@@ -76,10 +114,9 @@ void draw_game_scene(exploration* exp)
 	DrawRectangle(10, 600, 30, 100, DARKBLUE);
 	float xp_height = (float)exp->bohater.get_xp() / exp->bohater.get_xp_to_level_up() * 100;
 	DrawRectangle(10, 700-xp_height, 30, xp_height, WHITE);
-
-
-
 }
+
+
 void draw_chest_drop(exploration* exp)
 {
 	chest_drop* chest = dynamic_cast<chest_drop*>(exp->world_map[exp->current_node_id].current_event);
@@ -405,7 +442,8 @@ void draw_battle_ui(battle* fight) {
 	DrawRectangle(600, 650, 300, 30, DARKGRAY);
 	DrawRectangle(600, 650, (int)hp_width, 30, RED);
 	DrawTextEx(arial_font, TextFormat("HP Wroga: %d", fight->get_enemy_hp()), { 600, 620 }, 20, 2, MAROON);
-
+	DrawRectangle(0, 400, 1000, 80, Color{ 245, 245, 220, 255 });
+	DrawRectangleLinesEx({ 0, 400, 1000, 80 }, 5, Color{ 133, 94, 66, 255 });
 		Texture2D enemy_texture;
 
 		float scale = 0.17;
@@ -533,6 +571,7 @@ void graphics_init()
 	const int screenWidth = 1280;
 	const int screenHeight = 720;
 	InitWindow(screenWidth, screenHeight, "textRPG");
+	DisableCursor();
 	SetTargetFPS(60);
 
 }
@@ -544,10 +583,5 @@ void draw_game_over()
 	DrawText("Nacisnij ESC aby wyjsc", 520, 370, 20, GRAY);
 }
 
-void draw_game_won()
-{
-	ClearBackground(GOLD);
-	DrawText("WYGRALES", 500, 300, 50, RED);
-}
 
 

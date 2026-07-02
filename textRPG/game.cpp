@@ -25,9 +25,25 @@ exploration::exploration(player& p): bohater(p)
 {
     can_save_game = true;
     current_node_id = 1;
+
+    dlugosc = 200;
+    szerokosc = 200;
+
+    dungeon.assign(szerokosc, std::vector<int>(dlugosc, 2));
+
     world_map_init();
+    generate_map_from_graph();
+   
     
-    
+
+    this->camera = { 0 };
+    this->camera.position = Vector3{ 40.0f, 1.7f, 62.0f };
+    this->camera.target = Vector3{ 40.0f, 1.7f, 68.0f };
+    this->camera.up = Vector3{ 0.0f, 1.0f, 0.0f };
+    this->camera.fovy = 80.0f;
+    this->camera.projection = CAMERA_PERSPECTIVE;
+
+
 }
 
 inventory_state::inventory_state(player& p, gamestate* back_to) : p_ref(p), previous_state(back_to), back_requested(false) 
@@ -53,7 +69,7 @@ chest_drop::chest_drop(player& p, chest* chest) : Event(), chest_ptr(chest)
 
 
 int exploration::update_state()
-{
+ {
     if (this->showInventory) {
         this->showInventory = false;
         return 3;
@@ -244,19 +260,20 @@ void chest_drop::draw_event(exploration* exp)
 void exploration::draw() 
 {
     draw_game_scene(this);
-    draw_buttons(this);
-    draw_menu();
+    //draw_buttons(this);
+    //draw_menu();
 
-    Node* current = get_current_node();
+    /*Node* current = get_current_node();
 
     if (current->current_event != nullptr && get_current_enemy() == nullptr)
     {
         current->current_event->draw_event(this);
-    }
+    }*/
+
+
 }
 void battle::draw() 
 {
-    draw_game_scene(exp);
     draw_battle_ui(this);
     DrawGlobalAnimation();
     draw_menu();

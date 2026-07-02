@@ -59,11 +59,26 @@ struct textureManager {
 	Texture2D explosion;
 	Texture2D ignite;
 	Texture2D sun_strike;
+
+	
+	
+};
+
+struct ModelManager {
+
+	Model player_character;
+	Model enemy_character;
+	Model floor_tile;
+	Model wall_tile;
+	Model ceiling_tile;
+
 };
 
 extern fx_animation global_fx;
 extern textureManager textures;
-void LoadGameTextures();
+extern ModelManager objects;
 
+void LoadGameTextures();
+void LoadGameModels();
 
  

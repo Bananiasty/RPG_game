@@ -47,8 +47,15 @@ struct Node
 	int positionX;
 	int positionY;
 
+	int room_x;
+	int room_y;
+
+	int room_width;
+	int room_length;
+
 	Event* current_event = nullptr;
 	enemy* enemy;
 	chest* spawn_chest;
 };
+
 

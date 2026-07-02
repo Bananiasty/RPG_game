@@ -2,6 +2,7 @@
 
 fx_animation global_fx;
 textureManager textures;
+ModelManager objects;
 
 void LoadGameTextures()
 {
@@ -38,5 +39,16 @@ void LoadGameTextures()
 	textures.spikes = LoadTexture("graphics/SCROLLS/6 Spikes/Spikes.png");
 	textures.fireball = LoadTexture("graphics/SCROLLS/10 Fire ball/Fire-ball.png");
 	textures.ignite = LoadTexture("graphics/SCROLLS/7 Fire wall/Fire-wall.png");
+
+}
+
+void LoadGameModels()
+{
+	objects.player_character = LoadModel("models/characters/moja_postac.glb");
+	objects.enemy_character = LoadModel("models/postac_przeciwnika.glb");
+
+	objects.floor_tile = LoadModel("models/terrain/floor_tile1.glb");
+	objects.ceiling_tile = LoadModel("models/terrain/ceiling_tile1.glb");
+	objects.wall_tile = LoadModel("models/terrain/wall_tile1.glb");
 
 }

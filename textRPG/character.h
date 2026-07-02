@@ -14,8 +14,10 @@ protected:
 	std::string name;
 	int health, mana, base_defense, base_damage, block_chance, crit_chance, dodge_chance;
 	int max_health, max_mana;
-	Texture2D grafika;
 
+	Texture2D grafika;
+	Vector3 posistion;
+	float rotation;
 	
 public:
 	bool helm_slot = false;
@@ -24,7 +26,7 @@ public:
 	bool boots_slot = false;
 	bool weapon_slot = false;
 
-	character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g);
+	character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot);
 
 	bool is_dead();
 	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit);
@@ -72,7 +74,7 @@ public:
 	float queued_frame_time;
 
 	int xp_from_enemy_dif;
-	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika);
+	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
 
 	bool validate_and_set_name(const std::string& new_name);
 
@@ -102,7 +104,7 @@ public:
 
 	std::string get_intro_text() { return intro_text; }
 
-	enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, int dif, std::string intro);
+	enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, Vector3 pos, float rot, int dif, std::string intro);
 
 	
 	enemy* clone() const;

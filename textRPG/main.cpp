@@ -18,7 +18,7 @@ int main()
 {
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
-    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 0, textures.player);
+    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 0, textures.player, { 0, 0, 0 }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -28,8 +28,11 @@ int main()
 
     int current_state = 0;
 
+    
+
     graphics_init();
     LoadGameTextures();
+    LoadGameModels();
 
     arial_font = LoadFontEx("Fonts/arial.ttf", 32, NULL, 0);
     pogrubione_arial_font = LoadFontEx("Fonts/arialbd.ttf", 32, NULL, 0);
@@ -38,8 +41,11 @@ int main()
 
     while (!WindowShouldClose())
     {
+
         global_fx.update();
+        UpdateCamera(&world.camera, CAMERA_FIRST_PERSON);
         SetExitKey(KEY_NULL);
+
         if (current_state == 0)
         {
             int key = GetCharPressed();
@@ -91,7 +97,6 @@ int main()
         if (current_state == 6)
         {
             BeginDrawing();
-            draw_game_won();
             EndDrawing();
             continue;
         }
@@ -191,6 +196,7 @@ int main()
     
     UnloadFont(arial_font);
     CloseWindow();
+    
     return 0;
 }
         

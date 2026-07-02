@@ -68,12 +68,12 @@ void exploration::loot_init()
 void exploration::enemies_init()
 {
 
-	enemy_pool.push_back(new enemy("Szkielet", 15, 0, 2, 5, 0, 0, 0, textures.skeleton, 1, "Przed toba stoi otepialy szkielet, chyba czegos broni."));
-	enemy_pool.push_back(new enemy("Goblin", 30, 0, 4, 7, 5, 10, 15, textures.goblin, 1, "Z krzaka wyskoczyl wsciekly Goblin!!!"));
-	enemy_pool.push_back(new enemy("Troll", 80, 0, 0, 12, 15, 25, 0, textures.troll, 2, "Troll... wyglada na twardego."));
-	enemy_pool.push_back(new enemy("Bandyci", 50, 0, 2, 10, 0, 25, 30, textures.bandits, 2, "Bandyci chca cie ograbic!!!"));
-	enemy_pool.push_back(new enemy("Straznik", 50, 0, 6, 10, 40, 0, 0, textures.guard, 4, "Straznik nie chce cie przepuscic przez most."));
-	enemy_pool.push_back(new enemy("Smok", 80, 0, 10, 15, 0, 0, 0, textures.dragon, 10, "Final boss!!!"));
+	enemy_pool.push_back(new enemy("Szkielet", 15, 0, 2, 5, 0, 0, 0, textures.skeleton, { 0, 0, 0 }, 0, 1, "Przed toba stoi otepialy szkielet, chyba czegos broni."));
+	enemy_pool.push_back(new enemy("Goblin", 30, 0, 4, 7, 5, 10, 15, textures.goblin, { 0, 0, 0 }, 0, 1, "Z krzaka wyskoczyl wsciekly Goblin!!!"));
+	enemy_pool.push_back(new enemy("Troll", 80, 0, 0, 12, 15, 25, 0, textures.troll, { 0, 0, 0 }, 0, 2, "Troll... wyglada na twardego."));
+	enemy_pool.push_back(new enemy("Bandyci", 50, 0, 2, 10, 0, 25, 30, textures.bandits, { 0, 0, 0 }, 0, 2, "Bandyci chca cie ograbic!!!"));
+	enemy_pool.push_back(new enemy("Straznik", 50, 0, 6, 10, 40, 0, 0, textures.guard, { 0, 0, 0 }, 0, 4, "Straznik nie chce cie przepuscic przez most."));
+	enemy_pool.push_back(new enemy("Smok", 80, 0, 10, 15, 0, 0, 0, textures.dragon, { 0, 0, 0 }, 0, 10, "Final boss!!!"));
 }
 void exploration::world_map_init()
 {
@@ -89,17 +89,18 @@ void exploration::world_map_init()
 	enemy* smok = enemy_pool[5]->clone();
 
 
-	add_Node(1, "Baza wypadowa", 2, -1, 1, true, 550, 530, nullptr, nullptr);
-	add_Node(2, "Las", 3, 4, 1, true, 550, 530, nullptr, nullptr);
-	add_Node(3, "Kopalnia", -1, -1, 2, false, 550, 530, szkielet, rand_loot(szkielet));
-	add_Node(4, "Pole", 6, 5, 2, false, 550, 530, goblin, nullptr);
-	add_Node(5, "Legowisko Trola", 7, -1, 4, false, 550, 530, troll, rand_loot(troll));
-	add_Node(6, "Oboz Bandytow", -1, 7, 4, false, 550, 530, bandyci, rand_loot(bandyci));
-	add_Node(7, "Most", 8, -1, 5, false, 550, 530, straznik, rand_loot(straznik));
-	add_Node(8, "Smocza nora", -1, -1, 7, false, 550, 530, smok, rand_loot(smok));
+	add_Node(1, 2, -1, -1, true, 550, 530, nullptr, nullptr, 20, 34, 5, 5);
+	add_Node(2, -1, 3, -1, true, 550, 530, nullptr, nullptr, 10, 20, 5, 5);
+	add_Node(3, 1, -1, -1, false, 550, 530, szkielet, nullptr, 30, 10, 5, 5);
+	/*add_Node(4, "Pole", 6, 5, 2, false, 550, 530, goblin, nullptr);
+	add_Node(5, "Legowisko Trola", 7, -1, 4, false, 550, 530, troll, nullptr);
+	add_Node(6, "Oboz Bandytow", -1, 7, 4, false, 550, 530, bandyci, nullptr);
+	add_Node(7, "Most", 8, -1, 5, false, 550, 530, straznik, nullptr);
+	add_Node(8, "Smocza nora", -1, -1, 7, false, 550, 530, smok, nullptr);*/
 
 	map_graph();
 }
+
 
 
 

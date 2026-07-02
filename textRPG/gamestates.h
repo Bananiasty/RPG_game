@@ -4,6 +4,7 @@
 #include <map>
 #include <concepts>
 #include <string>
+#include "raylib.h"
 #include "struct.h"
 
 class enemy;
@@ -34,20 +35,31 @@ class exploration : public gamestate
 private:
 	
 
-	void add_Node(int id, std::string desc, int left = -1, int right = -1, int previous = -1, bool disc=false, int posX=600, int posY=500, enemy* e = nullptr, chest* s_chest = nullptr);
+	void add_Node(int id, int left = -1, int right = -1, int previous = -1, bool disc=false, int posX=600, int posY=500, enemy* e = nullptr, chest* s_chest = nullptr, int rx=0, int rh=0, int r_width=0, int r_length=0);
 	
 
 	
 public:
-	std::vector<item*>item_pool;
+	Camera3D camera;
+
+	int dlugosc;
+	int szerokosc;
+
 	std::map<int, Node> world_map;
+	std::vector<std::vector<int>> dungeon;
+
+
+	std::vector<item*>item_pool;
 	std::vector<enemy*> enemy_pool;
+
 	player& bohater;
 	int current_node_id;
 
 	bool showInventory = false;
 	bool showMap = false;
 	
+	void generate_map_from_graph();
+
 
 	void draw() override;
 	int update_state() override;
@@ -82,9 +94,7 @@ public:
 	
 	void save_game() override;
 	bool load_game() override;
-	
 
-	
 };
 
 class battle : public gamestate
@@ -92,8 +102,6 @@ class battle : public gamestate
 private:
 	player& p_ref;
 	enemy& e_ref;
-	
-
 
 	
 public:
@@ -111,8 +119,6 @@ public:
 	float enemy_cooldown = 0.0;
 	float player_cooldown = 0.0;
 
-
-	
 
 	void draw() override;
 
