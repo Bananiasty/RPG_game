@@ -30,7 +30,25 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 
 void DrawExploration(exploration* exp)
 {
-	
+	for (int i=1; i<=3; i++)
+	{
+		if (exp->world_map[i].enemy != nullptr)
+		{
+			auto* current_enemy = exp->world_map[i].enemy;
+
+			if (!current_enemy->is_dead())
+			{
+				if (current_enemy->get_name() == "Goblin")
+				{
+					DrawBillboard(exp->camera, textures.goblin, current_enemy->get_position(), 2.0f, WHITE);
+				}
+				else if (current_enemy->get_name() == "Szkielet")
+				{
+					DrawBillboard(exp->camera, textures.skeleton, current_enemy->get_position(), 2.0f, WHITE);
+				}
+			}
+		}
+	}
 
 	for (int cx = 0; cx < exp->szerokosc; cx++)
 	{

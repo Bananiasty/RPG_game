@@ -7,6 +7,7 @@
 #include "gamestates.h"
 #include "graphics.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "textureManager.h"
 
 
@@ -108,13 +109,21 @@ int main()
 
         if (current_state == 1 && world.get_current_enemy() != nullptr)
         {
-            current_state = 2;
-            current_fight = new battle(bohater, *world.get_current_enemy());
-            bohater.xp_from_enemy_dif = world.get_current_enemy()->get_dif();
+            enemy* current_enemy = world.get_current_enemy();
+            if (!current_enemy->is_dead())
+            {
+                float dystans = Vector3Distance(world.camera.position, current_enemy->get_position());
+                if (dystans < 1.2f)
+                {
+                    current_state = 2;
+                    current_fight = new battle(bohater, *current_enemy);
+                    bohater.xp_from_enemy_dif = current_enemy->get_dif();
 
-            current_fight->exp = &world;
+                    current_fight->exp = &world;
 
-            active_state = current_fight;
+                    active_state = current_fight;
+                }
+            }
         }
 
         int nextID = active_state->update_state();
@@ -176,16 +185,6 @@ int main()
             
             if (your_opponent && your_opponent->is_dead())
             {
-                if (your_opponent->get_name() == "Smok")
-                {
-                    bohater.grant_xp();
-                    bohater.check_level_up();
-                    delete current_fight;
-                    current_fight = nullptr;
-                    current_state = 6;
-                }
-                else
-                {
                     bohater.grant_xp();
                     bohater.check_level_up();
                     world.delete_dead_enemies();
@@ -193,7 +192,6 @@ int main()
                     current_state = 1;
                     delete current_fight;
                     current_fight = nullptr;
-                }
             }
         }
  

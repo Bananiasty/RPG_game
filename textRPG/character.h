@@ -16,7 +16,7 @@ protected:
 	int max_health, max_mana;
 
 	Texture2D grafika;
-	Vector3 posistion;
+	Vector3 position;
 	float rotation;
 	
 public:
@@ -100,6 +100,8 @@ private:
 	std::string intro_text;
 	int difficulty;
 public:
+
+	Vector3 get_position() const { return position; }
 	Texture2D get_texture() const { return grafika; }
 
 	std::string get_intro_text() { return intro_text; }

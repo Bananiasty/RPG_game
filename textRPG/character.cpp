@@ -33,7 +33,10 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
 };
 
 enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot, int dif, std::string intro)
-    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot), difficulty(dif), intro_text(intro){};
+    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot), difficulty(dif), intro_text(intro)
+{
+    this->position = pos;
+};
 
 void player::set_name(const std::string& new_name)
 {
