@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include "raylib.h"
 
 
 class item;
@@ -21,17 +22,28 @@ public:
 struct chest
 {
 private:
-	
+
 public:
+	Vector3 position;
+	enemy* enemy_ptr;
 	int slots;
 	std::vector<item*>chest_loot;
-	chest(std::vector<item*>ch_l, int slots_number) 
-	{ 
-		chest_loot = ch_l; 
-		slots = slots_number;
-	}
-	void loot_list();
+	std::vector<item*>enemy_loot;
+
+	//KONSTRUKTOR DLA SKRZYNI
+	chest(std::vector<item*> ch_l, int slots_number, Vector3 pos)
+		: position(pos), enemy_ptr(nullptr), slots(slots_number), chest_loot(ch_l), enemy_loot() {}
+
+	// KONSTRUKTOR DLA WROGA
+	chest(std::vector<item*> e_l, int slots_number, enemy* e) :
+		position(Vector3{ 0.0f, 0.0f, 0.0f }),
+		enemy_ptr(e),
+		slots(slots_number),
+		chest_loot(),
+		enemy_loot(e_l){}
+	
 	~chest();
+	
 };
 
 class Event;
@@ -52,7 +64,6 @@ struct Node
 	int room_width;
 	int room_length;
 
-	Event* current_event = nullptr;
 	enemy* enemy;
 	chest* spawn_chest;
 };
@@ -64,6 +75,7 @@ struct collisions
 	bool blokuj_ruch_plus_z = false;
 	bool blokuj_ruch_minus_z = false;
 };
+
 
 
 

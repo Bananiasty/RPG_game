@@ -99,8 +99,9 @@ class enemy :public character
 private:
 	std::string intro_text;
 	int difficulty;
+	
 public:
-
+	std::vector<item*> loot;
 	Vector3 get_position() const { return position; }
 	Texture2D get_texture() const { return grafika; }
 

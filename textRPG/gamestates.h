@@ -35,7 +35,7 @@ class exploration : public gamestate
 private:
 	
 
-	void add_Node(int id, int left = -1, int right = -1, int previous = -1, bool disc=false, int posX=600, int posY=500, enemy* e = nullptr, chest* s_chest = nullptr, int rx=0, int rh=0, int r_width=0, int r_length=0);
+	void add_Node(int id, int left = -1, int right = -1, int previous = -1, bool disc=false, int posX=600, int posY=500, chest* s_chest = nullptr, int rx=0, int rh=0, int r_width=0, int r_length=0);
 	
 
 	
@@ -47,10 +47,13 @@ public:
 
 	std::map<int, Node> world_map;
 	std::vector<std::vector<int>> dungeon;
+	std::vector<chest*> world_chests;
 
 
 	std::vector<item*>item_pool;
 	std::vector<enemy*> enemy_pool;
+
+	Event* active_ui_event = nullptr;
 
 	player& bohater;
 	int current_node_id;
@@ -73,10 +76,10 @@ public:
 	enemy* get_current_enemy();
 	int get_enemy_dif();
 
-	int rand_chest_slots(enemy* e);
-	chest* rand_loot(enemy* e);
+	int rand_chest_slots();
+	chest* rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f});
 
-	void delete_dead_enemies();
+	void delete_enemy(enemy* target);
 
 	void event_check();
 
@@ -99,12 +102,11 @@ public:
 
 class battle : public gamestate
 {
-private:
-	player& p_ref;
-	enemy& e_ref;
 
 	
 public:
+	player& p_ref;
+	enemy& e_ref;
 
 	battle(player& p, enemy& e);
 
@@ -124,7 +126,7 @@ public:
 
 	int player_attack();
 	int enemy_turn();
-	
+	enemy& get_enemy();
 	int get_player_hp();
 	int get_enemy_hp();
 	int get_enemy_max_hp();
@@ -141,8 +143,6 @@ class inventory_state : public gamestate
 private: 
 	player& p_ref;
 	gamestate* previous_state;
-	bool back_requested;
-	
 
 public:
 	exploration* exp;
@@ -156,7 +156,6 @@ public:
 
 	void draw() override;
 	int update_state() override;
-	void request_back() { back_requested = true; }
 
 	gamestate* get_previous_state() { return previous_state; }
 };
@@ -173,8 +172,6 @@ public:
 	exploration* exp;
 	battle* fight;
 
-	bool back_requested;
-
 	map_state(gamestate* back_to);
 	void draw() override;
 	int update_state() override;
@@ -187,7 +184,6 @@ class Event
 {
 protected:
 	exploration* exp;
-	bool can_save_game = false;
 
 public:
 	virtual ~Event() {}
@@ -198,16 +194,35 @@ class chest_drop : public Event
 {
 
 public:
+	player& p_ref;
+
 	chest* chest_ptr;
 	bool is_chest_open=false;
 	void discard_chest();
-	void collect_loot();
 	
+	void collect_chest_loot();
 	chest_drop(player& p, chest* chest);
 
 	void draw_event(exploration* exp) override;
 };
 
+class enemy_loot : public Event
+{
+
+public:
+	player& p_ref;
+	enemy* e_ref;
+
+	battle* current_fight;
+	chest* chest_ptr;
+
+	bool is_loot_open = true;
+	void discard_enemy_items();
+	void collect_enemy_loot();
+
+	enemy_loot(player& p, enemy* e, chest* chest);
+	void draw_event(exploration* exp) override;
+};
 
 
 

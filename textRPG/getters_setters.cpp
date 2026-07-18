@@ -2,7 +2,10 @@
 #include "character.h"
 
 
-
+enemy& battle::get_enemy()
+{
+    return e_ref;
+}
 
 int battle::get_player_hp()
 {

@@ -89,9 +89,9 @@ void exploration::world_map_init()
 	enemy* smok = enemy_pool[5]->clone();
 
 
-	add_Node(1, 2, -1, -1, true, 550, 530, szkielet, nullptr, 20, 34, 5, 5);
-	add_Node(2, -1, 3, -1, true, 550, 530, nullptr, nullptr, 10, 20, 5, 5);
-	add_Node(3, 1, -1, -1, false, 550, 530, goblin, nullptr, 30, 10, 5, 5);
+	add_Node(1, 2, -1, -1, true, 550, 530, nullptr, 20, 34, 5, 5);
+	add_Node(2, -1, 3, -1, true, 550, 530, nullptr, 10, 20, 5, 5);
+	add_Node(3, 1, -1, -1, false, 550, 530, nullptr, 30, 10, 5, 5);
 	/*add_Node(4, "Pole", 6, 5, 2, false, 550, 530, goblin, nullptr);
 	add_Node(5, "Legowisko Trola", 7, -1, 4, false, 550, 530, troll, nullptr);
 	add_Node(6, "Oboz Bandytow", -1, 7, 4, false, 550, 530, bandyci, nullptr);

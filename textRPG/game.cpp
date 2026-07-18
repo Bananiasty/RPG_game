@@ -6,8 +6,9 @@
 #include "gamestates.h"
 #include "struct.h"
 #include "graphics.h"
-#include "raygui.h"
+#include "raylib.h"
 #include "textureManager.h"
+#include "raymath.h"
 
 std::vector<std::string> gamestate::gameLogs;
 
@@ -17,13 +18,12 @@ battle::battle(player& p, enemy& e) : p_ref(p), e_ref(e)
     p_ref.current_enemy = &e_ref;
 
     log_object_intro(e_ref);
-    can_save_game = false;
     
 }
 
 exploration::exploration(player& p): bohater(p)
 {
-    can_save_game = true;
+    active_ui_event = nullptr;
     current_node_id = 1;
 
     dlugosc = 200;
@@ -46,23 +46,12 @@ exploration::exploration(player& p): bohater(p)
 
 }
 
-inventory_state::inventory_state(player& p, gamestate* back_to) : p_ref(p), previous_state(back_to), back_requested(false) 
-{
-    can_save_game = false;
-}
+inventory_state::inventory_state(player& p, gamestate* back_to) : p_ref(p), previous_state(back_to){}
 
-map_state::map_state(gamestate* back_to) :previous_state(back_to), back_requested(false) 
-{
-    can_save_game = false;
-}
+map_state::map_state(gamestate* back_to) :previous_state(back_to){}
 
-chest_drop::chest_drop(player& p, chest* chest) : Event(), chest_ptr(chest)
-{ 
-    can_save_game = true; 
-}
-
-
-
+chest_drop::chest_drop(player& p, chest* chest) : Event(), p_ref(p), chest_ptr(chest){}
+enemy_loot::enemy_loot(player& p, enemy* e, chest* chest) : Event(), p_ref(p), e_ref(e), chest_ptr(chest) {}
 
 
 
@@ -70,18 +59,21 @@ chest_drop::chest_drop(player& p, chest* chest) : Event(), chest_ptr(chest)
 
 int exploration::update_state()
  {
-    if (this->showInventory) {
-        this->showInventory = false;
+
+    if (IsKeyPressed(KEY_I))
+    {
+        showInventory = !showInventory;
         return 3;
     }
-    if (this->showMap)
+    if (IsKeyPressed(KEY_M))
     {
-        this->showMap = false;
+        showMap = !showMap;
         return 4;
     }
-    if (world_map[current_node_id].enemy != nullptr)
+    
+    if (active_ui_event != nullptr)
     {
-        return 2;
+        return 6;
     }
 
     return 1;
@@ -99,13 +91,14 @@ int battle::update_state()
         return 5; 
     }
 
-    if (this->showInventory) {
+    
+    if (IsKeyPressed(KEY_I) || this->showInventory)
+    {
         this->showInventory = false;
         return 3;
     }
-    if (this->showMap)
+    if (IsKeyPressed(KEY_M))
     {
-        this->showMap = false;
         return 4;
     }
 
@@ -113,9 +106,6 @@ int battle::update_state()
     {
         if (p_ref.spell_queued)
         {
-            std::cout << "[DEBUG] Rzucam czar!" << std::endl;
-            std::cout << "[DEBUG] Klatki: " << p_ref.queued_frame_count << " | Czas klatki: " << p_ref.queued_frame_time << std::endl;
-            std::cout << "[DEBUG] Obrazenia: " << p_ref.queued_damage << std::endl;
 
             global_fx.texture = *(p_ref.queued_animation_texture);
             global_fx.frame_count = p_ref.queued_frame_count;
@@ -173,24 +163,57 @@ int battle::update_state()
 
 int inventory_state::update_state()
 {
-    if(this->back_requested)
-    {
+    if (IsKeyPressed(KEY_I) || IsKeyPressed(KEY_ESCAPE))
+    {     
+        
         return -1;
     }
     return 3;
+
 }
 
 int map_state::update_state()
 {
+    if (IsKeyPressed(KEY_M) || IsKeyPressed(KEY_ESCAPE))
+    {
+        return -1;
+    }
     return 4;
+    
 }
 
 void exploration::event_check()
 {
-    Node* current = get_current_node();
-    if (current->spawn_chest != nullptr && current->current_event == nullptr)
+    if (active_ui_event != nullptr)
     {
-        current->current_event = new chest_drop(bohater, current->spawn_chest);
+        return;
+    }
+
+    Vector3 player_pos = camera.position;
+
+    for (chest* c : world_chests)
+    {
+        if (c != nullptr)
+        {
+            float distance = Vector3Distance(player_pos, c->position);
+
+            if (distance <= 2.5f && IsKeyPressed(KEY_E))
+            {
+                if (c->enemy_ptr != nullptr)
+                {
+                    enemy_loot* new_loot = new enemy_loot(bohater, c->enemy_ptr, c);
+                    new_loot->is_loot_open = true;
+                    active_ui_event = new_loot;
+                }
+                else
+                {
+                    chest_drop* new_chest = new chest_drop(bohater, c);
+                    new_chest->is_chest_open = true;
+                    active_ui_event = new_chest;
+                }
+                break;
+            }
+        }
     }
 }
 
@@ -255,21 +278,32 @@ void exploration::move_back()
 void chest_drop::draw_event(exploration* exp)
 {
     this->exp = exp;
-    draw_chest_drop(exp);
+    if (draw_drop(exp, this->chest_ptr, this->is_chest_open))
+    {
+        this->discard_chest();
+    }
+}
+void enemy_loot::draw_event(exploration* exp)
+{
+    this->exp = exp;
+    if (draw_drop(exp, this->chest_ptr, this->is_loot_open))
+    {
+        this->discard_enemy_items();
+    }
 }
 
 void exploration::draw() 
 {
     draw_game_scene(this);
-    //draw_buttons(this);
-    //draw_menu();
+    draw_buttons(this);
+    draw_menu();
 
-    /*Node* current = get_current_node();
+    Node* current = get_current_node();
 
-    if (current->current_event != nullptr && get_current_enemy() == nullptr)
+    if (active_ui_event != nullptr)
     {
-        current->current_event->draw_event(this);
-    }*/
+        active_ui_event->draw_event(this);
+    }
 
 
 }
@@ -277,23 +311,32 @@ void battle::draw()
 {
     draw_battle_ui(this);
     DrawGlobalAnimation();
-    draw_menu();
+    
 }
 void inventory_state::draw() 
 {
-    draw_game_scene(exp);
-    if (get_previous_state() != exp)
+    
+    if (get_previous_state() == exp)
+    {
+        draw_game_scene(exp);
+    }
+    else
+    {
         draw_battle_ui(fight);
+    }
     draw_inventory_ui(p_ref, this);
-    draw_menu();
 }
 void map_state::draw()
 {
-    draw_game_scene(exp);
-    if (get_previous_state() != exp)
+    if (get_previous_state() == exp)
+    {
+        draw_game_scene(exp);
+    }
+    else
+    {
         draw_battle_ui(fight);
+    }
     draw_map(this, exp);
-    draw_menu();
 }
 
 

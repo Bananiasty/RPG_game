@@ -6,6 +6,7 @@
 #include "inventory_class.h"
 #include "gamestates.h"
 #include "graphics.h"
+#include "raygui.h"
 #include "raylib.h"
 #include "raymath.h"
 #include "textureManager.h"
@@ -37,19 +38,21 @@ int main()
 
     arial_font = LoadFontEx("Fonts/arial.ttf", 32, NULL, 0);
     pogrubione_arial_font = LoadFontEx("Fonts/arialbd.ttf", 32, NULL, 0);
+    GuiSetFont(arial_font);
+    GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 
     battle* current_fight = nullptr;
     world.camera.position = { 46.0f, 2.0f, 76.0f };
 
+
     while (!WindowShouldClose())
     {
-
+        
         global_fx.update();
         Vector3 stara_pozycja = world.camera.position;
         Vector3 stara_camera = world.camera.target;
-        UpdateCamera(&world.camera, CAMERA_FIRST_PERSON);
 
-        world.apply_collision(stara_pozycja);
+        
         SetExitKey(KEY_NULL);
 
         //if (current_state == 0)
@@ -89,6 +92,35 @@ int main()
 
         //    continue;
         //}
+        
+        if (current_state == 1)
+        {
+            UpdateCamera(&world.camera, CAMERA_FIRST_PERSON);
+            world.apply_collision(stara_pozycja);
+            world.event_check();
+            
+            
+            for (auto* current_enemy : world.enemy_pool)
+            {
+                if (current_enemy == nullptr || current_enemy->is_dead())
+                    continue;
+
+                float dystans = Vector3Distance(world.camera.position, current_enemy->get_position());
+                if (dystans < 1.2f)
+                {
+                    current_state = 2;
+                    current_fight = new battle(bohater, *current_enemy);
+                    bohater.xp_from_enemy_dif = current_enemy->get_dif();
+                    current_fight->exp = &world;
+                    active_state = current_fight;
+                }
+            }
+            
+        }
+        else
+        {
+            world.camera.projection = CAMERA_PERSPECTIVE;
+        }
 
         if (bohater.is_dead()) current_state = 5;
 
@@ -99,31 +131,6 @@ int main()
             EndDrawing();
             continue;
 
-        }
-        if (current_state == 6)
-        {
-            BeginDrawing();
-            EndDrawing();
-            continue;
-        }
-
-        if (current_state == 1 && world.get_current_enemy() != nullptr)
-        {
-            enemy* current_enemy = world.get_current_enemy();
-            if (!current_enemy->is_dead())
-            {
-                float dystans = Vector3Distance(world.camera.position, current_enemy->get_position());
-                if (dystans < 1.2f)
-                {
-                    current_state = 2;
-                    current_fight = new battle(bohater, *current_enemy);
-                    bohater.xp_from_enemy_dif = current_enemy->get_dif();
-
-                    current_fight->exp = &world;
-
-                    active_state = current_fight;
-                }
-            }
         }
 
         int nextID = active_state->update_state();
@@ -161,7 +168,7 @@ int main()
 
             current_state = 4;
         }
-        else if (current_state == 4 && ((map_state*)active_state)->back_requested)
+        else if (nextID == -1 && current_state == 4)
         {
             map_state* map = (map_state*)active_state;
 
@@ -170,28 +177,61 @@ int main()
 
             delete map;
         }
+        if (nextID == 6 && current_state != 6)
+        {
+            current_state = 6;
+        }
+
+        else if (current_state == 7 && world.active_ui_event == nullptr)
+        {
+            current_state = 1;
+        }
+
+        static int prev_cursor_state = -1;
+        if (current_state != prev_cursor_state)
+        {
+            if (current_state == 1)
+                DisableCursor();
+            else
+                EnableCursor();
+            prev_cursor_state = current_state;
+        }
+
         BeginDrawing();
         ClearBackground(BLACK);
 
 
         active_state->draw();
-        if (current_state == 1 || current_state==2)
+        if (current_state==2)
             draw_commentary();
         EndDrawing();
 
         if (current_state == 2)
         {
-            enemy* your_opponent = world.get_current_enemy();
-            
-            if (your_opponent && your_opponent->is_dead())
+            if (current_fight != nullptr)
             {
+                enemy* your_opponent = &current_fight->get_enemy();
+
+                if (your_opponent && your_opponent->is_dead())
+                {
                     bohater.grant_xp();
                     bohater.check_level_up();
-                    world.delete_dead_enemies();
+
+                    chest* dropped_loot = world.rand_loot(your_opponent);
+                    if (dropped_loot != nullptr)
+                    {
+                        world.world_chests.push_back(dropped_loot);
+                    }
+
                     active_state = &world;
                     current_state = 1;
+
                     delete current_fight;
                     current_fight = nullptr;
+
+                    world.delete_enemy(your_opponent);
+                }
+
             }
         }
  

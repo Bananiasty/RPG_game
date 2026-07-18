@@ -9,12 +9,11 @@
 
 
 
-void exploration::add_Node(int id, int left, int right, int previous, bool disc, int posX, int posY, enemy* e, chest* s_chest, int rx, int rh, int r_width, int r_length)
+void exploration::add_Node(int id, int left, int right, int previous, bool disc, int posX, int posY, chest* s_chest, int rx, int rh, int r_width, int r_length)
 {
     Node temp_node;
     temp_node.left_id = left;
     temp_node.right_id = right;
-    temp_node.enemy = e;
     temp_node.previous_id = previous;
     temp_node.spawn_chest = s_chest;
     temp_node.discovered = disc;
@@ -210,12 +209,12 @@ void exploration::generate_map_from_graph()
 
 
 
-void exploration::delete_dead_enemies()
+void exploration::delete_enemy(enemy* target)
 {
-    if (world_map[current_node_id].enemy != nullptr)
+    if (target != nullptr)
     {
-        delete world_map[current_node_id].enemy;
-        world_map[current_node_id].enemy = nullptr;
+        std::erase(enemy_pool, target);
+        delete target;
 
         bohater.current_enemy = nullptr;
     }

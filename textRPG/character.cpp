@@ -32,7 +32,7 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
     queued_frame_time = 0.0;
 };
 
-enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot, int dif, std::string intro)
+enemy::enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch,  Texture2D g, Vector3 pos, float rot, int dif, std::string intro)
     : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot), difficulty(dif), intro_text(intro)
 {
     this->position = pos;
