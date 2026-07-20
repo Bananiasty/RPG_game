@@ -180,20 +180,26 @@ int main()
         if (nextID == 6 && current_state != 6)
         {
             current_state = 6;
+        
         }
-
-        else if (current_state == 7 && world.active_ui_event == nullptr)
+        else if (current_state == 6 && world.active_ui_event == nullptr)
         {
             current_state = 1;
+
         }
 
         static int prev_cursor_state = -1;
         if (current_state != prev_cursor_state)
         {
             if (current_state == 1)
+            {
                 DisableCursor();
+            }
             else
-                EnableCursor();
+            {
+                 EnableCursor();
+            }
+               
             prev_cursor_state = current_state;
         }
 

@@ -70,7 +70,7 @@ int exploration::update_state()
         showMap = !showMap;
         return 4;
     }
-    
+    event_check();
     if (active_ui_event != nullptr)
     {
         return 6;
@@ -186,33 +186,51 @@ void exploration::event_check()
 {
     if (active_ui_event != nullptr)
     {
-        return;
+        enemy_loot* el = dynamic_cast<enemy_loot*>(active_ui_event);
+        if (el != nullptr && !el->is_loot_open)
+        {
+            active_ui_event = nullptr;
+            return;
+        }
+
+        chest_drop* cd = dynamic_cast<chest_drop*>(active_ui_event);
+        if (cd != nullptr && !cd->is_chest_open)
+        {
+            active_ui_event = nullptr;
+            return;
+        }
+
+        return; 
     }
+
 
     Vector3 player_pos = camera.position;
 
     for (chest* c : world_chests)
     {
-        if (c != nullptr)
-        {
-            float distance = Vector3Distance(player_pos, c->position);
+        if (c == nullptr) continue;
 
-            if (distance <= 2.5f && IsKeyPressed(KEY_E))
+        if (Vector3Distance(player_pos, c->position) <= 2.5f && IsKeyPressed(KEY_E))
+        {
+            if (c->enemy_ptr != nullptr)
             {
-                if (c->enemy_ptr != nullptr)
+                if (!c->enemy_ptr->loot.empty() || !c->enemy_loot.empty())
                 {
                     enemy_loot* new_loot = new enemy_loot(bohater, c->enemy_ptr, c);
                     new_loot->is_loot_open = true;
                     active_ui_event = new_loot;
                 }
-                else
+            }
+            else
+            {
+                if (!c->chest_loot.empty())
                 {
                     chest_drop* new_chest = new chest_drop(bohater, c);
                     new_chest->is_chest_open = true;
                     active_ui_event = new_chest;
                 }
-                break;
             }
+            break;
         }
     }
 }

@@ -142,11 +142,30 @@ void player::take_all_loot(chest* c)
     c->chest_loot.clear();
 }
 
-void player::take_item(chest* c, item* item)
+void player::take_item(chest* c, item* it)
 {
-    bag->add_item(item);
-    std::erase(c->chest_loot, item);
+    if (c == nullptr || it == nullptr)
+    {
+        return;
+    }
+    std::cout << "[TAKE_ITEM] Adres obiektu gracza: " << this
+        << " | Adres torby: " << this->bag << std::endl;
+
+    this->bag->add_item(it);
+    std::cout << "[TAKE_ITEM] Przedmiotow w torbie: " << this->bag->items.size() << std::endl;
+
+    auto it_chest = std::find(c->chest_loot.begin(), c->chest_loot.end(), it);
+    if (it_chest != c->chest_loot.end())
+    {
+        c->chest_loot.erase(it_chest);
+    }
     
+    auto it_enemy = std::find(c->enemy_loot.begin(), c->enemy_loot.end(), it);
+    if (it_enemy != c->enemy_loot.end())
+    {
+        c->enemy_loot.erase(it_enemy);
+    }
+    this->sort_bag();
 }
 
 enemy* enemy::clone() const

@@ -11,7 +11,7 @@ class player;
 struct inventory
 {
 private:
-	int max_slots = 10;
+	int max_slots = 100;
 
 public:
 	std::vector<item*>items;

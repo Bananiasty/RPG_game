@@ -87,16 +87,7 @@ void chest_drop::collect_chest_loot()
 
 void chest_drop::discard_chest()
 {
-    if (this->chest_ptr->chest_loot.empty())
-    {
-        auto& chests = exp->world_chests;
-        chests.erase(std::remove(chests.begin(), chests.end(), this->chest_ptr), chests.end());
-        delete this->chest_ptr;
-    }
-
-    exp->active_ui_event = nullptr;
-
-    delete this;
+    is_chest_open = false;
 }
 
 void enemy_loot::collect_enemy_loot()
@@ -123,18 +114,7 @@ void enemy_loot::collect_enemy_loot()
 
 void enemy_loot::discard_enemy_items()
 {
-    if (this->chest_ptr != nullptr)
-    {
-        for (item* i : this->chest_ptr->enemy_loot)
-        {
-            if (i != nullptr)
-            {
-                e_ref->loot.push_back(i);
-            }
-        }
-        this->chest_ptr->enemy_loot.clear();
-    }
-
     is_loot_open = false;
+
 }
 	

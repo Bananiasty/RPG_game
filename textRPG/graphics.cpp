@@ -149,73 +149,83 @@ void draw_game_scene(exploration* exp)
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 {
-	if (current_chest == nullptr)
+	if (current_chest == nullptr || !is_open)
 	{
 		return false;
 	}
-	if (is_open == false)
-	{
-		return false;
-	}
-	std::vector<item*>& chest_loot = current_chest->chest_loot;
 
-	if (is_open == true)
-	{
-		if (chest_loot.empty())
-		{
-			is_open = false;
-			return true;
-		}
+	std::vector<item*>& target_loot = (!current_chest->enemy_loot.empty()) ? current_chest->enemy_loot : current_chest->chest_loot;
+
 	
-		DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
-		DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
+	if (target_loot.empty())
+	{
+		is_open = false;
+		return true;
+	}
+	
+	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
+	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
 
-		int startX = 140;
-		int startY = 180;
-		int btnWidth = 180;
-		int btnHeight = 60;
-		int padding = 15;
+	int startX = 140;
+	int startY = 180;
+	int btnWidth = 180;
+	int btnHeight = 60;
+	int padding = 15;
 
-		if (GuiButton({ 520,550,200,60 }, "Wez wszystko")) {
-			for (auto* it : chest_loot) {
+	if (GuiButton({ 520,550,200,60 }, "Wez wszystko")) {
+		for (auto* it : target_loot) 
+		{
+			if (it != nullptr)
+			{
 				exp->bohater.bag->add_item(it);
 			}
-			chest_loot.clear();
-			exp->bohater.sort_bag();
+		}
+		target_loot.clear();
+		exp->bohater.sort_bag();
+		is_open = false;
+		return true;
+	}
+
+	if (GuiButton({ 1000,100,50,50 }, "X")) {
+		is_open = false;
+		return true;
+	}
+
+	item* clicked_item = nullptr;
+
+	for (int i = 0; i < target_loot.size(); i++)
+	{
+		if (target_loot[i] == nullptr)
+		{
+			continue;
+		}
+		int row = i / 5;
+		int col = i % 5;
+		Rectangle itemRect = {
+			(float)(startX + col * (btnWidth + padding)),
+			(float)(startY + row * (btnHeight + padding)),
+			(float)btnWidth,
+			(float)btnHeight
+		};
+
+		std::string label = target_loot[i]->get_name();
+
+		if (GuiButton(itemRect, label.c_str())) 
+		{
+			clicked_item = target_loot[i];
+			break;
+		}
+	}
+	if (clicked_item != nullptr)
+	{
+		exp->bohater.take_item(current_chest, clicked_item);
+
+		if (target_loot.empty()) {
 			is_open = false;
 			return true;
 		}
-
-		if (GuiButton({ 1000,100,50,50 }, "X")) {
-			is_open = false;
-			return false;
-		}
-
-		for (int i = 0; i < chest_loot.size(); i++)
-		{
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-
-			std::string label = chest_loot[i]->get_name();
-
-			if (GuiButton(itemRect, label.c_str())) {
-				exp->bohater.take_item(current_chest, chest_loot[i]);
-				if (chest_loot.empty()) {
-					is_open = false;
-					return true;
-				}
-				return false;
-			}
-		}
-		
 	}
-
+	
 	return false;
 }
 
@@ -298,6 +308,7 @@ void draw_buttons(exploration* e)
 }
 void draw_inventory_ui(player& p, inventory_state* inv) 
 {
+
 	p.sort_bag();
 	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
 	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);

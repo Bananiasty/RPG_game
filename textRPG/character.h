@@ -85,7 +85,7 @@ public:
 	void set_name(const std::string& new_name);
 
 	void take_all_loot(chest* c);
-	void take_item(chest* c, item* item);
+	void take_item(chest* c, item* it);
 
 	void grant_xp();
 
