@@ -13,5 +13,6 @@ void draw_game_over();
 void draw_map(map_state* map, exploration* exp);
 void DrawGlobalAnimation();
 void DrawExploration(exploration* exp);
+void DrawHUD(exploration* exp);
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open);

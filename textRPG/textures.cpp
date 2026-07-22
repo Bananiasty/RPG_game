@@ -1,4 +1,5 @@
 #include "TextureManager.h"
+#include <iostream>
 
 fx_animation global_fx;
 textureManager textures;
@@ -32,13 +33,39 @@ void LoadGameTextures()
 	textures.chest_t = LoadTexture("graphics/chest.png");
 	SetTextureFilter(textures.dragon, TEXTURE_FILTER_BILINEAR);
 
-	textures.lightning = LoadTexture("graphics/SCROLLS/1 Lightning/Lightning.png");
-	textures.lightning_bolt = LoadTexture("graphics/SCROLLS/2 Lightning bolt/Lightning-bolt.png");
-	textures.sun_strike = LoadTexture("graphics/SCROLLS/4 Sun strike/Sun-strike.png");
-	textures.explosion = LoadTexture("graphics/SCROLLS/5 Explosion/Explosion.png");
-	textures.spikes = LoadTexture("graphics/SCROLLS/6 Spikes/Spikes.png");
-	textures.fireball = LoadTexture("graphics/SCROLLS/10 Fire ball/Fire-ball.png");
-	textures.ignite = LoadTexture("graphics/SCROLLS/7 Fire wall/Fire-wall.png");
+	textures.lightning = LoadTexture("graphics/GAME ASSETS/SPELLS/1 Lightning/Lightning.png");
+	textures.lightning_bolt = LoadTexture("graphics/GAME ASSETS/SPELLS/2 Lightning bolt/Lightning-bolt.png");
+	textures.sun_strike = LoadTexture("graphics/GAME ASSETS/SPELLS/4 Sun strike/Sun-strike.png");
+	textures.explosion = LoadTexture("graphics/GAME ASSETS/SPELLS/5 Explosion/Explosion.png");
+	textures.spikes = LoadTexture("graphics/GAME ASSETS/SPELLS/6 Spikes/Spikes.png");
+	textures.fireball = LoadTexture("graphics/GAME ASSETS/SPELLS/10 Fire ball/Fire-ball.png");
+	textures.ignite = LoadTexture("graphics/GAME ASSETS/SPELLS/7 Fire wall/Fire-wall.png");
+
+	textures.lightning_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/1-Lightning.png");
+	textures.lightning_bolt_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/2-Lightning-bolt.png");
+	textures.sun_strike_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/4-Sun-strike.png");
+	textures.explosion_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/5-Explosion.png");
+	textures.spikes_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/6-Spikes.png");
+	textures.fireball_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/10-Fire-ball.png");
+	textures.ignite_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/7-Fire-wall.png");
+
+
+	textures.short_sword = LoadTexture("graphics/GAME ASSETS/WEAPONS/Icons/item4.png");
+	textures.long_sword = LoadTexture("graphics/GAME ASSETS/WEAPONS/Icons/Iicon_32_31.png");
+
+	textures.leather_helm = LoadTexture("graphics/GAME ASSETS/ARMOR/item201.png");
+	textures.iron_helm = LoadTexture("graphics/GAME ASSETS/ARMOR/item202.png");
+
+	textures.leather_vest = LoadTexture("graphics/GAME ASSETS/ARMOR/item221.png");
+	textures.iron_vest = LoadTexture("graphics/GAME ASSETS/ARMOR/item222.png");
+
+	textures.leather_gauntlets = LoadTexture("graphics/GAME ASSETS/GLOVES/29.png");
+	textures.iron_gauntlets = LoadTexture("graphics/GAME ASSETS/GLOVES/13.png");
+
+	textures.leather_boots = LoadTexture("graphics/GAME ASSETS/ARMOR/item261.png");
+	textures.iron_boots = LoadTexture("graphics/GAME ASSETS/ARMOR/item262.png");
+
+	textures.apple = LoadTexture("graphics/GAME ASSETS/items/item322.png");
 
 }
 

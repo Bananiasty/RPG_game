@@ -60,6 +60,31 @@ struct textureManager {
 	Texture2D ignite;
 	Texture2D sun_strike;
 
+	Texture2D lightning_bolt_icon;
+	Texture2D fireball_icon;
+	Texture2D spikes_icon;
+	Texture2D lightning_icon;
+	Texture2D explosion_icon;
+	Texture2D ignite_icon;
+	Texture2D sun_strike_icon;
+
+	Texture2D long_sword;
+	Texture2D short_sword;
+
+	Texture2D leather_vest;
+	Texture2D iron_vest;
+
+	Texture2D leather_gauntlets;
+	Texture2D iron_gauntlets;
+	
+	Texture2D leather_boots;
+	Texture2D iron_boots;
+
+	Texture2D leather_helm;
+	Texture2D iron_helm;
+
+	Texture2D apple;
+
 	
 	
 };

@@ -32,18 +32,50 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 
 void DrawExploration(exploration* exp)
 {
+	
 	for (auto* current_enemy : exp->enemy_pool)
 	{
+		int current_id = current_enemy->get_id();
 		if (!current_enemy->is_dead())
 		{
-			if (current_enemy->get_name() == "Goblin")
+			switch (current_id)
 			{
-				DrawBillboard(exp->camera, textures.goblin, current_enemy->get_position(), 2.0f, WHITE);
-			}
-			else if (current_enemy->get_name() == "Szkielet")
-			{
-				DrawBillboard(exp->camera, textures.skeleton, current_enemy->get_position(), 2.0f, WHITE);
-			}
+				case 1:
+				{
+					DrawBillboard(exp->camera, textures.skeleton, current_enemy->get_position(), 2.0f, WHITE);
+					break;
+				}
+				
+				case 2:
+				{
+					DrawBillboard(exp->camera, textures.goblin, current_enemy->get_position(), 2.0f, WHITE);
+					break;
+				}
+				
+				case 3:
+				{
+					DrawBillboard(exp->camera, textures.troll, current_enemy->get_position(), 2.0f, WHITE);
+					break;
+				}
+				
+				case 4:
+				{
+					DrawBillboard(exp->camera, textures.bandits, current_enemy->get_position(), 2.0f, WHITE);
+					break;
+				}
+				
+				case 5:
+				{
+					DrawBillboard(exp->camera, textures.guard, current_enemy->get_position(), 2.0f, WHITE);
+					break;
+				}
+				
+				case 6:
+				{
+					DrawBillboard(exp->camera, textures.dragon, current_enemy->get_position(), 2.0f, WHITE);
+					break;
+				}
+			}	
 		}
 		
 	}
@@ -120,7 +152,12 @@ void DrawExploration(exploration* exp)
 			}
 		}
 	}
-	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", exp->bohater.get_health()), { 70, 620 }, 20, 2, MAROON);
+	
+}
+
+void DrawHUD(exploration* exp)
+{
+	DrawTextEx(arial_font, TextFormat("HP: %d", exp->bohater.get_health()), { 70, 620 }, 20, 2, MAROON);
 	DrawRectangle(70, 650, 300, 30, DARKGRAY);
 	float hp_width = ((float)exp->bohater.get_health() / exp->bohater.get_max_health()) * 300;
 	DrawRectangle(70, 650, (int)hp_width, 30, RED);
@@ -142,6 +179,7 @@ void draw_game_scene(exploration* exp)
 	BeginMode3D(exp->camera);
 	DrawExploration(exp); 
 	EndMode3D();
+	DrawHUD(exp);
 
 
 }
@@ -308,6 +346,7 @@ void draw_buttons(exploration* e)
 }
 void draw_inventory_ui(player& p, inventory_state* inv) 
 {
+	Texture2D item_icon;
 
 	p.sort_bag();
 	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
@@ -315,6 +354,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 	
 	auto& items = p.bag->items;
+
 	auto& equipment = p.equipment->items;
 	auto& usables = p.usables->items;
 	auto& scrolls = p.scrolls->items;
@@ -345,11 +385,13 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 		inv->equipment_tab = false;
 		inv->scrolls_tab = true;
 	}
-
+	
 	if (inv->equipment_tab == true)
 	{
 		for (int i = 0; i < equipment.size(); i++)
 		{
+			item_icon = *(equipment[i]->icon_texture);
+
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -357,19 +399,24 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				(float)(startY + row * (btnHeight + padding)),
 				(float)btnWidth,
 				(float)btnHeight
-			};
-
+			};		
 			std::string label = equipment[i]->get_name();
-			if (equipment[i]->is_equipped())
-			{
-				label = "[E] " + label;
-			}
-
-
-			if (GuiButton(itemRect, label.c_str()))
+			
+			
+			if (GuiButton(itemRect,""))
 			{				
 					equipment[i]->use(&p, -1);
 			}
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x+5, itemRect.y+5 }, 0.0f, scale, WHITE);
+			}
+			if (equipment[i]->is_equipped())
+			{
+				DrawTextEx(arial_font, "[E]", { itemRect.x + 55, itemRect.y + 35 }, 18, 1, WHITE);
+			}
+			DrawTextEx(arial_font, label.c_str(), { itemRect.x + 55, itemRect.y + 18 }, 18, 1, WHITE);
 		}
 	}
 	else if (inv->usables_tab == true)
@@ -378,6 +425,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		for (int i = 0; i < usables.size(); i++)
 		{
+			item_icon = *(usables[i]->icon_texture);
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -388,12 +436,18 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			};
 
 			std::string label = usables[i]->get_name();
-			if (GuiButton(itemRect, label.c_str()))
+			if (GuiButton(itemRect, ""))
 			{
 				itemToUse = i;
 				
 			}
-			
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+			}
+
+			DrawTextEx(arial_font, label.c_str(), { itemRect.x + 55, itemRect.y + 18 }, 18, 1, WHITE);
 		}
 		if (itemToUse != -1)
 		{
@@ -409,6 +463,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		for (int i = 0; i < scrolls.size(); i++)
 		{
+			item_icon = *(scrolls[i]->icon_texture);
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -419,11 +474,17 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			};
 
 			std::string label = scrolls[i]->get_name();
-			if (GuiButton(itemRect, label.c_str()))
+			if (GuiButton(itemRect,""))
 			{
 				itemToUse = i;
 			}
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+			}
 
+			DrawTextEx(arial_font, label.c_str(), { itemRect.x + 55, itemRect.y + 18 }, 18, 1, WHITE);
 		}
 		if (itemToUse != -1)
 		{

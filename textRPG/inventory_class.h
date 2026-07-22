@@ -37,8 +37,10 @@ private:
 	std::string rarity;
 	int cost = 0;
 
+
 public:
-	item(std::string n, std::string r, int c) :name(n), rarity(r), cost(c) {};
+	Texture2D* icon_texture;
+	item(std::string n, std::string r, int c, Texture2D* icon) :name(n), rarity(r), cost(c), icon_texture(icon){};
 	virtual item* clone() const = 0;
 	virtual ~item() {};
 	virtual item_type get_type() = 0;
@@ -55,7 +57,7 @@ protected:
 	virtual item* clone() const = 0;
 
 public:
-	armor(std::string n, std::string r, int c, int def) :item(n, r, c), defense_stat(def) {};
+	armor(std::string n, std::string r, int c, Texture2D* icon, int def) :item(n, r, c, icon), defense_stat(def) {};
 	item_type get_type() override;
 	void use(player* player, int index) override;
 	virtual bool is_equipped();
@@ -67,7 +69,7 @@ private:
 	int block_chance;
 
 public:
-	helm(std::string n, std::string r, int c, int def, int b_ch) :armor(n, r, c, def), block_chance(b_ch) {};
+	helm(std::string n, std::string r, int c, Texture2D* icon, int def, int b_ch) :armor(n, r, c, icon, def), block_chance(b_ch) {};
 	item* clone() const override;	
 	void use(player* player, int index) override;
 	bool is_equipped() override;
@@ -79,7 +81,7 @@ private:
 	bool vest_slot = false;
 
 public:
-	vest(std::string n, std::string r, int c, int def, int a_h) :armor(n, r, c, def), add_health(a_h) {};
+	vest(std::string n, std::string r, int c, Texture2D* icon, int def, int a_h) :armor(n, r, c, icon, def), add_health(a_h) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 	bool is_equipped() override;
@@ -91,7 +93,7 @@ private:
 	bool gauntlets_slot = false;
 
 public:
-	gauntlets(std::string n, std::string r, int c, int def, int c_ch_m) :armor(n, r, c, def), crit_chance_mod(c_ch_m) {};
+	gauntlets(std::string n, std::string r, int c, Texture2D* icon, int def, int c_ch_m) :armor(n, r, c, icon, def), crit_chance_mod(c_ch_m) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 	bool is_equipped() override;
@@ -103,7 +105,7 @@ private:
 	bool boots_slot = false;
 
 public:
-	boots(std::string n, std::string r, int c, int def, int d_ch_m) :armor(n, r, c, def), dodge_chance_mod(d_ch_m) {};
+	boots(std::string n, std::string r, int c,Texture2D* icon, int def, int d_ch_m) :armor(n, r, c, icon, def), dodge_chance_mod(d_ch_m) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 	bool is_equipped() override;
@@ -116,7 +118,7 @@ private:
 	bool weapon_slot=false;
 
 public:
-	weapon(std::string n, std::string r, int c, int def, int dmg) :armor(n, r, c, def), damage_stat(dmg) {};
+	weapon(std::string n, std::string r, int c,Texture2D* icon, int def, int dmg) :armor(n, r, c, icon, def), damage_stat(dmg) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 	bool is_equipped() override;
@@ -125,7 +127,7 @@ public:
 class usable:public item
 {
 public:
-	usable(std::string n, std::string r, int c) :item(n, r, c) {};
+	usable(std::string n, std::string r,int c, Texture2D* icon) :item(n, r, c, icon) {};
 	virtual item* clone() const = 0;
 	item_type get_type() override;
 	virtual void use(player* player, int index) override;
@@ -136,7 +138,7 @@ protected:
 	bool scroll_used = false;
 
 public:
-	scroll(std::string n, std::string r, int c) :usable(n, r, c){};
+	scroll(std::string n, std::string r, int c, Texture2D* icon) :usable(n, r, c, icon){};
 	item_type get_type() override;
 	virtual item* clone() const = 0;
 	virtual void use(player* player, int index) override = 0;
@@ -149,14 +151,14 @@ private:
 	int frame_count;
 	float frame_time;
 public:
-	combat_scroll(std::string n, std::string r, int c, float dmg, Texture2D* tex, int frames, float speed) :scroll(n, r, c) , damage(dmg), animation_texture(tex), frame_count(frames), frame_time(speed) {};
+	combat_scroll(std::string n, std::string r, int c, Texture2D* icon, float dmg, Texture2D* tex, int frames, float speed) :scroll(n, r, c, icon) , damage(dmg), animation_texture(tex), frame_count(frames), frame_time(speed) {};
 	void use(player* player, int index) override;
 	item* clone() const override;
 };
 class potion:public usable
 {
 public:
-	potion(std::string n, std::string r, int c) : usable(n, r, c) {};
+	potion(std::string n, std::string r, int c, Texture2D* icon) : usable(n, r, c,icon) {};
 	virtual item* clone() const = 0; 
 	void use(player* player, int index) override=0;
 };
@@ -165,7 +167,7 @@ class health_potion:public potion
 private:
 	int restore_health;
 public:
-	health_potion(std::string n, std::string r, int c, int r_h) :potion(n, r, c), restore_health(r_h) {};
+	health_potion(std::string n, std::string r, int c, Texture2D* icon, int r_h) :potion(n, r, c, icon), restore_health(r_h) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 };
@@ -174,7 +176,7 @@ class mana_potion:public potion
 private:
 	int restore_mana;
 public:
-	mana_potion(std::string n, std::string r, int c, int r_m) :potion(n, r, c), restore_mana(r_m) {};
+	mana_potion(std::string n, std::string r, int c, Texture2D* icon, int r_m) :potion(n, r, c, icon), restore_mana(r_m) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 };

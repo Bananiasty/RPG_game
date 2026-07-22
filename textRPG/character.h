@@ -99,7 +99,7 @@ class enemy :public character
 private:
 	std::string intro_text;
 	int difficulty;
-	
+	int id_number;
 public:
 	std::vector<item*> loot;
 	Vector3 get_position() const { return position; }
@@ -107,10 +107,11 @@ public:
 
 	std::string get_intro_text() { return intro_text; }
 
-	enemy(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, Vector3 pos, float rot, int dif, std::string intro);
+	enemy(int id, std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, Vector3 pos, float rot, int dif, std::string intro);
 
 	
 	enemy* clone() const;
 	int get_dif() { return difficulty; };
+	int get_id() { return id_number; };
 };
 
