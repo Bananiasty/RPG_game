@@ -14,6 +14,14 @@ void exploration::player_stats_init(player* c)
 {
 	c->set_max_health(c->get_health());
 	c->set_max_mana(c->get_mana());
+
+	auto& start_node = world_map[1];
+
+	float start_tile_x = start_node.room_x + (start_node.room_width / 2);
+	float start_tile_y = start_node.room_y + (start_node.room_length / 2);
+
+	c->position.x = (float)start_tile_x * 2.0f;
+	c->position.z = (float)start_tile_y * 2.0f;
 }
 
 void exploration::loot_init()
@@ -64,44 +72,29 @@ void exploration::loot_init()
 void exploration::enemies_init()
 {
 
-	enemy_pool.push_back(new enemy(1, "Szkielet", 15, 0, 2, 5, 0, 0, 0, textures.skeleton, { 45.0f, 1.0f, 73.0f }, 0, 1, "Przed toba stoi otepialy szkielet, chyba czegos broni."));
-	enemy_pool.push_back(new enemy(2, "Goblin", 30, 0, 4, 7, 5, 10, 15, textures.goblin, { 26.0f, 1.0f, 56.0f }, 0, 1, "Z krzaka wyskoczyl wsciekly Goblin!!!"));
-	enemy_pool.push_back(new enemy(3, "Troll", 80, 0, 0, 12, 15, 25, 0, textures.troll, { 28.0f, 1.0f, 88.0f }, 0, 2, "Troll... wyglada na twardego."));
-	enemy_pool.push_back(new enemy(4, "Bandyci", 50, 0, 2, 10, 0, 25, 30, textures.bandits, { 56.0f, 1.0f, 86.0f }, 0, 2, "Bandyci chca cie ograbic!!!"));
-	enemy_pool.push_back(new enemy(5, "Straznik", 50, 0, 6, 10, 40, 0, 0, textures.guard, { 56.0f, 1.0f, 116.0f }, 0, 4, "Straznik nie chce cie przepuscic przez most."));
-	enemy_pool.push_back(new enemy(6, "Smok", 80, 0, 10, 15, 0, 0, 0, textures.dragon, { 30.0f, 1.0f, 150.0f }, 0, 10, "Final boss!!!"));
+	enemy_pool.push_back(new enemy({ .id = 1, .name = "Szkielet", .hp = 15, .mp = 0, .armor = 2, .damage = 5, .block_chance = 0, .crit_chance = 0, .dodge_chance = 0, .texture = textures.skeleton, .rotation = 0.0f, .level = 1, .description = "Przed toba stoi otepialy szkielet, chyba czegos broni." }));
+	enemy_pool.push_back(new enemy({ .id = 2, .name = "Goblin", .hp = 30, .mp = 0, .armor = 4, .damage = 7, .block_chance = 5, .crit_chance = 10, .dodge_chance = 15, .texture = textures.goblin, .rotation = 0.0f, .level = 1, .description = "Z krzaka wyskoczyl wsciekly Goblin!!!" }));
+	enemy_pool.push_back(new enemy({ .id = 3, .name = "Troll", .hp = 80, .mp = 0, .armor = 0, .damage = 12, .block_chance = 15, .crit_chance = 25, .dodge_chance = 0, .texture = textures.troll, .rotation = 0.0f, .level = 2, .description = "Troll... wyglada na twardego." }));
+	enemy_pool.push_back(new enemy({ .id = 4, .name = "Bandyci", .hp = 50, .mp = 0, .armor = 2, .damage = 10, .block_chance = 0, .crit_chance = 25, .dodge_chance = 30, .texture = textures.bandits, .rotation = 0.0f, .level = 2, .description = "Bandyci chca cie ograbic!!!" }));
+	enemy_pool.push_back(new enemy({ .id = 5, .name = "Straznik", .hp = 50, .mp = 0, .armor = 6, .damage = 10, .block_chance = 40, .crit_chance = 0, .dodge_chance = 0, .texture = textures.guard, .rotation = 0.0f, .level = 4, .description = "Straznik nie chce cie przepuscic przez most." }));
+	enemy_pool.push_back(new enemy({ .id = 6, .name = "Smok", .hp = 80, .mp = 0, .armor = 10, .damage = 15, .block_chance = 0, .crit_chance = 0, .dodge_chance = 0, .texture = textures.dragon, .rotation = 0.0f, .level = 10, .description = "Final boss!!!" }));
 }
 void exploration::world_map_init()
 {
-	player_stats_init(&bohater);
+	
 	loot_init();
 	enemies_init();
 
-	enemy* szkielet = enemy_pool[0]->clone();
-	enemy* goblin = enemy_pool[1]->clone();
-	enemy* troll = enemy_pool[2]->clone();
-	enemy* bandyci = enemy_pool[3]->clone();
-	enemy* straznik = enemy_pool[4]->clone();
-	enemy* smok = enemy_pool[5]->clone();
+	add_Node({ .id = 1, .left = 2, .dungeon_pos = {10,10}, .room_size = {5, 5} });
+	add_Node({ .id = 2, .enemy_id = 2, .right = 3,  .dungeon_pos = { 10, 25 }, .room_size = { 6, 6 } });
+	add_Node({ .id = 3, .enemy_id = 3, .left = 4, .right = 5, .dungeon_pos = { 10, 40 }, .room_size = { 8, 8 } });
+	add_Node({ .id = 4, .enemy_id = 4, .left = 5, .dungeon_pos = { 25, 40 }, .room_size = { 6, 6 } });
+	add_Node({ .id = 5, .left = 6, .right = 8, .s_chest = rand_loot(nullptr, {21.0f, 1.0f, 111.0f}), .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 } });
+	add_Node({ .id = 6, .enemy_id = 5, .left = 7, .dungeon_pos = { 25, 55 }, .room_size = { 6, 6 } });
+	add_Node({ .id = 7, .enemy_id = 6, .left = 8, .dungeon_pos = { 25, 70 }, .room_size = { 6, 6 } });
+	add_Node({ .id = 8, .s_chest = rand_loot(nullptr, {21.0f, 1.0f, 141.0f}), .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 } });
 
-
-	add_Node(1, 2, -1, -1, true, 550, 530, nullptr, 20, 34, 5, 5);
-
-	add_Node(2, -1, 3, -1, true, 600, 500, nullptr, 10, 25, 6, 6);
-
-	add_Node(3, 4, 5, -1, false, 600, 400, nullptr, 10, 40, 8, 8);
-
-	add_Node(4, 5, -1, -1, false, 450, 300, nullptr, 25, 40, 6, 6);
-
-	add_Node(5, 6, 8, -1, false, 750, 300, nullptr, 10, 55, 7, 7);
-
-	add_Node(6, 7, -1, -1, false, 750, 200, nullptr, 25, 55, 6, 6);
-
-	add_Node(7, 8, -1, -1, false, 750, 100, nullptr, 25, 70, 6, 6);
-
-	add_Node(8, -1, -1, -1, false, 600, 100, nullptr, 10, 70, 10, 10);
-
-	map_graph();
+	//draw_dungeon_map();
 }
 
 

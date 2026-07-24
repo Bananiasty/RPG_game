@@ -32,53 +32,6 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 
 void DrawExploration(exploration* exp)
 {
-	
-	for (auto* current_enemy : exp->enemy_pool)
-	{
-		int current_id = current_enemy->get_id();
-		if (!current_enemy->is_dead())
-		{
-			switch (current_id)
-			{
-				case 1:
-				{
-					DrawBillboard(exp->camera, textures.skeleton, current_enemy->get_position(), 2.0f, WHITE);
-					break;
-				}
-				
-				case 2:
-				{
-					DrawBillboard(exp->camera, textures.goblin, current_enemy->get_position(), 2.0f, WHITE);
-					break;
-				}
-				
-				case 3:
-				{
-					DrawBillboard(exp->camera, textures.troll, current_enemy->get_position(), 2.0f, WHITE);
-					break;
-				}
-				
-				case 4:
-				{
-					DrawBillboard(exp->camera, textures.bandits, current_enemy->get_position(), 2.0f, WHITE);
-					break;
-				}
-				
-				case 5:
-				{
-					DrawBillboard(exp->camera, textures.guard, current_enemy->get_position(), 2.0f, WHITE);
-					break;
-				}
-				
-				case 6:
-				{
-					DrawBillboard(exp->camera, textures.dragon, current_enemy->get_position(), 2.0f, WHITE);
-					break;
-				}
-			}	
-		}
-		
-	}
 	for (auto* c : exp->world_chests)
 	{
 		if (c != nullptr)
@@ -95,6 +48,61 @@ void DrawExploration(exploration* exp)
 			}
 		}
 	}
+	for (auto& [id, node] : exp->world_map)
+	{
+		if(node.enemy != nullptr && !node.enemy->is_dead())
+		{
+			int current_id = node.enemy->get_id();
+			Vector3 pos = node.enemy->get_position();
+
+			switch (current_id)
+			{
+				case 1:
+				{
+					Vector3 draw_pos = { pos.x, pos.y + 0.4f, pos.z };
+					DrawBillboard(exp->camera, textures.skeleton, draw_pos, 3.0f, WHITE);
+					break;
+				}
+
+				case 2:
+				{
+					Vector3 draw_pos = { pos.x, pos.y, pos.z };
+					DrawBillboard(exp->camera, textures.goblin, draw_pos, 2.0f, WHITE);
+					break;
+				}
+				
+				case 3:
+				{
+					Vector3 draw_pos = { pos.x, pos.y + 0.63f, pos.z };
+					DrawBillboard(exp->camera, textures.troll, draw_pos, 3.5f, WHITE);
+					break;
+				}
+				
+				case 4:
+				{
+					Vector3 draw_pos = { pos.x, pos.y + 0.3, pos.z };
+					DrawBillboard(exp->camera, textures.bandits, draw_pos, 2.8f, WHITE);
+					break;
+				}
+				
+				case 5:
+				{
+					Vector3 draw_pos = { pos.x, pos.y + 0.45, pos.z };
+					DrawBillboard(exp->camera, textures.guard, draw_pos, 3.0f, WHITE);
+					break;
+				}
+				
+				case 6:
+				{
+					Vector3 draw_pos = { pos.x, pos.y + 0.55, pos.z };
+					DrawBillboard(exp->camera, textures.dragon, draw_pos, 3.5f, WHITE);
+					break;
+				}
+			}	
+		}
+		
+	}
+	
 
 	int playerGridX = (int)(exp->camera.position.x / 2.0f);
 	int playerGridY = (int)(exp->camera.position.z / 2.0f);
@@ -283,46 +291,59 @@ void draw_commentary()
 	}
 }
 
-void draw_map(map_state* map, exploration* exp)
+void draw_map_tile(exploration* exp, int x, int y, int start_x, int start_y, int tile)
 {
-	Node* current_Node = exp->get_current_node();
+	int offset_x = start_x + (tile * x);
+	int offset_y = start_y + (tile * y);
+
+	DrawRectangle(offset_x, offset_y, tile, tile, DARKGREEN);
+}
+
+void draw_dungeon_map(exploration* exp, float player_x, float player_y)
+{
+	if (exp == nullptr || exp->world_map.empty())
+	{
+		return;
+	}
 
 	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
 	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
-		
-		float posX = current_Node->positionX;
-		float posY = current_Node->positionY;
 
-		auto i = exp->world_map.begin();
+	int tile = 10;
+	int vision_range = 20;
 
-		while (i != exp->world_map.end())
-		{			
-			float posX = i->second.positionX;
-			float posY = i->second.positionY;
-			if (i->first != -1)
+	float exact_player_x_pos = (player_x) / 2.0f + 1.0f;
+	float exact_player_y_pos = (player_y) / 2.0f;
+
+	int player_x_pos_int = (int)std::floor(exact_player_x_pos);
+	int player_y_pos_int = (int)std::floor(exact_player_y_pos);
+
+	//Srodek ramki
+	int center_box_x = 640;
+	int center_box_y = 360;
+
+	int start_x = center_box_x - (exact_player_x_pos * tile);
+	int start_y = center_box_y - (exact_player_y_pos * tile);
+
+
+	int min_x = std::max(0, player_x_pos_int - vision_range);
+	int max_x = std::min(exp->szerokosc - 1, player_x_pos_int + vision_range);
+
+	int min_y = std::max(0, player_y_pos_int - vision_range);
+	int max_y = std::min(exp->dlugosc - 1, player_y_pos_int + vision_range);
+
+	for (int x = min_x; x <= max_x; x++)
+	{
+		for (int y = min_y; y <= max_y; y++)
+		{
+			if (exp->dungeon[x][y] == 1)
 			{
-				if(i->second.discovered)
-				{
-					DrawRectangle(posX, posY, 60, 60, DARKGREEN);
-					DrawRectangleLinesEx({ posX, posY, 60, 60 }, 3, RAYWHITE);
-				}
-				if (i->first == exp->current_node_id)
-				{
-					DrawRectangle(posX, posY, 60, 60, GREEN);
-					DrawRectangleLinesEx({ posX, posY, 60, 60 }, 3, RAYWHITE);
-				}
-				if (i->second.previous_id!=-1 && i->second.discovered)
-				{
-					Node& parent = exp->world_map[i->second.previous_id];
-					float parent_posX = parent.positionX;
-					float parent_posY = parent.positionY;
-					DrawLineEx({ posX + 30, posY + 30 }, { parent_posX + 30, parent_posY + 30 }, 5, WHITE);
-				}
+				draw_map_tile(exp, x, y, start_x, start_y, tile);
 			}
-
-			i++;
 		}
-		
+	}
+
+	DrawCircle(center_box_x, center_box_y, 4.0f, YELLOW);
 }
 
 
@@ -334,7 +355,6 @@ void draw_buttons(exploration* e)
 	screen_width = GetScreenWidth();
 	screen_height = GetScreenHeight();
 
-	Node* current = e->get_current_node();
 
 	DrawRectangle(screen_width * 0.8 , screen_height * 0.9, 50, 20, WHITE);
 	DrawText("I", screen_width * 0.8 + 20, screen_height * 0.9, 20, DARKBROWN);
@@ -529,7 +549,7 @@ void draw_battle_ui(battle* fight)
 
 	Texture2D enemy_texture;
 
-	float scale = 0.17;
+	float scale = 0.20;
 	if (e == "Szkielet") enemy_texture = textures.skeleton;
 	else if (e == "Troll")  enemy_texture = textures.troll;
 	else if (e == "Bandyci") enemy_texture = textures.bandits;

@@ -28,9 +28,14 @@ std::string battle::get_enemy_name()
 
 
 
-Node* exploration::get_current_node()
+Node* exploration::get_node(int room_id)
 {
-    return &world_map[current_node_id];
+    auto it = world_map.find(room_id);
+    if (it != world_map.end())
+    {
+        return &it->second;
+    }
+    return nullptr;
 }
 
 enemy* exploration::get_current_enemy()
@@ -45,4 +50,24 @@ int exploration::get_enemy_dif()
         return world_map[current_node_id].enemy->get_dif();
     }
     return 0;
+}
+
+enemy* exploration::get_enemy_by_id(int id)
+{
+    for (auto* e : enemy_pool)
+    {
+        if (e != nullptr && e->get_id() == id)
+            return e->clone();
+    }
+    return nullptr;
+}
+
+Node* exploration::get_room_by_id(int id)
+{
+    auto it = world_map.find(id);
+    if (it != world_map.end())
+    {
+        return &it->second;
+    }
+    return nullptr;
 }

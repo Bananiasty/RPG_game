@@ -32,16 +32,19 @@ exploration::exploration(player& p): bohater(p)
     dungeon.assign(szerokosc, std::vector<int>(dlugosc, 2));
 
     world_map_init();
-    generate_map_from_graph();
-   
+    generate_dungeon();
+
+    player_stats_init(&bohater);
     
 
     this->camera = { 0 };
-    this->camera.position = Vector3{ 40.0f, 1.7f, 62.0f };
-    this->camera.target = Vector3{ 40.0f, 1.7f, 68.0f };
+    this->camera.position = Vector3{ bohater.position.x, 1.7f, bohater.position.z };
+    this->camera.target = Vector3{ bohater.position.x, 1.7f, bohater.position.z + 5.0f };
     this->camera.up = Vector3{ 0.0f, 1.0f, 0.0f };
     this->camera.fovy = 80.0f;
     this->camera.projection = CAMERA_PERSPECTIVE;
+    std::cout << "Player Pos: " << bohater.position.x << ", " << bohater.position.z << std::endl;
+    std::cout << "Cam Pos: " << this->camera.position.x << ", " << this->camera.position.z << std::endl;
 
 
 }
@@ -59,7 +62,8 @@ enemy_loot::enemy_loot(player& p, enemy* e, chest* chest) : Event(), p_ref(p), e
 
 int exploration::update_state()
  {
-
+    this->bohater.position.x = this->camera.position.x;
+    this->bohater.position.z = this->camera.position.z;
     if (IsKeyPressed(KEY_I))
     {
         showInventory = !showInventory;
@@ -208,7 +212,10 @@ void exploration::event_check()
 
     for (chest* c : world_chests)
     {
-        if (c == nullptr) continue;
+        if (c == nullptr)
+        {
+            continue;
+        }
 
         if (Vector3Distance(player_pos, c->position) <= 2.5f && IsKeyPressed(KEY_E))
         {
@@ -236,59 +243,32 @@ void exploration::event_check()
 }
 
 
-void exploration::move_left()
+
+Vector3 exploration::set_enemy_pos(int enemy_id, int room_id)
 {
-    if (world_map[current_node_id].left_id != -1)
+    if (enemy_id == -1)
     {
-        current_node_id = world_map[current_node_id].left_id;
-
-        Node* current_Node = get_current_node();
-
-        if (world_map[current_node_id].left_id != -1)
-        {
-            world_map[current_Node->left_id].discovered = true;
-            world_map[current_Node->right_id].discovered = true;
-        }
-
-        if (world_map[current_node_id].right_id != -1)
-        {   
-            world_map[current_Node->left_id].discovered = true;
-            world_map[current_Node->right_id].discovered = true;
-        }
-        event_check();
+        return { 0.0f, 0.0f, 0.0f };
     }
-}
+    enemy* enemy_ptr = this->get_enemy_by_id(enemy_id);
 
-void exploration::move_right()
-{
-    if (world_map[current_node_id].right_id != -1)
+    if (enemy_ptr == nullptr)
     {
-        current_node_id = world_map[current_node_id].right_id;
-
-        Node* current_Node = get_current_node();
-
-        if (world_map[current_node_id].left_id != -1)
-        {
-            world_map[current_Node->left_id].discovered = true;
-            world_map[current_Node->right_id].discovered = true;
-        }
-
-        if (world_map[current_node_id].right_id != -1)
-        {
-            world_map[current_Node->left_id].discovered = true;
-            world_map[current_Node->right_id].discovered = true;
-        }
-        event_check();
+        return { 0.0f, 0.0f, 0.0f };
     }
-}
+    Node* room_ptr = this->get_room_by_id(room_id);
 
-void exploration::move_back()
-{
-    if (world_map[current_node_id].previous_id != -1)
+    if (room_ptr == nullptr)
     {
-        current_node_id = world_map[current_node_id].previous_id;
+        return { 0.0f, 0.0f, 0.0f };
     }
-    event_check();
+    float enemy_y = enemy_ptr->get_position().y;
+
+    Vector3 final_enemy_pos;
+
+    final_enemy_pos = { (room_ptr->room_x + (room_ptr->room_width / 2.0f)) * 2.0f, enemy_y ,(room_ptr->room_y + (room_ptr->room_length / 2.0f)) * 2.0f };
+
+    return final_enemy_pos;
 }
 
 
@@ -315,8 +295,6 @@ void exploration::draw()
     draw_game_scene(this);
     draw_buttons(this);
     draw_menu();
-
-    Node* current = get_current_node();
 
     if (active_ui_event != nullptr)
     {
@@ -354,7 +332,7 @@ void map_state::draw()
     {
         draw_battle_ui(fight);
     }
-    draw_map(this, exp);
+    draw_dungeon_map(this->exp, this->exp->bohater.position.x, this->exp->bohater.position.z);
 }
 
 

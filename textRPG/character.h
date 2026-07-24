@@ -16,10 +16,12 @@ protected:
 	int max_health, max_mana;
 
 	Texture2D grafika;
-	Vector3 position;
+	
 	float rotation;
 	
 public:
+	Vector3 position;
+
 	bool helm_slot = false;
 	bool vest_slot = false;
 	bool gauntlets_slot = false;
@@ -46,6 +48,8 @@ public:
 
 	void set_max_health(int val) { max_health = val; }
 	void set_max_mana(int val) { max_mana = val; }
+
+	void set_position(Vector3 new_pos) { position = new_pos; }
 	
 };
 class player :public character
@@ -100,18 +104,23 @@ private:
 	std::string intro_text;
 	int difficulty;
 	int id_number;
+	int room_id_number;
 public:
 	std::vector<item*> loot;
 	Vector3 get_position() const { return position; }
+	
 	Texture2D get_texture() const { return grafika; }
 
 	std::string get_intro_text() { return intro_text; }
 
-	enemy(int id, std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D grafika, Vector3 pos, float rot, int dif, std::string intro);
+	enemy(const enemy_config& config);
 
 	
 	enemy* clone() const;
-	int get_dif() { return difficulty; };
-	int get_id() { return id_number; };
+	int get_dif() { return difficulty; }
+	int get_id() { return id_number; }
+	int get_room_id() { return room_id_number; }
+
+	
 };
 

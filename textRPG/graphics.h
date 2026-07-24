@@ -3,16 +3,29 @@
 #include "gamestates.h"
 
 void draw_login_screen(const std::string& current_name, bool has_error);
+
 void graphics_init();
+
 void draw_game_scene(exploration* exp);
+
 void draw_buttons(exploration* e);
+
 void draw_battle_ui(battle* fight);
+
 void draw_inventory_ui(player& p, inventory_state* inv);
+
 void draw_commentary();
+
 void draw_game_over();
-void draw_map(map_state* map, exploration* exp);
+
 void DrawGlobalAnimation();
+
 void DrawExploration(exploration* exp);
+
 void DrawHUD(exploration* exp);
+
+void draw_map_tile(exploration* exp, int x, int y);
+
+void draw_dungeon_map(exploration* exp, float player_x, float player_y);
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open);

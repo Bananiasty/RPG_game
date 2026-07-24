@@ -22,7 +22,7 @@ chest* exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distr(0, (int)item_pool.size() - 1);
+    std::uniform_int_distribution<> distr(0, (int)item_pool.size()-1);
 
     int slots_number = rand_chest_slots();
     std::vector<item*> drawn_items;

@@ -17,7 +17,7 @@ character::character(std::string n, int hp, int mana, int bdef, int bdmg, int b_
 };
 
 player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot)
+    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, { 0.0f, 0.0f, 0.0f }, rot)
 {
     bag = new inventory();
     equipment = new inventory();
@@ -32,11 +32,28 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
     queued_frame_time = 0.0;
 };
 
-enemy::enemy(int id, std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch,  Texture2D g, Vector3 pos, float rot, int dif, std::string intro)
-    : id_number(id), character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, pos, rot), difficulty(dif), intro_text(intro)
+enemy::enemy(const enemy_config& config): 
+    id_number(config.id),
+    character(
+        config.name,
+        config.hp,
+        config.mp,
+        config.armor,
+        config.damage,
+        config.block_chance,
+        config.crit_chance,
+        config.dodge_chance,
+        config.texture,
+        config.position,
+        config.rotation
+    ),
+    
+    difficulty(config.level),
+    intro_text(config.description)
 {
-    this->position = pos;
-};
+    this->position = config.position;
+
+}
 
 void player::set_name(const std::string& new_name)
 {

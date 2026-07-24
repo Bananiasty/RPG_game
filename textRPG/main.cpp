@@ -20,7 +20,7 @@ int main()
 {
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
-    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 1, textures.player, { 44.0, 2.0, 8.0 }, 0);
+    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -42,7 +42,6 @@ int main()
     GuiSetStyle(DEFAULT, TEXT_SIZE, 24);
 
     battle* current_fight = nullptr;
-    world.camera.position = { 46.0f, 2.0f, 76.0f };
 
 
     while (!WindowShouldClose())
@@ -100,8 +99,9 @@ int main()
             world.event_check();
             
             
-            for (auto* current_enemy : world.enemy_pool)
+            for (auto& [id, node] : world.world_map)
             {
+                enemy* current_enemy = node.enemy;
                 if (current_enemy == nullptr || current_enemy->is_dead())
                     continue;
 
@@ -115,6 +115,7 @@ int main()
                     active_state = current_fight;
                 }
             }
+            
             
         }
         else

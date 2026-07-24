@@ -35,13 +35,12 @@ class exploration : public gamestate
 private:
 	
 
-	void add_Node(int id, int left = -1, int right = -1, int previous = -1, bool disc=false, int posX=600, int posY=500, chest* s_chest = nullptr, int rx=0, int rh=0, int r_width=0, int r_length=0);
+	void add_Node(const NodeConfig& config);
 	
 
 	
 public:
 	Camera3D camera;
-
 	int dlugosc;
 	int szerokosc;
 
@@ -61,7 +60,7 @@ public:
 	bool showInventory = false;
 	bool showMap = false;
 	
-	void generate_map_from_graph();
+	void generate_dungeon();
 	void apply_collision(Vector3 stara_pos);
 
 	void draw() override;
@@ -72,8 +71,12 @@ public:
 	void world_map_init();
 	void loot_init();
 
-	Node* get_current_node();
+	Node* get_node(int room_id);
+
+	Vector3 set_enemy_pos(int enemy_id, int room_id);
 	enemy* get_current_enemy();
+	enemy* get_enemy_by_id(int id);
+	Node* get_room_by_id(int id);
 	int get_enemy_dif();
 
 	int rand_chest_slots();
@@ -83,11 +86,7 @@ public:
 
 	void event_check();
 
-	void move_left();
-	void move_right();
-	void move_back();
-
-	void map_graph();
+	
 
 	void game_over() {};
 

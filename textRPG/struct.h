@@ -68,6 +68,18 @@ struct Node
 	chest* spawn_chest;
 };
 
+struct NodeConfig {
+	int id;
+	int enemy_id = -1;
+	int left = -1;
+	int right = -1;
+	int previous = -1;
+	bool discovered = false;
+	chest* s_chest = nullptr;
+	Vector2 dungeon_pos = { 0, 0 };
+	Vector2 room_size = { 5, 5 };
+};
+
 struct collisions
 {
 	bool blokuj_ruch_plus_x = false;
@@ -75,6 +87,27 @@ struct collisions
 	bool blokuj_ruch_plus_z = false;
 	bool blokuj_ruch_minus_z = false;
 };
+
+struct enemy_config {
+	int id = -1;
+	std::string name = "";
+	int hp = 20;
+	int mp = 0;
+	int armor = 0;
+	int damage = 0;
+	int block_chance = 0;
+	int crit_chance = 0;
+	int dodge_chance = 0;
+	Texture2D texture = {};
+	Vector3 position = { 0.0f, 1.0f, 0.0f };
+	float rotation = 0.0f;
+	int level = 1;
+	std::string description = "";
+};
+
+
+
+
 
 
 

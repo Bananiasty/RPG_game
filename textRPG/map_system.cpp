@@ -5,58 +5,55 @@
 #include "inventory_class.h"
 #include "gamestates.h"
 #include "struct.h"
+#include "graphics.h"
 #include <random>
 
 
 
-void exploration::add_Node(int id, int left, int right, int previous, bool disc, int posX, int posY, chest* s_chest, int rx, int rh, int r_width, int r_length)
+void exploration::add_Node(const NodeConfig& config) 
 {
-    Node temp_node;
-    temp_node.left_id = left;
-    temp_node.right_id = right;
-    temp_node.previous_id = previous;
-    temp_node.spawn_chest = s_chest;
-    temp_node.discovered = disc;
-    temp_node.positionX = posX;
-    temp_node.positionY = posY;
-    temp_node.room_x = rx;
-    temp_node.room_y = rh;
-    temp_node.room_width = r_width;
-    temp_node.room_length = r_length;
+    Node new_node;
 
-    world_map[id] = temp_node;
-}
-void exploration::map_graph()
-{
-    auto i = world_map.begin();
-    i++;
-    while (i != world_map.end())
+    new_node.left_id = config.left;
+    new_node.right_id = config.right;
+    new_node.previous_id = config.previous;
+
+    new_node.room_x = (int)config.dungeon_pos.x;
+    new_node.room_y = (int)config.dungeon_pos.y;
+
+    new_node.room_width = (int)config.room_size.x;
+    new_node.room_length = (int)config.room_size.y;
+
+    new_node.spawn_chest = config.s_chest;
+    new_node.enemy = nullptr;
+
+    world_map[config.id] = new_node;
+
+    if (config.enemy_id != -1)
     {
-        Node& this_Node = i->second;
-        if (this_Node.previous_id != -1)
+        enemy* e = get_enemy_by_id(config.enemy_id);
+        if (e != nullptr)
         {
-            Node& parent = world_map[this_Node.previous_id];
+            Vector3 pos = set_enemy_pos(config.enemy_id, config.id);
 
-            if (i->first == parent.left_id && parent.left_id != -1)
-            {
-                this_Node.positionX = parent.positionX - 80;
-                this_Node.positionY = parent.positionY - 80;
-            }
-            else if (i->first == parent.right_id && parent.right_id != -1)
-            {
-                this_Node.positionX = parent.positionX + 80;
-                this_Node.positionY = parent.positionY - 80;
-            }
+            e->set_position(pos);
+            world_map[config.id].enemy = e;
         }
-           
-        i++;
+    }
+    else
+    {
+        new_node.enemy = nullptr;
     }
 
+    
+
 }
 
 
 
-void exploration::generate_map_from_graph()
+
+
+void exploration::generate_dungeon()
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -200,7 +197,16 @@ void exploration::generate_map_from_graph()
                 }
             }
         }
+
       i++;
+    }
+    world_chests.clear();
+    for (auto& [id, node] : world_map)
+    {
+        if (node.spawn_chest != nullptr)
+        {
+            world_chests.push_back(node.spawn_chest);
+        }
     }
     
 }
