@@ -21,17 +21,21 @@ protected:
 	
 public:
 	Vector3 position;
-
+	
 	bool helm_slot = false;
 	bool vest_slot = false;
 	bool gauntlets_slot = false;
 	bool boots_slot = false;
 	bool weapon_slot = false;
 
+	float queued_damage = 0.0;
+
 	character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot);
 
 	bool is_dead();
-	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit);
+
+	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard);
+
 	std::pair<int, bool> calculate_dmg();
 
 	std::string get_name() { return name; }
@@ -64,6 +68,8 @@ private:
 	
 	
 public:
+	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
+
 	enemy* current_enemy = nullptr;
 	inventory* bag;
 	inventory* equipment;
@@ -71,14 +77,19 @@ public:
 	inventory* scrolls;
 
 	bool spell_queued = false;
-	float queued_damage = 0.0;
+	
 
 	Texture2D* queued_animation_texture;
 	int queued_frame_count;
 	float queued_frame_time;
 
 	int xp_from_enemy_dif;
-	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
+
+	bool is_guard = false;
+	bool is_attack = false;
+
+	void player_guard();
+	void player_attack();
 
 	bool validate_and_set_name(const std::string& new_name);
 

@@ -96,7 +96,7 @@ std::pair<int, bool> character::calculate_dmg()
     return std::make_pair(damage_amount, is_crit);
 }
 
-int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit)
+int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -113,15 +113,13 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
     int final_dmg = dmg_amount;
     bool is_blocked = false;
     
-    if (distr(gen) <= this->get_block_chance())
+    if (czy_to_gracz==true && is_guard==true)
     {
-        
         final_dmg /= 2;
         is_blocked = true;
-        
     }
     
-    int incoming_damage = final_dmg - this->get_defense();
+    int incoming_damage = std::max(0, final_dmg - this->get_defense());
 
     if (is_blocked)
     {
@@ -147,6 +145,24 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
     
     this->health -= incoming_damage;
     return incoming_damage;
+}
+
+void player::player_guard()
+{
+    
+    if (this->is_guard == false)
+    {
+        this->is_guard = true;
+    }
+   
+}
+void player::player_attack()
+{
+
+    if (this->is_attack == false)
+    {
+        this->is_attack = true;
+    }
 }
 
 

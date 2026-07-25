@@ -116,6 +116,8 @@ public:
 	bool waiting_for_enemy = false;
 	bool click_cooldown = false;
 	bool attack_clicked = false;
+	bool guard_clicked = false;
+
 
 	float enemy_cooldown = 0.0;
 	float player_cooldown = 0.0;
@@ -123,8 +125,13 @@ public:
 
 	void draw() override;
 
-	int player_attack();
+	int player_turn();
 	int enemy_turn();
+	
+
+
+
+
 	enemy& get_enemy();
 	int get_player_hp();
 	int get_enemy_hp();

@@ -1,3 +1,5 @@
+#include <vector>
+#include <algorithm>
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
@@ -30,12 +32,78 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 	}
 }
 
+struct RenderObject
+{
+	float distance_sqr = 0.0f;
+
+	chest* chest_ptr = nullptr;
+	enemy* enemy_ptr = nullptr;
+};
+
 void DrawExploration(exploration* exp)
 {
+	int promienWidzenia = 20;
+
+	int playerGridX = (int)(exp->camera.position.x / 2.0f);
+	int playerGridY = (int)(exp->camera.position.z / 2.0f);
+
+	int startX = std::max(0, playerGridX - promienWidzenia);
+	int endX = std::min(exp->szerokosc, playerGridX + promienWidzenia);
+	int startY = std::max(0, playerGridY - promienWidzenia);
+	int endY = std::min(exp->dlugosc, playerGridY + promienWidzenia);
+
+	std::vector<RenderObject> object_to_draw;
+
 	for (auto* c : exp->world_chests)
 	{
-		if (c != nullptr)
+		int chestGridX = (int)(c->position.x / 2.0f);
+		int chestGridY = (int)(c->position.z / 2.0f);
+
+		if (chestGridX >= startX && chestGridX < endX && chestGridY >= startY && chestGridY < endY)
 		{
+			float dx = c->position.x - exp->camera.position.x;
+			float dy = c->position.y - exp->camera.position.y;
+			float dz = c->position.z - exp->camera.position.z;
+
+			RenderObject object;
+			object.chest_ptr = c;
+			object.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
+			object_to_draw.push_back(object);
+		}
+	}
+	for (auto& [id, node] : exp->world_map)
+	{
+		if (node.enemy != nullptr && !node.enemy->is_dead())
+		{
+			Vector3 pos = node.enemy->get_position();
+			int enemyGridX = (int)(pos.x / 2.0f);
+			int enemyGridY = (int)(pos.z / 2.0f);
+
+			if (enemyGridX >= startX && enemyGridX < endX &&
+				enemyGridY >= startY && enemyGridY < endY)
+			{
+				float dx = pos.x - exp->camera.position.x;
+				float dy = pos.y - exp->camera.position.y;
+				float dz = pos.z - exp->camera.position.z;
+
+				RenderObject object;
+				object.enemy_ptr = node.enemy;
+				object.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
+				object_to_draw.push_back(object);
+			}
+		}
+	}
+	std::sort(object_to_draw.begin(), object_to_draw.end(), [](const RenderObject& a, const RenderObject& b)
+		{
+			return a.distance_sqr > b.distance_sqr;
+		});
+	
+	for (const auto& object : object_to_draw)
+	{
+		// A. Jeœli to SKRZYNKA:
+		if (object.chest_ptr != nullptr)
+		{
+			auto* c = object.chest_ptr;
 			if (c->enemy_ptr != nullptr)
 			{
 				DrawCube(c->position, 0.7f, 0.1f, 0.7f, RED);
@@ -47,71 +115,57 @@ void DrawExploration(exploration* exp)
 				DrawCubeWires(c->position, 0.6f, 0.6f, 0.6f, DARKBROWN);
 			}
 		}
-	}
-	for (auto& [id, node] : exp->world_map)
-	{
-		if(node.enemy != nullptr && !node.enemy->is_dead())
+
+		else if (object.enemy_ptr != nullptr)
 		{
-			int current_id = node.enemy->get_id();
-			Vector3 pos = node.enemy->get_position();
+			auto* enemy = object.enemy_ptr;
+			int current_id = enemy->get_id();
+			Vector3 pos = enemy->get_position();
 
 			switch (current_id)
 			{
-				case 1:
-				{
-					Vector3 draw_pos = { pos.x, pos.y + 0.4f, pos.z };
-					DrawBillboard(exp->camera, textures.skeleton, draw_pos, 3.0f, WHITE);
-					break;
-				}
-
-				case 2:
-				{
-					Vector3 draw_pos = { pos.x, pos.y, pos.z };
-					DrawBillboard(exp->camera, textures.goblin, draw_pos, 2.0f, WHITE);
-					break;
-				}
-				
-				case 3:
-				{
-					Vector3 draw_pos = { pos.x, pos.y + 0.63f, pos.z };
-					DrawBillboard(exp->camera, textures.troll, draw_pos, 3.5f, WHITE);
-					break;
-				}
-				
-				case 4:
-				{
-					Vector3 draw_pos = { pos.x, pos.y + 0.3, pos.z };
-					DrawBillboard(exp->camera, textures.bandits, draw_pos, 2.8f, WHITE);
-					break;
-				}
-				
-				case 5:
-				{
-					Vector3 draw_pos = { pos.x, pos.y + 0.45, pos.z };
-					DrawBillboard(exp->camera, textures.guard, draw_pos, 3.0f, WHITE);
-					break;
-				}
-				
-				case 6:
-				{
-					Vector3 draw_pos = { pos.x, pos.y + 0.55, pos.z };
-					DrawBillboard(exp->camera, textures.dragon, draw_pos, 3.5f, WHITE);
-					break;
-				}
-			}	
+			case 1:
+			{
+				Vector3 draw_pos = { pos.x, pos.y + 0.4f, pos.z };
+				DrawBillboard(exp->camera, textures.skeleton, draw_pos, 3.0f, WHITE);
+				break;
+			}
+			case 2:
+			{
+				Vector3 draw_pos = { pos.x, pos.y, pos.z };
+				DrawBillboard(exp->camera, textures.goblin, draw_pos, 2.0f, WHITE);
+				break;
+			}
+			case 3:
+			{
+				Vector3 draw_pos = { pos.x, pos.y + 0.63f, pos.z };
+				DrawBillboard(exp->camera, textures.troll, draw_pos, 3.5f, WHITE);
+				break;
+			}
+			case 4:
+			{
+				Vector3 draw_pos = { pos.x, pos.y + 0.3f, pos.z };
+				DrawBillboard(exp->camera, textures.bandits, draw_pos, 2.8f, WHITE);
+				break;
+			}
+			case 5:
+			{
+				Vector3 draw_pos = { pos.x, pos.y + 0.45f, pos.z };
+				DrawBillboard(exp->camera, textures.guard, draw_pos, 3.0f, WHITE);
+				break;
+			}
+			case 6:
+			{
+				Vector3 draw_pos = { pos.x, pos.y + 0.55f, pos.z };
+				DrawBillboard(exp->camera, textures.dragon, draw_pos, 3.5f, WHITE);
+				break;
+			}
+			}
 		}
-		
 	}
 	
 
-	int playerGridX = (int)(exp->camera.position.x / 2.0f);
-	int playerGridY = (int)(exp->camera.position.z / 2.0f);
-	int promienWidzenia = 20;
-
-	int startX = std::max(0, playerGridX - promienWidzenia);
-	int endX = std::min(exp->szerokosc, playerGridX + promienWidzenia);
-	int startY = std::max(0, playerGridY - promienWidzenia);
-	int endY = std::min(exp->dlugosc, playerGridY + promienWidzenia);
+	
 
 	for (int cx = startX; cx < endX; cx++)
 	{
@@ -600,12 +654,17 @@ void draw_battle_ui(battle* fight)
 		if (fight->player_cooldown <= 0)
 		{
 			fight->attack_clicked = true;
-			fight->player_cooldown = 2.5;
+			fight->player_cooldown = 1.0;
 		}
 					
 	}
-	if (GuiButton({ battle_menu_button.x + button_spacing * 2, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, "Guard")) {
-
+	if (GuiButton({ battle_menu_button.x + button_spacing * 2, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, "Guard")) 
+	{
+		if (fight->player_cooldown <= 0)
+		{
+			fight->guard_clicked = true;
+			fight->player_cooldown = 1.0;
+		}
 		
 	}
 	

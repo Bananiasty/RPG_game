@@ -108,57 +108,12 @@ int battle::update_state()
 
     if (!waiting_for_enemy)
     {
-        if (p_ref.spell_queued)
-        {
-
-            global_fx.texture = *(p_ref.queued_animation_texture);
-            global_fx.frame_count = p_ref.queued_frame_count;
-            global_fx.frame_time = p_ref.queued_frame_time;
-
-            Vector2 target_pos = { 680, 260 };
-            global_fx.play(target_pos);
-
-            this->waiting_for_enemy = true;
-
-            this->enemy_cooldown = (p_ref.queued_frame_count * p_ref.queued_frame_time) + 2;
-
-            p_ref.spell_queued = false;
-        }
-        else if (this->attack_clicked && click_cooldown == false)
-        {
-            this->attack_clicked = false;
-            this->player_attack();
-            this->waiting_for_enemy = true;
-            this->click_cooldown = true;
-
-            this->enemy_cooldown = 2.0;
-        }
-
-            
+        this->player_turn();           
     }
- 
-    if (click_cooldown)
-    {
-        player_cooldown -= GetFrameTime();
-        if (player_cooldown <= 0.0)
-        {
-            click_cooldown = false;
-        }
-    }
-
-    if (waiting_for_enemy) {
-        if (!global_fx.is_playing && p_ref.queued_damage > 0)
-        {
-            e_ref.take_damage(p_ref.queued_damage, &p_ref, false);
-            p_ref.queued_damage = 0.0;
-        }
-
-        enemy_cooldown -= GetFrameTime();       
-        if (enemy_cooldown <= 0.0) {
-            this->enemy_turn();
-            waiting_for_enemy = false;
-        }
-
+   
+    if (waiting_for_enemy) 
+    {      
+        this->enemy_turn();
     }
 
     return 2; 
@@ -321,6 +276,7 @@ void inventory_state::draw()
         draw_battle_ui(fight);
     }
     draw_inventory_ui(p_ref, this);
+    draw_buttons(this->exp);
 }
 void map_state::draw()
 {
@@ -333,6 +289,7 @@ void map_state::draw()
         draw_battle_ui(fight);
     }
     draw_dungeon_map(this->exp, this->exp->bohater.position.x, this->exp->bohater.position.z);
+    draw_buttons(this->exp);
 }
 
 

@@ -20,7 +20,7 @@ int main()
 {
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
-    player bohater("", 100, 50, 0, 100, 0, 0, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
+    player bohater("", 100, 50, 0, 10, 0, 0, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
