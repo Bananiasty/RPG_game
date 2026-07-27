@@ -111,7 +111,7 @@ void DrawExploration(exploration* exp)
 			}
 			else
 			{
-				DrawCube(c->position, 0.6f, 0.6f, 0.6f, BROWN);
+				DrawModel(objects.m_chest, c->position, 1.5f, WHITE);
 				DrawCubeWires(c->position, 0.6f, 0.6f, 0.6f, DARKBROWN);
 			}
 		}
@@ -158,6 +158,33 @@ void DrawExploration(exploration* exp)
 			{
 				Vector3 draw_pos = { pos.x, pos.y + 0.55f, pos.z };
 				DrawBillboard(exp->camera, textures.dragon, draw_pos, 3.5f, WHITE);
+				break;
+			}
+			case 10:
+			{
+				Vector3 draw_pos = { pos.x, pos.y + 0.45f, pos.z };
+
+				// Zak³adamy kierunek patrzenia wroga (jeœli obiekt wroga ma swój wektor kierunku, podstaw go tu, np. object.enemy_ptr->forward)
+				Vector3 enemyForward = { 0.0f, 0.0f, 1.0f };
+
+				// Wyliczamy odpowiedni¹ klatkê (0-7) w zale¿noœci od k¹ta widzenia
+				int frameIndex = GetSpriteFrameIndex(pos, enemyForward, exp->camera.position);
+
+				float frameWidth = (float)textures.ghoul.width / 8.0f; // Szerokoœæ 1 z 8 klatek
+				float frameHeight = (float)textures.ghoul.height;
+
+				Rectangle sourceRec = { frameIndex * frameWidth, 0.0f, frameWidth, frameHeight };
+
+				float proportions = frameWidth / frameHeight;
+				float targetHeight = 3.0f;
+				float targetWidth = targetHeight * proportions;
+
+				BeginShaderMode(textures.outlineShader);
+
+				DrawBillboardRec(exp->camera, textures.ghoul, sourceRec, draw_pos, { targetWidth, targetHeight }, WHITE);
+
+				EndShaderMode();
+
 				break;
 			}
 			}
@@ -604,6 +631,7 @@ void draw_battle_ui(battle* fight)
 	Texture2D enemy_texture;
 
 	float scale = 0.20;
+	float frameWidth = 0.0f;
 	if (e == "Szkielet") enemy_texture = textures.skeleton;
 	else if (e == "Troll")  enemy_texture = textures.troll;
 	else if (e == "Bandyci") enemy_texture = textures.bandits;
@@ -614,10 +642,29 @@ void draw_battle_ui(battle* fight)
 		enemy_texture = textures.goblin;
 		scale = 0.47;
 	}
+	else if (e == "Ghoul")
+	{
+		enemy_texture = textures.ghoul;
+		frameWidth = (float)enemy_texture.width / 8.0f;
+		scale = 2.0f;
+	}
+	
+	if (e != "Ghoul")
+	{
+		frameWidth = (float)enemy_texture.width;
+	}
 
-	float przeskalowana_szerokosc_wroga = (float)enemy_texture.width * scale;
+	float przeskalowana_szerokosc_wroga = frameWidth * scale;
 	float posX = 670.0 - (przeskalowana_szerokosc_wroga / 2.0);
 	float posY = 55.0;
+
+	Rectangle sourceRec = { 0.0f, 0.0f, frameWidth, (float)enemy_texture.height };
+
+	// Prostok¹t docelowy na ekranie (gdzie i w jakim rozmiarze narysowaæ)
+	Rectangle destRec = { posX, posY, frameWidth * scale, (float)enemy_texture.height * scale };
+
+	// Rysowanie wyciêtej klatki (zastêpuje DrawTextureEx)
+	DrawTexturePro(enemy_texture, sourceRec, destRec, Vector2{ 0.0f, 0.0f }, 0.0f, WHITE);
 
 	float centerX = 430.0 + (((float)enemy_texture.width * 0.17) / 2.0);
 	float centerY = 80.0 + (((float)enemy_texture.height * 0.17) / 2.0);
@@ -629,8 +676,6 @@ void draw_battle_ui(battle* fight)
 	{
 		DrawCircleGradient({ 650, 200 }, 200, Color{ 255, 0, 0, 60 }, BLANK);
 	}
-
-	DrawTextureEx(enemy_texture, { posX, posY }, 0, scale, WHITE);
 
 	float szerokosc_tekstu_e = (float)MeasureText(e.c_str(), 24);
 	float posX_text = 675 - (szerokosc_tekstu_e / 2);

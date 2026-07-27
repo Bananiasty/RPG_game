@@ -50,6 +50,8 @@ struct textureManager {
 	Texture2D bandits;
 	Texture2D guard;
 	Texture2D dragon;
+	Texture2D ghoul;
+
 	Texture2D chest_t;
 
 	Texture2D lightning_bolt;
@@ -85,7 +87,12 @@ struct textureManager {
 
 	Texture2D apple;
 
-	
+	Texture2D wall_tile_tex;
+	Texture2D floor_tile_tex;
+	Texture2D ceiling_tile_tex;
+
+
+	Shader outlineShader;
 	
 };
 
@@ -96,6 +103,7 @@ struct ModelManager {
 	Model floor_tile;
 	Model wall_tile;
 	Model ceiling_tile;
+	Model m_chest;
 
 };
 
@@ -105,5 +113,6 @@ extern ModelManager objects;
 
 void LoadGameTextures();
 void LoadGameModels();
+int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPos);
 
  

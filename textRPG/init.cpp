@@ -71,6 +71,7 @@ void exploration::loot_init()
 }
 void exploration::enemies_init()
 {
+	enemy_pool.push_back(new enemy({ .id = 10, .name = "Ghoul", .hp = 40, .mp = 0, .armor = 0, .damage = 5, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
 
 	enemy_pool.push_back(new enemy({ .id = 1, .name = "Szkielet", .hp = 15, .mp = 0, .armor = 2, .damage = 5, .block_chance = 0, .crit_chance = 0, .dodge_chance = 0, .texture = textures.skeleton, .rotation = 0.0f, .level = 1, .description = "Przed toba stoi otepialy szkielet, chyba czegos broni." }));
 	enemy_pool.push_back(new enemy({ .id = 2, .name = "Goblin", .hp = 30, .mp = 0, .armor = 4, .damage = 7, .block_chance = 5, .crit_chance = 10, .dodge_chance = 15, .texture = textures.goblin, .rotation = 0.0f, .level = 1, .description = "Z krzaka wyskoczyl wsciekly Goblin!!!" }));
@@ -85,14 +86,14 @@ void exploration::world_map_init()
 	loot_init();
 	enemies_init();
 
-	add_Node({ .id = 1, .left = 2, .dungeon_pos = {10,10}, .room_size = {5, 5} });
+	add_Node({ .id = 1, .left = 2,.s_chest = rand_loot(nullptr, {21.0f, 0, 21.0f}), .dungeon_pos = {10,10}, .room_size = {5, 5} });
 	add_Node({ .id = 2, .enemy_id = 2, .right = 3,  .dungeon_pos = { 10, 25 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 3, .enemy_id = 3, .left = 4, .right = 5, .dungeon_pos = { 10, 40 }, .room_size = { 8, 8 } });
+	add_Node({ .id = 3, .enemy_id = 10, .left = 4, .right = 5, .dungeon_pos = { 10, 40 }, .room_size = { 8, 8 } });
 	add_Node({ .id = 4, .enemy_id = 4, .left = 5, .dungeon_pos = { 25, 40 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 5, .left = 6, .right = 8, .s_chest = rand_loot(nullptr, {21.0f, 1.0f, 111.0f}), .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 } });
+	add_Node({ .id = 5, .left = 6, .right = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 111.0f}), .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 } });
 	add_Node({ .id = 6, .enemy_id = 5, .left = 7, .dungeon_pos = { 25, 55 }, .room_size = { 6, 6 } });
 	add_Node({ .id = 7, .enemy_id = 6, .left = 8, .dungeon_pos = { 25, 70 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 8, .s_chest = rand_loot(nullptr, {21.0f, 1.0f, 141.0f}), .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 } });
+	add_Node({ .id = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 141.0f}), .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 } });
 
 	//draw_dungeon_map();
 }

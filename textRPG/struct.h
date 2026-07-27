@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include "raylib.h"
+#include "textureManager.h"
 
 
 class item;
@@ -29,10 +30,14 @@ public:
 	int slots;
 	std::vector<item*>chest_loot;
 	std::vector<item*>enemy_loot;
+	Model chest_model;
 
 	//KONSTRUKTOR DLA SKRZYNI
 	chest(std::vector<item*> ch_l, int slots_number, Vector3 pos)
-		: position(pos), enemy_ptr(nullptr), slots(slots_number), chest_loot(ch_l), enemy_loot() {}
+		: position(pos), enemy_ptr(nullptr), slots(slots_number), chest_loot(ch_l), enemy_loot() 
+	{
+		chest_model = objects.m_chest;
+	}
 
 	// KONSTRUKTOR DLA WROGA
 	chest(std::vector<item*> e_l, int slots_number, enemy* e) :
