@@ -150,6 +150,7 @@
   <ItemGroup>
     <ClCompile Include="character.cpp" />
     <ClCompile Include="chest.cpp" />
+    <ClCompile Include="enemies.cpp" />
     <ClCompile Include="fight.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="getters_setters.cpp" />

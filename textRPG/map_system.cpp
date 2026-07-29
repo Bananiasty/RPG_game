@@ -76,8 +76,8 @@ void exploration::generate_dungeon()
             szerokosc_korytarza = 2;
         }
 
-        int start_x = this_Node.room_x + (this_Node.room_width / 2);
-        int start_y = this_Node.room_y + (this_Node.room_length / 2);
+        int start_x = this_Node.room_x + (int)std::floor(this_Node.room_width / 2.0f);
+        int start_y = this_Node.room_y + (int)std::floor(this_Node.room_length / 2.0f);
 
         //POKOJE
         for (int current_x = this_Node.room_x; current_x < (this_Node.room_x + this_Node.room_width); current_x++)

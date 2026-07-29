@@ -38,13 +38,11 @@ exploration::exploration(player& p): bohater(p)
     
 
     this->camera = { 0 };
-    this->camera.position = Vector3{ bohater.position.x, 1.7f, bohater.position.z };
-    this->camera.target = Vector3{ bohater.position.x, 1.7f, bohater.position.z + 5.0f };
+    this->camera.position = Vector3{ bohater.position.x, 1.5f, bohater.position.z };
+    this->camera.target = Vector3{ bohater.position.x, 1.5f, bohater.position.z + 5.0f };
     this->camera.up = Vector3{ 0.0f, 1.0f, 0.0f };
     this->camera.fovy = 80.0f;
     this->camera.projection = CAMERA_PERSPECTIVE;
-    std::cout << "Player Pos: " << bohater.position.x << ", " << bohater.position.z << std::endl;
-    std::cout << "Cam Pos: " << this->camera.position.x << ", " << this->camera.position.z << std::endl;
 
 
 }
@@ -74,6 +72,7 @@ int exploration::update_state()
         showMap = !showMap;
         return 4;
     }
+    update_enemies();
     event_check();
     if (active_ui_event != nullptr)
     {
@@ -213,15 +212,13 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id)
     }
     Node* room_ptr = this->get_room_by_id(room_id);
 
-    if (room_ptr == nullptr)
-    {
-        return { 0.0f, 0.0f, 0.0f };
-    }
     float enemy_y = enemy_ptr->get_position().y;
 
     Vector3 final_enemy_pos;
+    float centerX = room_ptr->room_x + (room_ptr->room_width / 2.0f);
+    float centerZ = room_ptr->room_y + (room_ptr->room_length / 2.0f);
 
-    final_enemy_pos = { (room_ptr->room_x + (room_ptr->room_width / 2.0f)) * 2.0f, enemy_y ,(room_ptr->room_y + (room_ptr->room_length / 2.0f)) * 2.0f };
+    final_enemy_pos = { centerX * 2.0f, enemy_y, centerZ * 2.0f };
 
     return final_enemy_pos;
 }

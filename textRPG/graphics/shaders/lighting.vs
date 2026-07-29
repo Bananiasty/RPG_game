@@ -9,13 +9,15 @@ out vec2 fragTexCoord;
 out vec4 fragColor;
 
 uniform mat4 mvp;
-uniform mat4 matModel;
 
 void main()
 {
     fragTexCoord = vertexTexCoord;
     fragColor = vertexColor;
 
-    fragPosition = vec3(matModel * vec4(vertexPosition, 1.0));
-    gl_Position = mvp * vec4(vertexPosition, 1.0);
+
+    vec4 eyePos = mvp * vec4(vertexPosition, 1.0);
+    fragPosition = eyePos.xyz;
+
+    gl_Position = eyePos;
 }

@@ -7,6 +7,8 @@
 #include "raylib.h"
 #include "struct.h"
 
+
+
 class enemy;
 class player;
 struct chest;
@@ -62,6 +64,7 @@ public:
 	
 	void generate_dungeon();
 	void apply_collision(Vector3 stara_pos);
+	void update_enemies();
 
 	void draw() override;
 	int update_state() override;
@@ -98,6 +101,7 @@ public:
 	bool load_game() override;
 
 };
+
 
 class battle : public gamestate
 {

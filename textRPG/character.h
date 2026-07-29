@@ -116,7 +116,40 @@ private:
 	int difficulty;
 	int id_number;
 	int room_id_number;
+
+	bool moving = false;
+	Vector3 target_tile = { 0.0f, 0.0f, 0.0f };
+	Vector3 forward = { 0.0f, 0.0f, 1.0f };
+
+	int last_frame_index = 0;
 public:
+	int get_last_frame() const { return last_frame_index; }
+	void set_last_frame(int frame) { last_frame_index = frame; }
+
+	void set_forward(Vector3 f) { this->forward = f; }
+	Vector3 get_forward() const { return this->forward; }
+	bool is_moving() const
+	{
+		return moving;
+	}
+
+	void set_is_moving(bool state)
+	{
+		moving = state;
+	}
+
+	// Ustawia wspó³rzêdne docelowego kafelka
+	void set_target_tile(Vector3 tile)
+	{
+		target_tile = tile;
+	}
+
+	// Pobiera wspó³rzêdne docelowego kafelka
+	Vector3 get_target_tile() const
+	{
+		return target_tile;
+	}
+
 	std::vector<item*> loot;
 	Vector3 get_position() const { return position; }
 	

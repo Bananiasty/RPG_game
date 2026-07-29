@@ -1,5 +1,6 @@
 #include "TextureManager.h"
 #include <iostream>
+#include "character.h"
 
 fx_animation global_fx;
 textureManager textures;
@@ -90,6 +91,22 @@ void LoadGameTextures()
 	float outlineSizeValue = 1.0f;
 	SetShaderValue(textures.outlineShader, outlineSizeLoc, &outlineSizeValue, SHADER_UNIFORM_FLOAT);
 
+	//Widocznosc
+	textures.fogShader = LoadShader("graphics/shaders/lighting.vs","graphics/shaders/lighting.fs");
+
+
+	textures.fogShader.locs[SHADER_LOC_MATRIX_MODEL] = GetShaderLocation(textures.fogShader, "matModel");
+	textures.fogShader.locs[SHADER_LOC_MATRIX_MVP] = GetShaderLocation(textures.fogShader, "mvp");
+
+	int viewPosLoc = GetShaderLocation(textures.fogShader, "viewPos");
+	int minDistLoc = GetShaderLocation(textures.fogShader, "minDistance");
+	int maxDistLoc = GetShaderLocation(textures.fogShader, "maxDistance");
+
+	float minDist = 2.0f;
+	float maxDist = 20.0f;
+
+	SetShaderValue(textures.fogShader, minDistLoc, &minDist, SHADER_UNIFORM_FLOAT);
+	SetShaderValue(textures.fogShader, maxDistLoc, &maxDist, SHADER_UNIFORM_FLOAT);
 
 }
 
@@ -99,52 +116,67 @@ void LoadGameModels()
 	objects.enemy_character = LoadModel("graphics/models/postac_przeciwnika.glb");
 
 	objects.m_chest = LoadModel("graphics/models/objects/treasure_chest_128.glb");
+	objects.m_chest.materials[1].shader = textures.fogShader;
 
 	objects.floor_tile = LoadModel("graphics/models/terrain/floor_tile1.glb");
 
 	objects.floor_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.floor_tile_tex;
 	objects.floor_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+	objects.floor_tile.materials[1].shader = textures.fogShader;
 
 	objects.ceiling_tile = LoadModel("graphics/models/terrain/ceiling_tile1.glb");
 	objects.ceiling_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.ceiling_tile_tex;
 	objects.ceiling_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+	objects.ceiling_tile.materials[1].shader = textures.fogShader;
 
 
 	objects.wall_tile = LoadModel("graphics/models/terrain/wall_tile.glb");
 
 	objects.wall_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.wall_tile_tex;
 	objects.wall_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+	objects.wall_tile.materials[1].shader = textures.fogShader;
+
 	
 }
 
-int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPos)
+int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPos, int lastFrame)
 {
-	// Kierunek od wroga do gracza
 	float dx = cameraPos.x - enemyPos.x;
 	float dz = cameraPos.z - enemyPos.z;
 
-	// K¹t do kamery
 	float angleToCamera = atan2f(dz, dx) * RAD2DEG;
-
-	// K¹t obrotu samego wroga
 	float enemyAngle = atan2f(enemyForward.z, enemyForward.x) * RAD2DEG;
 
-	// Ró¿nica k¹tów
 	float relativeAngle = angleToCamera - enemyAngle;
 
-	// Normalizacja do przedzia³u <0, 360>
-	while (relativeAngle < 0.0f)
+	while (relativeAngle < 0.0f) relativeAngle += 360.0f;
+	while (relativeAngle >= 360.0f) relativeAngle -= 360.0f;
+
+	// 2. Wyznaczamy "idealn¹" now¹ klatkê (0-7)
+	int newFrame = (int)((relativeAngle + 22.5f) / 45.0f) % 8;
+
+	// Jeœli klatka jest taka sama jak poprzednio, nic nie zmieniamy
+	if (newFrame == lastFrame)
 	{
-		relativeAngle += 360.0f;
-	}
-	while (relativeAngle >= 360.0f)
-	{
-		relativeAngle -= 360.0f;
+		return newFrame;
 	}
 
-	// Podzia³ 360 stopni na 8 sektorów
-	// Dodajemy 22.5f (przesuniêcie o pó³ sektora)
-	int frameIndex = (int)((relativeAngle + 22.5f) / 45.0f) % 8;
+	// 3. Histereza (Margines)
+	// Srodek idealny dla danej klatki to: newFrame * 45.0f
+	float targetCenterAngle = newFrame * 45.0f;
+	float angleDiff = std::abs(relativeAngle - targetCenterAngle);
 
-	return frameIndex;
+	// Normalizacja ró¿nicy k¹tów
+	if (angleDiff > 180.0f) angleDiff = 360.0f - angleDiff;
+
+	// Margines np. 6 stopni: zmieniamy klatkê tylko wtedy, gdy g³êboko weszliœmy w nowy sektor
+	float margin = 6.0f;
+
+	// Jeœli jesteœmy zbyt blisko krawêdzi poprzedniego sektora, zostawiamy star¹ klatkê
+	if (angleDiff > (22.5f - margin))
+	{
+		return lastFrame;
+	}
+
+	return newFrame;
 }

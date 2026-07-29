@@ -14,6 +14,30 @@ extern Font pogrubione_arial_font;
 float screen_width = 0.0f;
 float screen_height = 0.0f;
 
+
+
+
+void draw_game_scene(exploration* exp)
+{
+
+
+	ClearBackground(BLACK);
+
+	int viewPosLoc = GetShaderLocation(textures.fogShader, "viewPos");
+	SetShaderValue(textures.fogShader, viewPosLoc, &exp->camera.position, SHADER_UNIFORM_VEC3);
+
+	BeginMode3D(exp->camera);
+
+	DrawExploration(exp); 
+
+	EndMode3D();
+
+	DrawHUD(exp);
+
+
+}
+
+
 void draw_login_screen(const std::string& current_name, bool has_error)
 {
 	ClearBackground(BLACK);
@@ -53,6 +77,8 @@ void DrawExploration(exploration* exp)
 	int endY = std::min(exp->dlugosc, playerGridY + promienWidzenia);
 
 	std::vector<RenderObject> object_to_draw;
+
+	Vector3 enemyForward = { 0.0f, 0.0f, 1.0f };
 
 	for (auto* c : exp->world_chests)
 	{
@@ -162,24 +188,28 @@ void DrawExploration(exploration* exp)
 			}
 			case 10:
 			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.45f, pos.z };
+				Vector3 draw_pos = { pos.x, pos.y + 0.15f, pos.z };
 
-				// Zak³adamy kierunek patrzenia wroga (jeœli obiekt wroga ma swój wektor kierunku, podstaw go tu, np. object.enemy_ptr->forward)
-				Vector3 enemyForward = { 0.0f, 0.0f, 1.0f };
+				enemyForward = enemy->get_forward();
+
+				int lastFrame = enemy->get_last_frame();
 
 				// Wyliczamy odpowiedni¹ klatkê (0-7) w zale¿noœci od k¹ta widzenia
-				int frameIndex = GetSpriteFrameIndex(pos, enemyForward, exp->camera.position);
+				int frameIndex = GetSpriteFrameIndex(pos, enemyForward, exp->camera.position, lastFrame);
 
-				float frameWidth = (float)textures.ghoul.width / 8.0f; // Szerokoœæ 1 z 8 klatek
+				enemy->set_last_frame(frameIndex);
+
+				float frameWidth = (float)textures.ghoul.width / 8.0f;
 				float frameHeight = (float)textures.ghoul.height;
 
 				Rectangle sourceRec = { frameIndex * frameWidth, 0.0f, frameWidth, frameHeight };
 
 				float proportions = frameWidth / frameHeight;
-				float targetHeight = 3.0f;
+				float targetHeight = 2.3f;
 				float targetWidth = targetHeight * proportions;
 
 				BeginShaderMode(textures.outlineShader);
+				BeginShaderMode(textures.fogShader);
 
 				DrawBillboardRec(exp->camera, textures.ghoul, sourceRec, draw_pos, { targetWidth, targetHeight }, WHITE);
 
@@ -259,23 +289,177 @@ void DrawHUD(exploration* exp)
 }
 
 
-void draw_game_scene(exploration* exp)
+
+
+void draw_inventory_ui(player& p, inventory_state* inv)
 {
+	Texture2D item_icon;
+	Vector2 mouse_pos = GetMousePosition();
 
-	
-	ClearBackground(BLACK);
-
-	BeginMode3D(exp->camera);
-	DrawExploration(exp); 
-	EndMode3D();
-	DrawHUD(exp);
+	p.sort_bag();
+	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
+	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
 
 
+	auto& items = p.bag->items;
+
+	auto& equipment = p.equipment->items;
+	auto& usables = p.usables->items;
+	auto& scrolls = p.scrolls->items;
+
+	int startX = 140;
+	int startY = 400;
+	int btnWidth = 60;
+	int btnHeight = 60;
+	int padding = 15;
+
+
+	if (GuiButton({ 200, 180, 150, 80 }, "Equipment"))
+	{
+		inv->equipment_tab = true;
+		inv->usables_tab = false;
+		inv->scrolls_tab = false;
+
+	}
+	if (GuiButton({ 500, 180, 150, 80 }, "Usables"))
+	{
+		inv->usables_tab = true;
+		inv->equipment_tab = false;
+		inv->scrolls_tab = false;
+	}
+	if (GuiButton({ 800, 180, 150, 80 }, "Scrolls"))
+	{
+		inv->usables_tab = false;
+		inv->equipment_tab = false;
+		inv->scrolls_tab = true;
+	}
+
+	if (inv->equipment_tab == true)
+	{
+		for (int i = 0; i < equipment.size(); i++)
+		{
+			item_icon = *(equipment[i]->icon_texture);
+
+			int row = i / 5;
+			int col = i % 5;
+			Rectangle itemRect = {
+				(float)(startX + col * (btnWidth + padding)),
+				(float)(startY + row * (btnHeight + padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+			std::string label = equipment[i]->get_name();
+
+
+			if (GuiButton(itemRect, ""))
+			{
+				equipment[i]->use(&p, -1);
+			}
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+			}
+			if (equipment[i]->is_equipped())
+			{
+				DrawTextEx(arial_font, "[E]", { itemRect.x + 55, itemRect.y + 35 }, 18, 1, WHITE);
+			}
+			if (CheckCollisionPointRec(mouse_pos, itemRect))
+			{
+				DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
+				DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 18, 1, WHITE);
+			}
+		}
+	}
+	else if (inv->usables_tab == true)
+	{
+		int itemToUse = -1;
+
+		for (int i = 0; i < usables.size(); i++)
+		{
+			item_icon = *(usables[i]->icon_texture);
+			int row = i / 5;
+			int col = i % 5;
+			Rectangle itemRect = {
+				(float)(startX + col * (btnWidth + padding)),
+				(float)(startY + row * (btnHeight + padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+
+			std::string label = usables[i]->get_name();
+			if (GuiButton(itemRect, ""))
+			{
+				itemToUse = i;
+
+			}
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+			}
+
+			if (CheckCollisionPointRec(mouse_pos, itemRect))
+			{
+				DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
+				DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 18, 1, WHITE);
+			}
+		}
+		if (itemToUse != -1)
+		{
+			usables[itemToUse]->use(&p, -1);
+			p.sort_bag();
+			return;
+		}
+
+	}
+	else if (inv->scrolls_tab == true)
+	{
+		int itemToUse = -1;
+
+		for (int i = 0; i < scrolls.size(); i++)
+		{
+			item_icon = *(scrolls[i]->icon_texture);
+			int row = i / 5;
+			int col = i % 5;
+			Rectangle itemRect = {
+				(float)(startX + col * (btnWidth + padding)),
+				(float)(startY + row * (btnHeight + padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+
+			std::string label = scrolls[i]->get_name();
+			if (GuiButton(itemRect, ""))
+			{
+				itemToUse = i;
+			}
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+			}
+			if(CheckCollisionPointRec(mouse_pos, itemRect))
+			{
+				DrawRectangle(itemRect.x, itemRect.y-50, 120, 40, DARKBLUE);
+				DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y-50 }, 18, 1, WHITE);
+			}
+			
+		}
+		if (itemToUse != -1)
+		{
+			scrolls[itemToUse]->use(&p, -1);
+			p.sort_bag();
+			return;
+		}
+
+	}
 }
-
-
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 {
+	Texture2D item_icon;
+	Vector2 mouse_pos = GetMousePosition();
+
 	if (current_chest == nullptr || !is_open)
 	{
 		return false;
@@ -295,9 +479,9 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 	int startX = 140;
 	int startY = 180;
-	int btnWidth = 180;
+	int btnWidth = 60;
 	int btnHeight = 60;
-	int padding = 15;
+	int padding = 30;
 
 	if (GuiButton({ 520,550,200,60 }, "Wez wszystko")) {
 		for (auto* it : target_loot) 
@@ -322,6 +506,7 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 	for (int i = 0; i < target_loot.size(); i++)
 	{
+		item_icon = *target_loot[i]->icon_texture;
 		if (target_loot[i] == nullptr)
 		{
 			continue;
@@ -337,10 +522,20 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 		std::string label = target_loot[i]->get_name();
 
-		if (GuiButton(itemRect, label.c_str())) 
+		if (GuiButton(itemRect, ""))
 		{
 			clicked_item = target_loot[i];
 			break;
+		}
+		if (item_icon.id > 0)
+		{
+			float scale = (float)(btnHeight - 10) / item_icon.height;
+			DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+		}
+		if (CheckCollisionPointRec(mouse_pos, itemRect))
+		{
+			DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
+			DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 18, 1, WHITE);
 		}
 	}
 	if (clicked_item != nullptr)
@@ -445,157 +640,7 @@ void draw_buttons(exploration* e)
 
 
 }
-void draw_inventory_ui(player& p, inventory_state* inv) 
-{
-	Texture2D item_icon;
 
-	p.sort_bag();
-	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
-	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
-
-	
-	auto& items = p.bag->items;
-
-	auto& equipment = p.equipment->items;
-	auto& usables = p.usables->items;
-	auto& scrolls = p.scrolls->items;
-
-	int startX = 140;
-	int startY = 400;
-	int btnWidth = 180;
-	int btnHeight = 60;
-	int padding = 15;
-
-
-	if (GuiButton({ 200, 180, 150, 80 }, "Equipment"))
-	{
-		inv->equipment_tab = true;
-		inv->usables_tab = false;
-		inv->scrolls_tab = false;
-
-	}
-	if (GuiButton({ 500, 180, 150, 80 }, "Usables"))
-	{
-		inv->usables_tab = true;
-		inv->equipment_tab = false;
-		inv->scrolls_tab = false;
-	}
-	if (GuiButton({ 800, 180, 150, 80 }, "Scrolls"))
-	{
-		inv->usables_tab = false;
-		inv->equipment_tab = false;
-		inv->scrolls_tab = true;
-	}
-	
-	if (inv->equipment_tab == true)
-	{
-		for (int i = 0; i < equipment.size(); i++)
-		{
-			item_icon = *(equipment[i]->icon_texture);
-
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};		
-			std::string label = equipment[i]->get_name();
-			
-			
-			if (GuiButton(itemRect,""))
-			{				
-					equipment[i]->use(&p, -1);
-			}
-			if (item_icon.id > 0)
-			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x+5, itemRect.y+5 }, 0.0f, scale, WHITE);
-			}
-			if (equipment[i]->is_equipped())
-			{
-				DrawTextEx(arial_font, "[E]", { itemRect.x + 55, itemRect.y + 35 }, 18, 1, WHITE);
-			}
-			DrawTextEx(arial_font, label.c_str(), { itemRect.x + 55, itemRect.y + 18 }, 18, 1, WHITE);
-		}
-	}
-	else if (inv->usables_tab == true)
-	{
-		int itemToUse = -1; 
-
-		for (int i = 0; i < usables.size(); i++)
-		{
-			item_icon = *(usables[i]->icon_texture);
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-
-			std::string label = usables[i]->get_name();
-			if (GuiButton(itemRect, ""))
-			{
-				itemToUse = i;
-				
-			}
-			if (item_icon.id > 0)
-			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
-			}
-
-			DrawTextEx(arial_font, label.c_str(), { itemRect.x + 55, itemRect.y + 18 }, 18, 1, WHITE);
-		}
-		if (itemToUse != -1)
-		{
-			usables[itemToUse]->use(&p, -1);
-			p.sort_bag();
-			return;
-		}
-		
-	}
-	else if (inv->scrolls_tab == true)
-	{
-		int itemToUse = -1;
-
-		for (int i = 0; i < scrolls.size(); i++)
-		{
-			item_icon = *(scrolls[i]->icon_texture);
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-
-			std::string label = scrolls[i]->get_name();
-			if (GuiButton(itemRect,""))
-			{
-				itemToUse = i;
-			}
-			if (item_icon.id > 0)
-			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
-			}
-
-			DrawTextEx(arial_font, label.c_str(), { itemRect.x + 55, itemRect.y + 18 }, 18, 1, WHITE);
-		}
-		if (itemToUse != -1)
-		{
-			scrolls[itemToUse]->use(&p, -1);
-			p.sort_bag();
-			return;
-		}
-
-	}
-}
 
 	
 

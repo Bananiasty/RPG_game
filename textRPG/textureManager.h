@@ -93,6 +93,7 @@ struct textureManager {
 
 
 	Shader outlineShader;
+	Shader fogShader;
 	
 };
 
@@ -113,6 +114,6 @@ extern ModelManager objects;
 
 void LoadGameTextures();
 void LoadGameModels();
-int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPos);
+int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPos, int lastFrame);
 
  

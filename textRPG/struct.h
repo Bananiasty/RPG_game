@@ -93,6 +93,7 @@ struct collisions
 	bool blokuj_ruch_minus_z = false;
 };
 
+
 struct enemy_config {
 	int id = -1;
 	std::string name = "";
