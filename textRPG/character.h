@@ -53,6 +53,7 @@ public:
 	void set_max_health(int val) { max_health = val; }
 	void set_max_mana(int val) { max_mana = val; }
 
+	Vector3 get_position() const { return position; }
 	void set_position(Vector3 new_pos) { position = new_pos; }
 	
 };
@@ -138,20 +139,18 @@ public:
 		moving = state;
 	}
 
-	// Ustawia wspó³rzêdne docelowego kafelka
 	void set_target_tile(Vector3 tile)
 	{
 		target_tile = tile;
 	}
 
-	// Pobiera wspó³rzêdne docelowego kafelka
 	Vector3 get_target_tile() const
 	{
 		return target_tile;
 	}
 
 	std::vector<item*> loot;
-	Vector3 get_position() const { return position; }
+	
 	
 	Texture2D get_texture() const { return grafika; }
 

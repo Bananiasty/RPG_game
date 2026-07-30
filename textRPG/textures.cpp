@@ -68,9 +68,9 @@ void LoadGameTextures()
 
 	textures.apple = LoadTexture("graphics/GAME ASSETS/items/item322.png");
 
-	textures.wall_tile_tex = LoadTexture("graphics/textures/terrain/rock_wall_16_diff_128.png");
-	textures.floor_tile_tex = LoadTexture("graphics/textures/terrain/cracked_concrete_bronze_ginger_128.png");
-	textures.ceiling_tile_tex = LoadTexture("graphics/textures/terrain/cracked_concrete_02_diff_128.png");
+	textures.wall_tile_tex = LoadTexture("graphics/textures/terrain/dark_rock_128.png");
+	textures.floor_tile_tex = LoadTexture("graphics/textures/terrain/cobblestone_floor_128.png");
+	textures.ceiling_tile_tex = LoadTexture("graphics/textures/terrain/dark_rock_128.png");
 
 	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul.png");
 	textures.outlineShader = LoadShader("graphics/shaders/outline.vs", "graphics/shaders/outline.fs");
@@ -103,7 +103,7 @@ void LoadGameTextures()
 	int maxDistLoc = GetShaderLocation(textures.fogShader, "maxDistance");
 
 	float minDist = 2.0f;
-	float maxDist = 20.0f;
+	float maxDist = 15.0f;
 
 	SetShaderValue(textures.fogShader, minDistLoc, &minDist, SHADER_UNIFORM_FLOAT);
 	SetShaderValue(textures.fogShader, maxDistLoc, &maxDist, SHADER_UNIFORM_FLOAT);

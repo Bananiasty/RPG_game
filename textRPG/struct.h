@@ -111,6 +111,24 @@ struct enemy_config {
 	std::string description = "";
 };
 
+//A* pathfinding
+struct GridPosition 
+{
+	int x;
+	int z;
+};
+
+struct tile_path
+{
+	int x, z;
+	int gCost;
+	int hCost;
+	int fCost() const { return gCost + hCost; }
+	GridPosition parent;
+};
+
+
+
 
 
 

@@ -588,7 +588,7 @@ void draw_dungeon_map(exploration* exp, float player_x, float player_y)
 	int tile = 10;
 	int vision_range = 20;
 
-	float exact_player_x_pos = (player_x) / 2.0f + 1.0f;
+	float exact_player_x_pos = (player_x) / 2.0f;
 	float exact_player_y_pos = (player_y) / 2.0f;
 
 	int player_x_pos_int = (int)std::floor(exact_player_x_pos);
@@ -603,10 +603,10 @@ void draw_dungeon_map(exploration* exp, float player_x, float player_y)
 
 
 	int min_x = std::max(0, player_x_pos_int - vision_range);
-	int max_x = std::min(exp->szerokosc - 1, player_x_pos_int + vision_range);
+	int max_x = std::min(exp->szerokosc, player_x_pos_int + vision_range);
 
 	int min_y = std::max(0, player_y_pos_int - vision_range);
-	int max_y = std::min(exp->dlugosc - 1, player_y_pos_int + vision_range);
+	int max_y = std::min(exp->dlugosc, player_y_pos_int + vision_range);
 
 	for (int x = min_x; x <= max_x; x++)
 	{
