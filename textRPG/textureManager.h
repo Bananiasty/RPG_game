@@ -51,6 +51,7 @@ struct textureManager {
 	Texture2D guard;
 	Texture2D dragon;
 	Texture2D ghoul;
+	Image ghoulImage;
 
 	Texture2D chest_t;
 

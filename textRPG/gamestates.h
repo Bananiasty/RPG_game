@@ -6,12 +6,8 @@
 #include <string>
 #include "raylib.h"
 #include "struct.h"
+#include "character.h"
 
-
-
-class enemy;
-class player;
-struct chest;
 
 class gamestate
 {
@@ -24,7 +20,6 @@ public:
 	bool showMenu = false;
 
 	bool can_save_game = false;
-
 	
 	void draw_menu();
 
@@ -43,8 +38,11 @@ private:
 	
 public:
 	Camera3D camera;
+
 	int dlugosc;
 	int szerokosc;
+
+	BodyPart GetHoveredBodyPart(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera);
 
 	std::map<int, Node> world_map;
 	std::vector<std::vector<int>> dungeon;
@@ -130,17 +128,19 @@ public:
 	bool guard_clicked = false;
 
 
+
 	float enemy_cooldown = 0.0;
 	float player_cooldown = 0.0;
 
 
 	void draw() override;
 
+	void initiate_fight_view();
 	int player_turn();
 	int enemy_turn();
 	
 
-
+	
 
 
 	enemy& get_enemy();

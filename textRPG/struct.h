@@ -127,6 +127,19 @@ struct tile_path
 	GridPosition parent;
 };
 
+struct SpriteRenderParams
+{
+	Vector3 drawPos;
+	float targetWidth;
+	float targetHeight;
+	float frameWidth;
+	float frameHeight;
+
+};
+SpriteRenderParams GetGhoulRenderParams(Vector3 entityPos, Texture2D texture);
+
+
+
 
 
 

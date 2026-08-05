@@ -16,7 +16,6 @@ battle::battle(player& p, enemy& e) : p_ref(p), e_ref(e)
 { 
     gamestate::gameLogs.clear();
     p_ref.current_enemy = &e_ref;
-
     log_object_intro(e_ref);
     
 }
@@ -25,7 +24,6 @@ exploration::exploration(player& p): bohater(p)
 {
     active_ui_event = nullptr;
     current_node_id = 1;
-
     dlugosc = 200;
     szerokosc = 200;
 
@@ -257,7 +255,9 @@ void exploration::draw()
 }
 void battle::draw() 
 {
+    draw_game_scene(this->exp);
     draw_battle_ui(this);
+    draw_buttons(this->exp);
     DrawGlobalAnimation();
     
 }

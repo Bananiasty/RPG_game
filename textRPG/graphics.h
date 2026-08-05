@@ -29,3 +29,4 @@ void draw_map_tile(exploration* exp, int x, int y);
 void draw_dungeon_map(exploration* exp, float player_x, float player_y);
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open);
+

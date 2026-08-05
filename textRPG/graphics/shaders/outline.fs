@@ -6,40 +6,54 @@ in vec4 fragColor;
 out vec4 finalColor;
 
 uniform sampler2D texture0;
-uniform vec2 textureSize;   
+uniform vec2 textureSize;
 uniform vec4 outlineColor;
-uniform float outlineSize;
+uniform int sideLimit;
 
 void main()
 {
+    // Ograniczenie dla lewej / prawej strony
+    float frameX = fract(fragTexCoord.x * 8.0);
+    if (sideLimit == 1 && frameX > 0.5) discard;
+    if (sideLimit == 2 && frameX < 0.5) discard;
+
     vec4 texel = texture(texture0, fragTexCoord);
 
+    // Odrzucamy samą postać, aby pod spodem było widać ostrego ghoula z wywołania (B)
     if (texel.a > 0.4) 
     {
-    	finalColor = texel * fragColor;
+        discard;
+    }
+
+    vec2 offset = vec2(1.2 / textureSize.x, 1.2 / textureSize.y);
+    float alphaSum = 0.0;
+
+    // Próbkowanie otoczenia z wagami Gaussowskimi
+    alphaSum += texture(texture0, fragTexCoord + vec2(-offset.x, -offset.y)).a * 0.5;
+    alphaSum += texture(texture0, fragTexCoord + vec2( 0.0,      -offset.y)).a * 1.0;
+    alphaSum += texture(texture0, fragTexCoord + vec2( offset.x, -offset.y)).a * 0.5;
+
+    alphaSum += texture(texture0, fragTexCoord + vec2(-offset.x,  0.0)).a * 1.0;
+    alphaSum += texture(texture0, fragTexCoord + vec2( offset.x,  0.0)).a * 1.0;
+
+    alphaSum += texture(texture0, fragTexCoord + vec2(-offset.x,  offset.y)).a * 0.5;
+    alphaSum += texture(texture0, fragTexCoord + vec2( 0.0,       offset.y)).a * 1.0;
+    alphaSum += texture(texture0, fragTexCoord + vec2( offset.x,  offset.y)).a * 0.5;
+
+    float avgAlpha = alphaSum / 6.0;
+
+    // MAGIA ANTI-ALIASINGU:
+    // fwidth wyznacza natężenie zmian na ekranie i wygładza dokładnie brzegi pikseli
+    float delta = fwidth(avgAlpha);
+    float glowAlpha = smoothstep(0.05 - delta, 0.45 + delta, avgAlpha);
+
+    if (glowAlpha > 0.01)
+    {
+        // Przypisanie alfy z miękkim wygaszaniem brzegów
+        finalColor = vec4(outlineColor.rgb, outlineColor.a * glowAlpha);
     }
     else
     {
-        vec2 size = vec2(textureSize.x * 8.0, textureSize.y); 
-        vec2 offset = (vec2(1.0) / size) * outlineSize;
-
-        vec2 uvUp    = fragTexCoord + vec2(0.0, -offset.y);
-        vec2 uvDown  = fragTexCoord + vec2(0.0,  offset.y);
-        vec2 uvLeft  = fragTexCoord + vec2(-offset.x, 0.0);
-        vec2 uvRight = fragTexCoord + vec2( offset.x, 0.0);
-
-        float a1 = (uvUp.y >= 0.0)    ? texture(texture0, uvUp).a    : 0.0;
-        float a2 = (uvDown.y <= 1.0)  ? texture(texture0, uvDown).a  : 0.0;
-        float a3 = texture(texture0, uvLeft).a;
-        float a4 = texture(texture0, uvRight).a;
-
-        if (a1 > 0.1 || a2 > 0.1 || a3 > 0.1 || a4 > 0.1)
-        {
-            finalColor = outlineColor;
-        }
-        else
-        {
-            discard;
-        }
+        discard;
     }
 }

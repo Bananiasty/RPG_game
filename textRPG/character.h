@@ -2,9 +2,13 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <string>
+#include <utility>
 #include "struct.h"
 #include "raylib.h"
 
+
+enum class BodyPart { NONE, TORSO, HEAD, LEFT_ARM, RIGHT_ARM, LEFT_LEG, RIGHT_LEG };
 
 class character
 {
@@ -18,6 +22,26 @@ protected:
 	Texture2D grafika;
 	
 	float rotation;
+
+	bool has_head = true;
+	bool has_left_arm = true;
+	bool has_right_arm = true;
+	bool has_left_leg = true;
+	bool has_right_leg = true;
+
+	BodyPart hovered_part = BodyPart::NONE;
+
+	static constexpr float FRAME_WIDTH = 64.0f;
+	static constexpr float FRAME_HEIGHT = 128.0f;
+
+	Rectangle get_limb_rec(int angle_index, int row_index) const {
+		return Rectangle{
+			angle_index * FRAME_WIDTH,
+			row_index * FRAME_HEIGHT,
+			FRAME_WIDTH,
+			FRAME_HEIGHT
+		};
+	}
 	
 public:
 	Vector3 position;
@@ -27,6 +51,9 @@ public:
 	bool gauntlets_slot = false;
 	bool boots_slot = false;
 	bool weapon_slot = false;
+
+	BodyPart get_hovered_body_part() const { return hovered_part; }
+	void set_hovered_body_part(BodyPart part) { hovered_part = part; }
 
 	float queued_damage = 0.0;
 
@@ -55,8 +82,43 @@ public:
 
 	Vector3 get_position() const { return position; }
 	void set_position(Vector3 new_pos) { position = new_pos; }
+
+	bool get_has_head() const { return has_head; }
+	bool get_has_left_arm() const { return has_left_arm; }
+	bool get_has_right_arm() const { return has_right_arm; }
+	bool get_has_left_leg() const { return has_left_leg; }
+	bool get_has_right_leg() const { return has_right_leg; }
+
+	void set_has_head(bool state) { has_head = state; }
+	void set_has_left_arm(bool state) { has_left_arm = state; }
+	void set_has_right_arm(bool state) { has_right_arm = state; }
+	void set_has_left_leg(bool state) { has_left_leg = state; }
+	void set_has_right_leg(bool state) { has_right_leg = state; }
 	
+	void draw_composite(Vector2 screen_pos, int angle_index) const {
+
+		DrawTextureRec(grafika, get_limb_rec(angle_index, 0), screen_pos, WHITE);
+
+		Vector2 limb_screen_pos = { screen_pos.x, screen_pos.y - FRAME_HEIGHT };
+
+		if (has_head) {
+			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
+		}
+		if (has_left_arm) {
+			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
+		}
+		if (has_right_arm) {
+			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
+		}
+		if (has_left_leg) {
+			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
+		}
+		if (has_right_leg) {
+			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
+		}
+	}
 };
+
 class player :public character
 {
 private:
@@ -65,8 +127,6 @@ private:
 	int level;
 	int xp_to_level_up=1;
 
-
-	
 	
 public:
 	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika, Vector3 pos, float rot);

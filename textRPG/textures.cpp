@@ -72,7 +72,11 @@ void LoadGameTextures()
 	textures.floor_tile_tex = LoadTexture("graphics/textures/terrain/cobblestone_floor_128.png");
 	textures.ceiling_tile_tex = LoadTexture("graphics/textures/terrain/dark_rock_128.png");
 
-	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul.png");
+	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
+	textures.ghoulImage = LoadImage("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
+
+
+	// Kontury przeciwnikow
 	textures.outlineShader = LoadShader("graphics/shaders/outline.vs", "graphics/shaders/outline.fs");
 
 	int textureSizeLoc = GetShaderLocation(textures.outlineShader, "textureSize");
@@ -90,6 +94,8 @@ void LoadGameTextures()
 
 	float outlineSizeValue = 1.0f;
 	SetShaderValue(textures.outlineShader, outlineSizeLoc, &outlineSizeValue, SHADER_UNIFORM_FLOAT);
+
+
 
 	//Widocznosc
 	textures.fogShader = LoadShader("graphics/shaders/lighting.vs","graphics/shaders/lighting.fs");

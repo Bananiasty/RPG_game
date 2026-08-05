@@ -3,11 +3,15 @@
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
 #include "raygui.h"
+#include "raymath.h"
+#include "rlgl.h"
 #include "graphics.h"
 #include "character.h"
+#include "struct.h"
 #include "inventory_class.h"
 #include "textureManager.h"
 #include <ranges>
+#include <utility>
 
 extern Font arial_font;
 extern Font pogrubione_arial_font;
@@ -33,7 +37,7 @@ void draw_game_scene(exploration* exp)
 	EndMode3D();
 
 	DrawHUD(exp);
-
+	 
 
 }
 
@@ -63,6 +67,96 @@ struct RenderObject
 	chest* chest_ptr = nullptr;
 	enemy* enemy_ptr = nullptr;
 };
+
+
+static Texture2D GetSingleLimbTexture(Image& atlasImage, int frameIndex, BodyPart part)
+{
+	float frameWidth = (float)atlasImage.width / 8.0f;
+	float frameHeight = (float)atlasImage.height / 2.0f;
+
+	// 1. Wycinamy klatkê koñczyn z dolnego rzêdu
+	Rectangle cropRec = { frameIndex * frameWidth, frameHeight, frameWidth, frameHeight };
+	Image limbImg = ImageFromImage(atlasImage, cropRec);
+
+	// 2. Czyszczymy piksele innych koñczyn – zostawiamy tylko wskazan¹!
+	for (int y = 0; y < limbImg.height; y++)
+	{
+		for (int x = 0; x < limbImg.width; x++)
+		{
+			float u = (float)x / limbImg.width;
+			float v = (float)y / limbImg.height;
+
+			bool keepPixel = false;
+
+			switch (part)
+			{
+			case BodyPart::HEAD:
+				if (v < 0.20f) keepPixel = true;
+				break;
+			case BodyPart::LEFT_ARM:
+				if (u < 0.40f && v >= 0.20f && v <= 0.65f) keepPixel = true;
+				break;
+			case BodyPart::RIGHT_ARM:
+				if (u > 0.60f && v >= 0.20f && v <= 0.65f) keepPixel = true;
+				break;
+			case BodyPart::LEFT_LEG:
+				if (u < 0.50f && v > 0.60f) keepPixel = true;
+				break;
+			case BodyPart::RIGHT_LEG:
+				if (u >= 0.50f && v > 0.60f) keepPixel = true;
+				break;
+			default:
+				break;
+			}
+
+			// Jeœli piksel nie nale¿y do wybranej koñczyny, robimy go w 100% przezroczystym
+			if (!keepPixel)
+			{
+				ImageDrawPixel(&limbImg, x, y, BLANK);
+			}
+		}
+	}
+
+	// 3. Zamieniamy przetworzony obrazek na tymczasow¹ teksturê dla GPU
+	Texture2D resultTex = LoadTextureFromImage(limbImg);
+	UnloadImage(limbImg); // zwalniamy pamiêæ RAM obrazka pomocniczego
+
+	return resultTex;
+}
+
+std::pair<float, int> GetOutlineParams(BodyPart part, float frameHeight)
+{
+	switch (part)
+	{
+	case BodyPart::TORSO:     return { 0.0f * frameHeight, 0 };
+	case BodyPart::HEAD:      return { 1.0f * frameHeight, 0 };
+	case BodyPart::RIGHT_ARM: return { 2.0f * frameHeight, 1 };
+	case BodyPart::LEFT_ARM:  return { 2.0f * frameHeight, 2 };
+	case BodyPart::RIGHT_LEG: return { 3.0f * frameHeight, 1 };
+	case BodyPart::LEFT_LEG:  return { 3.0f * frameHeight, 2 };
+	default:                  return { 0.0f, 0 };
+	}
+}
+
+void DrawOutlineBillboard(Camera3D camera, Texture2D texture, Shader shader, Rectangle rec, Vector3 pos, Vector2 size, int sideLimit)
+{
+	rlDisableDepthMask();
+
+	float texSize[2] = { (float)texture.width, (float)texture.height };
+	float color[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	SetShaderValue(shader, GetShaderLocation(shader, "textureSize"), texSize, SHADER_UNIFORM_VEC2);
+	SetShaderValue(shader, GetShaderLocation(shader, "outlineColor"), color, SHADER_UNIFORM_VEC4);
+	SetShaderValue(shader, GetShaderLocation(shader, "sideLimit"), &sideLimit, SHADER_UNIFORM_INT);
+
+	SetTextureFilter(texture, TEXTURE_FILTER_BILINEAR);
+	BeginShaderMode(shader);
+	DrawBillboardRec(camera, texture, rec, pos, size, WHITE);
+	EndShaderMode();
+	SetTextureFilter(texture, TEXTURE_FILTER_POINT);
+
+	rlEnableDepthMask();
+}
 
 void DrawExploration(exploration* exp)
 {
@@ -123,10 +217,9 @@ void DrawExploration(exploration* exp)
 		{
 			return a.distance_sqr > b.distance_sqr;
 		});
-	
+
 	for (const auto& object : object_to_draw)
 	{
-		// A. Jeœli to SKRZYNKA:
 		if (object.chest_ptr != nullptr)
 		{
 			auto* c = object.chest_ptr;
@@ -188,104 +281,146 @@ void DrawExploration(exploration* exp)
 			}
 			case 10:
 			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.15f, pos.z };
-
-				enemyForward = enemy->get_forward();
+				auto params = GetGhoulRenderParams(pos, textures.ghoul);
 
 				int lastFrame = enemy->get_last_frame();
-
-				// Wyliczamy odpowiedni¹ klatkê (0-7) w zale¿noœci od k¹ta widzenia
-				int frameIndex = GetSpriteFrameIndex(pos, enemyForward, exp->camera.position, lastFrame);
-
+				int frameIndex = GetSpriteFrameIndex(pos, enemy->get_forward(), exp->camera.position, lastFrame);
 				enemy->set_last_frame(frameIndex);
 
-				float frameWidth = (float)textures.ghoul.width / 8.0f;
-				float frameHeight = (float)textures.ghoul.height;
+				BodyPart hoveredPart = enemy->get_hovered_body_part();
 
-				Rectangle sourceRec = { frameIndex * frameWidth, 0.0f, frameWidth, frameHeight };
-
-				float proportions = frameWidth / frameHeight;
-				float targetHeight = 2.3f;
-				float targetWidth = targetHeight * proportions;
-
-				BeginShaderMode(textures.outlineShader);
 				BeginShaderMode(textures.fogShader);
-
-				DrawBillboardRec(exp->camera, textures.ghoul, sourceRec, draw_pos, { targetWidth, targetHeight }, WHITE);
-
+				for (int row = 0; row < 4; ++row)
+				{
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, row * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+				}
 				EndShaderMode();
 
+				if (hoveredPart != BodyPart::NONE)
+				{
+					auto [rowY, sideLimit] = GetOutlineParams(hoveredPart, params.frameHeight);
+					Rectangle outlineRec = { frameIndex * params.frameWidth, rowY, params.frameWidth, params.frameHeight };
+
+					DrawOutlineBillboard(exp->camera, textures.ghoul, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
+				}
 				break;
 			}
 			}
 		}
-	}
-	
 
-	
 
-	for (int cx = startX; cx < endX; cx++)
-	{
-		for (int cy = startY; cy < endY; cy++)
+
+
+		for (int cx = startX; cx < endX; cx++)
 		{
-			if (exp->dungeon[cx][cy] == 2)
+			for (int cy = startY; cy < endY; cy++)
 			{
-				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
-				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
+				if (exp->dungeon[cx][cy] == 2)
+				{
+					Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
+					Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
 
-				//ŒCIANA PO£UDNIOWA
-				if (cy > 0 && exp->dungeon[cx][cy - 1] == 1)
-				{
-					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					//ŒCIANA PO£UDNIOWA
+					if (cy > 0 && exp->dungeon[cx][cy - 1] == 1)
+					{
+						DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+						DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					}
+					//ŒCIANA PÓ£NOCNA
+					if (cy < exp->dlugosc - 1 && exp->dungeon[cx][cy + 1] == 1)
+					{
+						Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
+						Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
+						DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+						DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					}
+					//ŒCIANA WSCHODNIA
+					if (cx > 0 && exp->dungeon[cx - 1][cy] == 1)
+					{
+						Vector3 p_dolna = Vector3{ p_dolna.x = pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
+						Vector3 p_gorna = Vector3{ p_gorna.x = pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
+						DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+						DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					}
+					//ŒCIANA ZACHODNIA
+					if (cx < exp->szerokosc - 1 && exp->dungeon[cx + 1][cy] == 1)
+					{
+						Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
+						Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
+						DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+						DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					}
 				}
-				//ŒCIANA PÓ£NOCNA
-				if (cy < exp->dlugosc - 1 && exp->dungeon[cx][cy + 1] == 1)
+				if (exp->dungeon[cx][cy] == 1)
 				{
-					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
-					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
-					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f , (float)cy * 2.0f }, 1.0f, WHITE);
+					DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f , (float)cy * 2.0f }, 1.0f, WHITE);
 				}
-				//ŒCIANA WSCHODNIA
-				if (cx > 0 && exp->dungeon[cx - 1][cy] == 1)
-				{
-					Vector3 p_dolna = Vector3{ p_dolna.x = pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
-					Vector3 p_gorna = Vector3{ p_gorna.x = pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
-					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-				}
-				//ŒCIANA ZACHODNIA
-				if (cx < exp->szerokosc - 1 && exp->dungeon[cx + 1][cy] == 1)
-				{
-					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
-					Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
-					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-				}
-			}
-			if (exp->dungeon[cx][cy] == 1)
-			{
-				DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f , (float)cy * 2.0f }, 1.0f, WHITE);
-				DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f , (float)cy * 2.0f }, 1.0f, WHITE);
 			}
 		}
+
+	}
+}
+
+void draw_battle_ui(battle* fight)
+{
+
+	screen_width = GetScreenWidth();
+	screen_height = GetScreenHeight();
+
+	std::string e = fight->get_enemy_name();
+	float p_hp_width = ((float)fight->p_ref.get_health() / fight->p_ref.get_max_health()) * 300;
+	float e_hp_width = (float)fight->get_enemy_hp() / fight->get_enemy_max_hp() * 300;
+	float xp_height = (float)fight->p_ref.get_xp() / fight->p_ref.get_xp_to_level_up() * 100;
+
+	//PASEK ZYCIA GRACZA
+	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", fight->p_ref.get_health()), { 70, 620 }, 20, 2, MAROON);
+	DrawRectangle(70, 650, 300, 30, DARKGRAY);
+	DrawRectangle(70, 650, (int)p_hp_width, 30, RED);
+	
+	/*DrawTextEx(arial_font, TextFormat("LvL %d", fight->p_ref.get_level()), { 10, 530 }, 20, 2, WHITE);
+	DrawTextEx(arial_font, TextFormat("XP: %d/%d", fight->p_ref.get_xp(), fight->p_ref.get_xp_to_level_up()), { 10, 500 }, 20, 2, WHITE);                                        XP
+	DrawRectangle(10, 600, 30, 100, DARKBLUE);
+	DrawRectangle(10, 700 - xp_height, 30, xp_height, WHITE);*/
+
+	Texture2D enemy_texture;
+
+	float szerokosc_tekstu_e = (float)MeasureText(e.c_str(), 24);
+	float posX_text = 675 - (szerokosc_tekstu_e / 2);
+
+	Rectangle battle_menu_button = { screen_width * 0.2, screen_height * 0.8, 120, 30 };
+	int button_spacing = battle_menu_button.width + 10;
+	
+	if (GuiButton({ battle_menu_button }, "Attack")) {
+				
+		if (fight->player_cooldown <= 0)
+		{
+			fight->attack_clicked = true;
+			fight->player_cooldown = 1.0;
+		}
+					
+	}
+	if (GuiButton({ battle_menu_button.x + button_spacing * 2, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, "Guard")) 
+	{
+		if (fight->player_cooldown <= 0)
+		{
+			fight->guard_clicked = true;
+			fight->player_cooldown = 1.0;
+		}
+		
 	}
 	
 }
-
 void DrawHUD(exploration* exp)
 {
-	DrawTextEx(arial_font, TextFormat("HP: %d", exp->bohater.get_health()), { 70, 620 }, 20, 2, MAROON);
-	DrawRectangle(70, 650, 300, 30, DARKGRAY);
-	float hp_width = ((float)exp->bohater.get_health() / exp->bohater.get_max_health()) * 300;
-	DrawRectangle(70, 650, (int)hp_width, 30, RED);
 
-	DrawTextEx(arial_font, TextFormat("LvL %d", exp->bohater.get_level()), { 10, 530 }, 20, 2, WHITE);
+
+	/*DrawTextEx(arial_font, TextFormat("LvL %d", exp->bohater.get_level()), { 10, 530 }, 20, 2, WHITE);
 	DrawTextEx(arial_font, TextFormat("XP: %d/%d", exp->bohater.get_xp(), exp->bohater.get_xp_to_level_up()), { 10, 500 }, 20, 2, WHITE);
 	DrawRectangle(10, 600, 30, 100, DARKBLUE);
 	float xp_height = (float)exp->bohater.get_xp() / exp->bohater.get_xp_to_level_up() * 100;
-	DrawRectangle(10, 700 - xp_height, 30, xp_height, WHITE);
+	DrawRectangle(10, 700 - xp_height, 30, xp_height, WHITE);*/
 }
 
 
@@ -561,7 +696,7 @@ void draw_commentary()
 		float przesuniecie_y = 0.0;
 		for (const auto& log : gamestate::gameLogs | std::views::reverse | std::views::take(3))
 		{
-			DrawTextEx(arial_font, log.c_str(), { 50, 410 + przesuniecie_y }, 25, 2, PINK);
+			DrawTextEx(arial_font, log.c_str(), { 50, 410 + przesuniecie_y }, 25, 2, WHITE);
 			przesuniecie_y += 20.0;
 		}		
 	}
@@ -637,128 +772,12 @@ void draw_buttons(exploration* e)
 
 	DrawRectangle(screen_width * 0.9, screen_height * 0.9, 50, 20, WHITE);
 	DrawText("M", screen_width * 0.9 + 20, screen_height * 0.9, 20, DARKBROWN);
-
-
 }
 
 
 	
 
-void draw_battle_ui(battle* fight)
-{
 
-	screen_width = GetScreenWidth();
-	screen_height = GetScreenHeight();
-
-	std::string e = fight->get_enemy_name();
-	float p_hp_width = ((float)fight->p_ref.get_health() / fight->p_ref.get_max_health()) * 300;
-	float e_hp_width = (float)fight->get_enemy_hp() / fight->get_enemy_max_hp() * 300;
-	float xp_height = (float)fight->p_ref.get_xp() / fight->p_ref.get_xp_to_level_up() * 100;
-
-	DrawRectangle(screen_width * 0.8, screen_height * 0.9, 50, 20, WHITE);
-	DrawText("I", screen_width * 0.8 + 20, screen_height * 0.9, 20, DARKBROWN);
-	//PASEK ZYCIA GRACZA
-	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", fight->p_ref.get_health()), { 70, 620 }, 20, 2, MAROON);
-	DrawRectangle(70, 650, 300, 30, DARKGRAY);
-	DrawRectangle(70, 650, (int)p_hp_width, 30, RED);
-	DrawTextEx(arial_font, TextFormat("LvL %d", fight->p_ref.get_level()), { 10, 530 }, 20, 2, WHITE);
-	DrawTextEx(arial_font, TextFormat("XP: %d/%d", fight->p_ref.get_xp(), fight->p_ref.get_xp_to_level_up()), { 10, 500 }, 20, 2, WHITE);
-	DrawRectangle(10, 600, 30, 100, DARKBLUE);
-	DrawRectangle(10, 700 - xp_height, 30, xp_height, WHITE);
-
-	//PASEK ZYCIA PRZECIWNIKA
-	DrawRectangle(600, 650, 300, 30, DARKGRAY);
-	DrawRectangle(600, 650, (int)e_hp_width, 30, RED);
-	DrawTextEx(arial_font, TextFormat("HP Wroga: %d", fight->get_enemy_hp()), { 600, 620 }, 20, 2, MAROON);
-	DrawRectangle(0, 400, 1000, 80, Color{ 245, 245, 220, 255 });
-	DrawRectangleLinesEx({ 0, 400, 1000, 80 }, 5, Color{ 133, 94, 66, 255 });
-
-	Texture2D enemy_texture;
-
-	float scale = 0.20;
-	float frameWidth = 0.0f;
-	if (e == "Szkielet") enemy_texture = textures.skeleton;
-	else if (e == "Troll")  enemy_texture = textures.troll;
-	else if (e == "Bandyci") enemy_texture = textures.bandits;
-	else if (e == "Straznik") enemy_texture = textures.guard;
-	else if (e == "Smok") enemy_texture = textures.dragon;
-	else if (e == "Goblin")
-	{
-		enemy_texture = textures.goblin;
-		scale = 0.47;
-	}
-	else if (e == "Ghoul")
-	{
-		enemy_texture = textures.ghoul;
-		frameWidth = (float)enemy_texture.width / 8.0f;
-		scale = 2.0f;
-	}
-	
-	if (e != "Ghoul")
-	{
-		frameWidth = (float)enemy_texture.width;
-	}
-
-	float przeskalowana_szerokosc_wroga = frameWidth * scale;
-	float posX = 670.0 - (przeskalowana_szerokosc_wroga / 2.0);
-	float posY = 55.0;
-
-	Rectangle sourceRec = { 0.0f, 0.0f, frameWidth, (float)enemy_texture.height };
-
-	// Prostok¹t docelowy na ekranie (gdzie i w jakim rozmiarze narysowaæ)
-	Rectangle destRec = { posX, posY, frameWidth * scale, (float)enemy_texture.height * scale };
-
-	// Rysowanie wyciêtej klatki (zastêpuje DrawTextureEx)
-	DrawTexturePro(enemy_texture, sourceRec, destRec, Vector2{ 0.0f, 0.0f }, 0.0f, WHITE);
-
-	float centerX = 430.0 + (((float)enemy_texture.width * 0.17) / 2.0);
-	float centerY = 80.0 + (((float)enemy_texture.height * 0.17) / 2.0);
-	if (e != "Goblin")
-	{
-		DrawCircleGradient({ centerX, centerY }, 300, Color{ 255, 0, 0, 60 }, BLANK);
-	}
-	else
-	{
-		DrawCircleGradient({ 650, 200 }, 200, Color{ 255, 0, 0, 60 }, BLANK);
-	}
-
-	float szerokosc_tekstu_e = (float)MeasureText(e.c_str(), 24);
-	float posX_text = 675 - (szerokosc_tekstu_e / 2);
-
-	DrawTextEx(pogrubione_arial_font, e.c_str(), { posX_text, 320 }, 24, 2, RED);
-
-	Rectangle battle_menu_button = { screen_width * 0.2, screen_height * 0.7, 120, 30 };
-	int button_spacing = battle_menu_button.width + 10;
-
-	/*DrawRectangleRec(battle_menu_button, WHITE);
-	DrawTextEx(pogrubione_arial_font, "Attack", { battle_menu_button.x, battle_menu_button.y }, 20, 2, DARKBLUE);
-	DrawRectangleRec({ battle_menu_button.x + button_spacing, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, WHITE);
-	DrawTextEx(pogrubione_arial_font, "Skills", { battle_menu_button.x + button_spacing, battle_menu_button.y }, 20, 2, DARKBLUE);
-	DrawRectangleRec({battle_menu_button.x + button_spacing * 2, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height}, WHITE);
-	DrawTextEx(pogrubione_arial_font, "Guard", { battle_menu_button.x + button_spacing * 2, battle_menu_button.y }, 20, 2, DARKBLUE);
-	DrawRectangleRec({ battle_menu_button.x + button_spacing * 3, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, WHITE);
-	DrawTextEx(pogrubione_arial_font, "Item", { battle_menu_button.x + button_spacing * 3, battle_menu_button.y }, 20, 2, DARKBLUE);*/
-	
-	if (GuiButton({ battle_menu_button }, "Attack")) {
-				
-		if (fight->player_cooldown <= 0)
-		{
-			fight->attack_clicked = true;
-			fight->player_cooldown = 1.0;
-		}
-					
-	}
-	if (GuiButton({ battle_menu_button.x + button_spacing * 2, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, "Guard")) 
-	{
-		if (fight->player_cooldown <= 0)
-		{
-			fight->guard_clicked = true;
-			fight->player_cooldown = 1.0;
-		}
-		
-	}
-	
-}
 
 		
 
@@ -845,6 +864,7 @@ void draw_game_over()
 	DrawText("GAME OVER", 500, 300, 50, RED);
 	DrawText("Nacisnij ESC aby wyjsc", 520, 370, 20, GRAY);
 }
+
 
 
 

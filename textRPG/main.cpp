@@ -112,7 +112,12 @@ int main()
                     current_fight = new battle(bohater, *current_enemy);
                     bohater.xp_from_enemy_dif = current_enemy->get_dif();
                     current_fight->exp = &world;
+                    current_fight->initiate_fight_view();
                     active_state = current_fight;
+
+                    
+                    
+                    
                 }
             }
             
@@ -121,6 +126,8 @@ int main()
         else
         {
             world.camera.projection = CAMERA_PERSPECTIVE;
+
+
         }
 
         if (bohater.is_dead()) current_state = 5;
@@ -218,27 +225,29 @@ int main()
             if (current_fight != nullptr)
             {
                 enemy* your_opponent = &current_fight->get_enemy();
-
-                if (your_opponent && your_opponent->is_dead())
+                if (your_opponent != nullptr)
                 {
-                    bohater.grant_xp();
-                    bohater.check_level_up();
-
-                    chest* dropped_loot = world.rand_loot(your_opponent);
-                    if (dropped_loot != nullptr)
+                    your_opponent->set_last_frame(0);
+                    if (your_opponent->is_dead())
                     {
-                        world.world_chests.push_back(dropped_loot);
+                        bohater.grant_xp();
+                        bohater.check_level_up();
+
+                        chest* dropped_loot = world.rand_loot(your_opponent);
+                        if (dropped_loot != nullptr)
+                        {
+                            world.world_chests.push_back(dropped_loot);
+                        }
+
+                        active_state = &world;
+                        current_state = 1;
+
+                        delete current_fight;
+                        current_fight = nullptr;
+
+                        world.delete_enemy(your_opponent);
                     }
-
-                    active_state = &world;
-                    current_state = 1;
-
-                    delete current_fight;
-                    current_fight = nullptr;
-
-                    world.delete_enemy(your_opponent);
                 }
-
             }
         }
  
