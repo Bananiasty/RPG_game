@@ -8,7 +8,9 @@ ModelManager objects;
 
 void LoadGameTextures()
 {
-	textures.kopalnia = LoadTexture("graphics/kopalnia.png");
+
+
+	textures.inventory_UI = LoadTexture("graphics/UI/inventory_UI.png");
 
 	textures.player = LoadTexture("graphics/textures/enemies/bohater.png");
 	SetTextureFilter(textures.player, TEXTURE_FILTER_BILINEAR);

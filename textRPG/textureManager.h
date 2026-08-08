@@ -92,9 +92,12 @@ struct textureManager {
 	Texture2D floor_tile_tex;
 	Texture2D ceiling_tile_tex;
 
+	Texture2D inventory_UI;
 
 	Shader outlineShader;
 	Shader fogShader;
+
+
 	
 };
 

@@ -21,8 +21,9 @@ player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, in
 {
     bag = new inventory();
     equipment = new inventory();
-    usables = new inventory();
-    scrolls = new inventory();
+    inv_items = new inventory();
+    food = new inventory();
+    books = new inventory();
     this->level = 1;
     this->xp = 0;
     gold = 0;
@@ -201,10 +202,6 @@ void player::take_item(chest* c, item* it)
     this->sort_bag();
 }
 
-enemy* enemy::clone() const
-{
-    return new enemy(*this);
-}
 
 void player::grant_xp()
 {
@@ -227,8 +224,9 @@ void player::check_level_up()
 void player::sort_bag()
 {
     if (equipment != nullptr) equipment->items.clear();
-    if (usables != nullptr) usables->items.clear();
-    if (scrolls != nullptr) scrolls->items.clear();
+    if (inv_items != nullptr) inv_items->items.clear();
+    if (food != nullptr) food->items.clear();
+    if (books != nullptr) books->items.clear();
 
     if (bag->items.empty())
     {
@@ -247,14 +245,19 @@ void player::sort_bag()
                     equipment->add_item(it);
                     break;
                 }
-                case item_type::USABLE:
+                case item_type::ITEM:
                 {
-                    usables->add_item(it);
+                    inv_items->add_item(it);
                     break;
                 }
-                case item_type::SCROLL:
+                case item_type::FOOD:
                 {
-                    scrolls->add_item(it);
+                    food->add_item(it);
+                    break;
+                }
+                case item_type::BOOK:
+                {
+                    books->add_item(it);
                     break;
                 }
                 default:

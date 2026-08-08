@@ -11,15 +11,22 @@ item_type armor::get_type()
     return item_type::ARMOR;
 }
 
-item_type usable::get_type()
+item_type other_item::get_type()
 {
-    return item_type::USABLE;
+    return item_type::ITEM;
+}
+
+item_type food::get_type()
+{
+    return item_type::FOOD;
 }
 
 item_type scroll::get_type()
 {
-    return item_type::SCROLL;
+    return item_type::BOOK;
 }
+
+
 
 bool armor::is_equipped()
 {
@@ -51,7 +58,7 @@ void armor::use(player* c, int index)
 
 void helm::use(player* c, int index)
 {
-    if (this->item_equipped == false && c->helm_slot == true) return;
+    if (this->item_equipped == false && c->equipped_helm != nullptr) return;
 
     bool was_equipped = this->is_equipped();
     armor::use(c, index);
@@ -59,18 +66,18 @@ void helm::use(player* c, int index)
     if (was_equipped == false && this->item_equipped == true)
     {
         add_player_block_chance(c, this->block_chance);
-        c->helm_slot = true;
+        c->equipped_helm = this;
     }
     else if (was_equipped == true && this->item_equipped == false)
     {
         this->reduce_player_block_chance(c, this->block_chance);
-        c->helm_slot = false;
+        c->equipped_helm = nullptr;
     }
 }
 
 void vest::use(player* c, int index)
 {
-    if (this->item_equipped == false && c->vest_slot == true) return;
+    if (this->item_equipped == false && c->equipped_vest != nullptr) return;
 
     bool was_equipped = this->is_equipped();
     armor::use(c, index);
@@ -78,18 +85,18 @@ void vest::use(player* c, int index)
     if (was_equipped == false && this->item_equipped == true)
     {
         add_player_health(c, this->add_health);
-        c->vest_slot = true;
+        c->equipped_vest = this;
     }
     else if (was_equipped == true && this->item_equipped == false)
     {
         this->reduce_player_health(c, this->add_health);
-        c->vest_slot = false;
+        c->equipped_vest = nullptr;
     }
 }
 
 void gauntlets::use(player* c, int index)
 {
-    if (this->item_equipped == false && c->gauntlets_slot == true) return;
+    if (this->item_equipped == false && c->equipped_gauntlets != nullptr) return;
 
     bool was_equipped = this->is_equipped();
     armor::use(c, index);
@@ -97,18 +104,18 @@ void gauntlets::use(player* c, int index)
     if (was_equipped == false && this->item_equipped == true)
     {
         add_player_crit_chance(c, this->crit_chance_mod);
-        c->gauntlets_slot = true;
+        c->equipped_gauntlets = this;
     }
     else if (was_equipped == true && this->item_equipped == false)
     {
         this->reduce_player_crit_chance(c, this->crit_chance_mod);
-        c->gauntlets_slot = false;
+        c->equipped_gauntlets = nullptr;
     }
 }
 
 void boots::use(player* c, int index)
 {
-    if (this->item_equipped == false && c->boots_slot == true) return;
+    if (this->item_equipped == false && c->equipped_boots != nullptr) return;
 
     bool was_equipped = this->is_equipped();
     armor::use(c, index);
@@ -116,43 +123,34 @@ void boots::use(player* c, int index)
     if (was_equipped == false && this->item_equipped == true)
     {
         add_player_dodge_chance(c, this->dodge_chance_mod);
-        c->boots_slot = true;
+        c->equipped_boots = this;
     }
     else if (was_equipped == true && this->item_equipped == false)
     {
         this->reduce_player_dodge_chance(c, this->dodge_chance_mod);
-        c->boots_slot = false;
+        c->equipped_boots = nullptr;
     }
 }
 
 void weapon::use(player* c, int index)
 {
-    if (this->item_equipped == false && c->weapon_slot == true) return;
+    if (this->item_equipped == false && c->equipped_weapon != nullptr) return;
 
     bool was_equipped = this->is_equipped();
     armor::use(c, index);
 
     if (was_equipped == false && this->item_equipped == true)
     {
+
         add_player_damage(c, this->damage_stat);
-        c->weapon_slot = true;
+        c->equipped_weapon = this;
     }
     else if (was_equipped == true && this->item_equipped == false)
     {
         this->reduce_player_damage(c, this->damage_stat);
-        c->weapon_slot = false;
+        c->equipped_weapon = nullptr;
     }
 }
-
-//void inventory::del_item(int index)
-//{
-//    if (index >= 0 && index < items.size())
-//    {
-//        item* to_remove = items[index];
-//        delete to_remove;
-//        items.erase(items.begin() + index);
-//    }
-//}
 
 void usable::use(player* c, int index)
 {
@@ -167,8 +165,25 @@ void usable::use(player* c, int index)
         }
     }
 }
-   
 
+void other_item::use(player* c, int index)
+{
+    auto& items = c->bag->items;
+    for (auto it = items.begin(); it != items.end(); ++it)
+    {
+        if (*it == this)
+        {
+            delete* it;
+            items.erase(it);
+            break;
+        }
+    }
+}
+   
+void food::use(player* c, int index)
+{
+    usable::use(c, index);
+}
 
 void health_potion::use(player* c, int index)
 {
@@ -218,3 +233,5 @@ item* boots::clone() const { return new boots(*this); }
 item* health_potion::clone() const { return new health_potion(*this); }
 item* mana_potion::clone() const { return new mana_potion(*this); }
 item* combat_scroll::clone() const { return new combat_scroll(*this); }
+item* food::clone() const { return new food(*this); }
+item* other_item::clone() const { return new other_item(*this); }

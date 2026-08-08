@@ -8,7 +8,7 @@ class enemy;
 class player;
 struct inventory;
 
-enum class item_type { ARMOR, USABLE, SCROLL};
+enum class item_type { ARMOR, ITEM, FOOD, BOOK};
 class item
 {
 protected:
@@ -30,7 +30,6 @@ protected:
 	void restore_player_health(player* c, int val);
 	void restore_player_mana(player* c, int val);
 
-	//int get_cost();
 
 private:
 	std::string name;
@@ -129,7 +128,15 @@ class usable:public item
 public:
 	usable(std::string n, std::string r,int c, Texture2D* icon) :item(n, r, c, icon) {};
 	virtual item* clone() const = 0;
-	item_type get_type() override;
+	virtual item_type get_type() override = 0;
+	virtual void use(player* player, int index) override;
+};
+class other_item :public usable
+{
+public:
+	other_item(std::string n, std::string r, int c, Texture2D* icon) :usable(n, r, c, icon) {};
+	item* clone() const override;
+	virtual item_type get_type() override;
 	virtual void use(player* player, int index) override;
 };
 class scroll:public usable
@@ -155,28 +162,29 @@ public:
 	void use(player* player, int index) override;
 	item* clone() const override;
 };
-class potion:public usable
+class food:public usable
 {
 public:
-	potion(std::string n, std::string r, int c, Texture2D* icon) : usable(n, r, c,icon) {};
-	virtual item* clone() const = 0; 
-	void use(player* player, int index) override=0;
+	food(std::string n, std::string r, int c, Texture2D* icon) : usable(n, r, c,icon) {};
+	item_type get_type() override;
+	virtual item* clone() const override;
+	void use(player* player, int index) override;
 };
-class health_potion:public potion
+class health_potion:public food
 {
 private:
 	int restore_health;
 public:
-	health_potion(std::string n, std::string r, int c, Texture2D* icon, int r_h) :potion(n, r, c, icon), restore_health(r_h) {};
+	health_potion(std::string n, std::string r, int c, Texture2D* icon, int r_h) :food(n, r, c, icon), restore_health(r_h) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 };
-class mana_potion:public potion
+class mana_potion:public food
 {
 private:
 	int restore_mana;
 public:
-	mana_potion(std::string n, std::string r, int c, Texture2D* icon, int r_m) :potion(n, r, c, icon), restore_mana(r_m) {};
+	mana_potion(std::string n, std::string r, int c, Texture2D* icon, int r_m) :food(n, r, c, icon), restore_mana(r_m) {};
 	item* clone() const override;
 	void use(player* player, int index) override;
 };

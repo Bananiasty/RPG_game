@@ -49,10 +49,9 @@ void battle::initiate_fight_view()
 
 int battle::player_turn()
 {
-    auto params = GetGhoulRenderParams(e_ref.get_position(), textures.ghoul);
+    auto params = e_ref.get_render_params(textures.ghoul);
 
-    BodyPart hovered = exp->GetHoveredBodyPart(params.drawPos, params.targetWidth, params.targetHeight, exp->camera);
-    e_ref.set_hovered_body_part(hovered);
+    
 
     if (!p_ref.is_dead() && !e_ref.is_dead())
     {
@@ -68,17 +67,32 @@ int battle::player_turn()
         {
             if (this->attack_clicked)
             {
-                auto [p_dmg, crit] = p_ref.calculate_dmg();
-                int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard);
+               
+                if (IsKeyPressed(KEY_ESCAPE))
+                {
+                    this->attack_clicked = false;
+                    e_ref.set_hovered_body_part(BodyPart::NONE);
+                    return 0;
+                }
 
-                this->waiting_for_enemy = true;
-                this->click_cooldown = true;
-                this->enemy_cooldown = 1.5;
+                BodyPart hovered = e_ref.calculate_hovered_body_part(params.drawPos, params.targetWidth, params.targetHeight, exp->camera);
+                e_ref.set_hovered_body_part(hovered);
 
-                this->attack_clicked = false;
-                e_ref.set_hovered_body_part(BodyPart::NONE);
+                if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hovered != BodyPart::NONE)
+                {
+                    auto [p_dmg, crit] = p_ref.calculate_dmg();
+                    int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard);
 
-                return final_dmg;
+                    this->waiting_for_enemy = true;
+                    this->click_cooldown = true;
+                    this->enemy_cooldown = 1.5;
+
+                    this->attack_clicked = false;
+                    e_ref.set_hovered_body_part(BodyPart::NONE);
+
+                    return final_dmg;
+                }
+                
             }
             if (this->guard_clicked)
             {
@@ -115,23 +129,14 @@ int battle::player_turn()
 }
 
 
-int battle::enemy_turn() 
+int battle::enemy_turn()
 {
-	enemy_cooldown -= GetFrameTime();
-	if (enemy_cooldown <= 0.0)
-	{
-		waiting_for_enemy = false;
-		if (!global_fx.is_playing && p_ref.queued_damage > 0)
-		{
-			e_ref.take_damage(p_ref.queued_damage, &p_ref, false, false);
-			p_ref.queued_damage = 0.0;
-		}
-		auto [e_dmg, crit] = e_ref.calculate_dmg();
-		int final_dmg = p_ref.take_damage(e_dmg, &p_ref, crit, p_ref.is_guard);
+    enemy_cooldown -= GetFrameTime();
+    if (enemy_cooldown <= 0.0)
+    {
+        waiting_for_enemy = false;
+        return e_ref.execute_ai_turn(p_ref);
+    }
 
-		p_ref.is_guard = false;
-
-		return final_dmg;
-	}
-	return 0;
+    return 0;
 }

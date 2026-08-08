@@ -264,11 +264,8 @@ void battle::draw()
 void inventory_state::draw() 
 {
     
-    if (get_previous_state() == exp)
-    {
-        draw_game_scene(exp);
-    }
-    else
+    draw_game_scene(exp);
+    if (get_previous_state() != exp)
     {
         draw_battle_ui(fight);
     }

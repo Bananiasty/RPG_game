@@ -55,6 +55,11 @@ void exploration::loot_init()
 	item_pool.push_back(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon,  40, &textures.lightning, 10, 0.10));
 
 	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2)); 
+	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
+	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
+	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
+	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
+	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
 	bohater.bag->add_item(new gauntlets("Iron gloves", "Normal", 18, &textures.iron_gauntlets, 2, 5));
 	bohater.bag->add_item(new vest("Iron vest", "Normal", 50, &textures.iron_vest, 2, 5));
 	bohater.bag->add_item(new helm("Iron helm", "Normal", 25, &textures.iron_helm, 2, 5));
@@ -71,14 +76,8 @@ void exploration::loot_init()
 }
 void exploration::enemies_init()
 {
-	enemy_pool.push_back(new enemy({ .id = 10, .name = "Ghoul", .hp = 40, .mp = 0, .armor = 0, .damage = 5, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
+	enemy_pool.push_back(new ghoul({ .id = 10, .name = "Ghoul", .hp = 40, .mp = 0, .armor = 0, .damage = 5, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
 
-	enemy_pool.push_back(new enemy({ .id = 1, .name = "Szkielet", .hp = 15, .mp = 0, .armor = 2, .damage = 5, .block_chance = 0, .crit_chance = 0, .dodge_chance = 0, .texture = textures.skeleton, .rotation = 0.0f, .level = 1, .description = "Przed toba stoi otepialy szkielet, chyba czegos broni." }));
-	enemy_pool.push_back(new enemy({ .id = 2, .name = "Goblin", .hp = 30, .mp = 0, .armor = 4, .damage = 7, .block_chance = 5, .crit_chance = 10, .dodge_chance = 15, .texture = textures.goblin, .rotation = 0.0f, .level = 1, .description = "Z krzaka wyskoczyl wsciekly Goblin!!!" }));
-	enemy_pool.push_back(new enemy({ .id = 3, .name = "Troll", .hp = 80, .mp = 0, .armor = 0, .damage = 12, .block_chance = 15, .crit_chance = 25, .dodge_chance = 0, .texture = textures.troll, .rotation = 0.0f, .level = 2, .description = "Troll... wyglada na twardego." }));
-	enemy_pool.push_back(new enemy({ .id = 4, .name = "Bandyci", .hp = 50, .mp = 0, .armor = 2, .damage = 10, .block_chance = 0, .crit_chance = 25, .dodge_chance = 30, .texture = textures.bandits, .rotation = 0.0f, .level = 2, .description = "Bandyci chca cie ograbic!!!" }));
-	enemy_pool.push_back(new enemy({ .id = 5, .name = "Straznik", .hp = 50, .mp = 0, .armor = 6, .damage = 10, .block_chance = 40, .crit_chance = 0, .dodge_chance = 0, .texture = textures.guard, .rotation = 0.0f, .level = 4, .description = "Straznik nie chce cie przepuscic przez most." }));
-	enemy_pool.push_back(new enemy({ .id = 6, .name = "Smok", .hp = 80, .mp = 0, .armor = 10, .damage = 15, .block_chance = 0, .crit_chance = 0, .dodge_chance = 0, .texture = textures.dragon, .rotation = 0.0f, .level = 10, .description = "Final boss!!!" }));
 }
 void exploration::world_map_init()
 {

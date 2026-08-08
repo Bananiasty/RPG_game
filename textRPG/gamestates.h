@@ -42,7 +42,6 @@ public:
 	int dlugosc;
 	int szerokosc;
 
-	BodyPart GetHoveredBodyPart(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera);
 
 	std::map<int, Node> world_map;
 	std::vector<std::vector<int>> dungeon;
@@ -165,9 +164,9 @@ public:
 	exploration* exp;
 	battle* fight;
 	bool equipment_tab = false;
-	bool usables_tab = false;
-	bool scrolls_tab = false;
-	bool other_tab = false;
+	bool food_tab = false;
+	bool books_tab = false;
+	bool items_tab = false;
 
 	inventory_state(player& p, gamestate* back_to);
 

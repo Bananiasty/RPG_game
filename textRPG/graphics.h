@@ -30,3 +30,9 @@ void draw_dungeon_map(exploration* exp, float player_x, float player_y);
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open);
 
+inline Vector2 virtual_mouse_pos = { 0.0f, 0.0f };
+
+inline Vector2 GetVirtualMousePosition()
+{
+    return virtual_mouse_pos;
+}

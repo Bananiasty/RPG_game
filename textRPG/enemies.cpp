@@ -65,16 +65,23 @@ void exploration::update_enemies()
     }
 }
 
-BodyPart exploration::GetHoveredBodyPart(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera)
+BodyPart enemy::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera)
 {
     Ray ray = GetScreenToWorldRay(GetMousePosition(), camera);
 
-    BoundingBox enemyBox = {
-        { drawPos.x - targetWidth * 0.5f, drawPos.y - targetHeight * 0.5f, drawPos.z - 0.2f },
-        { drawPos.x + targetWidth * 0.5f, drawPos.y + targetHeight * 0.5f, drawPos.z + 0.2f }
-    };
+    Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
+    Vector3 up = Vector3Normalize(camera.up);
 
-    RayCollision collision = GetRayCollisionBox(ray, enemyBox);
+    float halfW = targetWidth * 0.5f;
+    float halfH = targetHeight * 0.5f;
+
+    Vector3 topLeft = Vector3Add(Vector3Subtract(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+    Vector3 topRight = Vector3Add(Vector3Add(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+    Vector3 bottomRight = Vector3Subtract(Vector3Add(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+    Vector3 bottomLeft = Vector3Subtract(Vector3Subtract(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+
+    RayCollision collision = GetRayCollisionQuad(ray, topLeft, topRight, bottomRight, bottomLeft);
 
     if (collision.hit)
     {
@@ -104,16 +111,21 @@ BodyPart exploration::GetHoveredBodyPart(Vector3 drawPos, float targetWidth, flo
     return BodyPart::NONE;
 }
 
-SpriteRenderParams GetGhoulRenderParams(Vector3 entityPos, Texture2D texture)
+int enemy::execute_ai_turn(character& target)
 {
-    constexpr float GHOUL_Y_OFFSET = 0.15f;
+    if (!global_fx.is_playing && target.queued_damage > 0)
+    {
+        this->take_damage(target.queued_damage, &target, false, false);
+        target.queued_damage = 0.0;
+    }
 
-    float fWidth = (float)texture.width / 8.0f;
-    float fHeight = (float)texture.height / 4.0f;
-    float tHeight = 2.3f;
-    float tWidth = tHeight * (fWidth / fHeight);
+    auto [e_dmg, crit] = this->calculate_dmg();
+    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard);
 
-    Vector3 drawPos = { entityPos.x, entityPos.y + GHOUL_Y_OFFSET, entityPos.z };
+    target.is_guard = false;
 
-    return { drawPos, tWidth, tHeight, fWidth, fHeight };
+    return final_dmg;
 }
+
+   
+

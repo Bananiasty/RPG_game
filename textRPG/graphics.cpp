@@ -13,8 +13,8 @@
 #include <ranges>
 #include <utility>
 
-extern Font arial_font;
-extern Font pogrubione_arial_font;
+extern Font cabin_sketch_font;
+extern Font cabin_sketch_font_bold;
 float screen_width = 0.0f;
 float screen_height = 0.0f;
 
@@ -47,16 +47,16 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 	ClearBackground(BLACK);
 
 	DrawText( "LOGOWANIE", 500, 100, 50, GOLD);
-	DrawTextEx(arial_font, "Wpisz swoj nickname (3-12 znakow, bez znakow specjalnych):", { 350, 180 }, 20, 2, GRAY);
+	DrawTextEx(cabin_sketch_font, "Wpisz swoj nickname (3-12 znakow, bez znakow specjalnych):", { 350, 180 }, 20, 2, GRAY);
 
 	DrawRectangleLines(500, 230, 300, 40, LIGHTGRAY);
-	DrawTextEx(arial_font, current_name.c_str(), { 510, 240 }, 20, 3, RAYWHITE);
+	DrawTextEx(cabin_sketch_font, current_name.c_str(), { 510, 240 }, 20, 3, RAYWHITE);
 
-	DrawTextEx(arial_font, "Wcisnij [ENTER] aby zatwierdzic", { 500, 300 }, 16, 2, DARKGRAY);
+	DrawTextEx(cabin_sketch_font, "Wcisnij [ENTER] aby zatwierdzic", { 500, 300 }, 16, 2, DARKGRAY);
 
 	if (has_error)
 	{
-		DrawTextEx(arial_font, "BLAD: Nick zawiera znaki specjalne lub ma zla dlugosc!", { 250, 350 }, 18, 2, RED);
+		DrawTextEx(cabin_sketch_font, "BLAD: Nick zawiera znaki specjalne lub ma zla dlugosc!", { 250, 350 }, 18, 2, RED);
 	}
 }
 
@@ -281,7 +281,7 @@ void DrawExploration(exploration* exp)
 			}
 			case 10:
 			{
-				auto params = GetGhoulRenderParams(pos, textures.ghoul);
+				auto params = enemy->get_render_params(textures.ghoul);
 
 				int lastFrame = enemy->get_last_frame();
 				int frameIndex = GetSpriteFrameIndex(pos, enemy->get_forward(), exp->camera.position, lastFrame);
@@ -365,52 +365,68 @@ void DrawExploration(exploration* exp)
 
 void draw_battle_ui(battle* fight)
 {
+	const int GAME_WIDTH = 1920;
+	const int GAME_HEIGHT = 1080;
 
-	screen_width = GetScreenWidth();
-	screen_height = GetScreenHeight();
+	Vector2 mouse = GetVirtualMousePosition();
 
 	std::string e = fight->get_enemy_name();
-	float p_hp_width = ((float)fight->p_ref.get_health() / fight->p_ref.get_max_health()) * 300;
-	float e_hp_width = (float)fight->get_enemy_hp() / fight->get_enemy_max_hp() * 300;
-	float xp_height = (float)fight->p_ref.get_xp() / fight->p_ref.get_xp_to_level_up() * 100;
 
-	//PASEK ZYCIA GRACZA
-	DrawTextEx(arial_font, TextFormat("HP Bohatera: %d", fight->p_ref.get_health()), { 70, 620 }, 20, 2, MAROON);
-	DrawRectangle(70, 650, 300, 30, DARKGRAY);
-	DrawRectangle(70, 650, (int)p_hp_width, 30, RED);
-	
-	/*DrawTextEx(arial_font, TextFormat("LvL %d", fight->p_ref.get_level()), { 10, 530 }, 20, 2, WHITE);
-	DrawTextEx(arial_font, TextFormat("XP: %d/%d", fight->p_ref.get_xp(), fight->p_ref.get_xp_to_level_up()), { 10, 500 }, 20, 2, WHITE);                                        XP
-	DrawRectangle(10, 600, 30, 100, DARKBLUE);
-	DrawRectangle(10, 700 - xp_height, 30, xp_height, WHITE);*/
+	float p_hp_width = ((float)fight->p_ref.get_health() / fight->p_ref.get_max_health()) * 400.0f;
 
-	Texture2D enemy_texture;
+	//PASEK ZDROWIA GRACZA
+	float player_hp_x = 100.0f;
+	float player_hp_y = GAME_HEIGHT * 0.80f;
 
-	float szerokosc_tekstu_e = (float)MeasureText(e.c_str(), 24);
-	float posX_text = 675 - (szerokosc_tekstu_e / 2);
+	DrawTextEx(cabin_sketch_font, TextFormat("HP Bohatera: %d", fight->p_ref.get_health()), { player_hp_x, player_hp_y - 35.0f }, 28, 2, MAROON);
+	DrawRectangle((int)player_hp_x, (int)player_hp_y, 400, 35, DARKGRAY);
+	DrawRectangle((int)player_hp_x, (int)player_hp_y, (int)p_hp_width, 35, RED);
 
-	Rectangle battle_menu_button = { screen_width * 0.2, screen_height * 0.8, 120, 30 };
-	int button_spacing = battle_menu_button.width + 10;
-	
-	if (GuiButton({ battle_menu_button }, "Attack")) {
-				
-		if (fight->player_cooldown <= 0)
-		{
-			fight->attack_clicked = true;
-			fight->player_cooldown = 1.0;
-		}
-					
+	Rectangle battle_menu_button = { GAME_WIDTH * 0.40f, GAME_HEIGHT * 0.82f, 220.0f, 60.0f };
+	float button_spacing = battle_menu_button.width + 20.0f;
+
+	bool is_attack_hovered = CheckCollisionPointRec(mouse, battle_menu_button);
+	Color attack_btn_color = is_attack_hovered ? GRAY : LIGHTGRAY;
+
+	DrawRectangleRec(battle_menu_button, attack_btn_color);
+	DrawRectangleLinesEx(battle_menu_button, 2.0f, DARKGRAY);
+
+	Vector2 attack_text_size = MeasureTextEx(cabin_sketch_font, "Attack", 40, 1);
+	Vector2 attack_text_pos = {
+		battle_menu_button.x + (battle_menu_button.width - attack_text_size.x) * 0.5f,
+		battle_menu_button.y + (battle_menu_button.height - attack_text_size.y) * 0.5f
+	};
+	DrawTextEx(cabin_sketch_font, "Attack", attack_text_pos, 40, 1, BLACK);
+
+	if (is_attack_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		fight->attack_clicked = true;
 	}
-	if (GuiButton({ battle_menu_button.x + button_spacing * 2, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height }, "Guard")) 
+
+	//PRZYCISK GUARD
+	Rectangle guard_button_rec = { battle_menu_button.x + button_spacing, battle_menu_button.y, battle_menu_button.width, battle_menu_button.height };
+
+	bool is_guard_hovered = CheckCollisionPointRec(mouse, guard_button_rec);
+	Color guard_btn_color = is_guard_hovered ? GRAY : LIGHTGRAY;
+
+	DrawRectangleRec(guard_button_rec, guard_btn_color);
+	DrawRectangleLinesEx(guard_button_rec, 2.0f, DARKGRAY);
+
+	Vector2 guard_text_size = MeasureTextEx(cabin_sketch_font, "Guard", 40, 1);
+	Vector2 guard_text_pos = {
+		guard_button_rec.x + (guard_button_rec.width - guard_text_size.x) * 0.5f,
+		guard_button_rec.y + (guard_button_rec.height - guard_text_size.y) * 0.5f
+	};
+	DrawTextEx(cabin_sketch_font, "Guard", guard_text_pos, 40, 1, BLACK);
+
+	if (is_guard_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
 		if (fight->player_cooldown <= 0)
 		{
 			fight->guard_clicked = true;
 			fight->player_cooldown = 1.0;
 		}
-		
 	}
-	
 }
 void DrawHUD(exploration* exp)
 {
@@ -428,67 +444,302 @@ void DrawHUD(exploration* exp)
 
 void draw_inventory_ui(player& p, inventory_state* inv)
 {
+	const int GAME_WIDTH = 1920;
+	const int GAME_HEIGHT = 1080;
+
+	Texture2D inventory = textures.inventory_UI;
 	Texture2D item_icon;
-	Vector2 mouse_pos = GetMousePosition();
 
+	Vector2 mouse_pos = GetVirtualMousePosition();
+	Vector2 window_center = { GAME_WIDTH * 0.5 - inventory.width * 0.5, GAME_HEIGHT * 0.5 - inventory.height * 0.5 };
+
+	Rectangle equipment_button = { window_center.x + inventory.width * 0.057f, window_center.y + inventory.height * 0.081f, 120, 120 };
+	Rectangle item_button = { window_center.x + inventory.width * 0.181f, window_center.y + inventory.height * 0.081f, 120, 120 };
+	Rectangle food_button = { window_center.x + inventory.width * 0.308f, window_center.y + inventory.height * 0.081f, 120, 120 };
+	Rectangle books_button = { window_center.x + inventory.width * 0.437f, window_center.y + inventory.height * 0.081f, 120, 120 };
+
+	const float SLOT_SIZE = 75.0f;
+
+	const float HELM_OFFSET_X = 1039.5f;
+	const float HELM_OFFSET_Y = 75.0f;
+	Rectangle helm_slot = { window_center.x + HELM_OFFSET_X, window_center.y + HELM_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float WEAPON_OFFSET_X = 919.5f;
+	const float WEAPON_OFFSET_Y = 186.0f;
+	Rectangle weapon_slot = { window_center.x + WEAPON_OFFSET_X, window_center.y + WEAPON_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float SHIELD_OFFSET_X = 1159.5f;
+	const float SHIELD_OFFSET_Y = 186.0f;
+	Rectangle shield_slot = { window_center.x + SHIELD_OFFSET_X, window_center.y + SHIELD_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float VEST_OFFSET_X = 1039.5f;
+	const float VEST_OFFSET_Y = 229.5f;
+	Rectangle vest_slot = { window_center.x + VEST_OFFSET_X, window_center.y + VEST_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float GLOVES_OFFSET_X = 918.0f;
+	const float GLOVES_OFFSET_Y = 342.0f;
+	Rectangle gloves_slot = { window_center.x + GLOVES_OFFSET_X, window_center.y + GLOVES_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float BOOTS_OFFSET_X = 1159.5f;
+	const float BOOTS_OFFSET_Y = 342.0f;
+	Rectangle boots_slot = { window_center.x + BOOTS_OFFSET_X, window_center.y + BOOTS_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float ACCESSORY_1_OFFSET_X = 1047.0f;
+	const float ACCESSORY_1_OFFSET_Y = 541.5f;
+	Rectangle accessory_1 = { window_center.x + ACCESSORY_1_OFFSET_X, window_center.y + ACCESSORY_1_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float ACCESSORY_2_OFFSET_X = 1158.0f;
+	const float ACCESSORY_2_OFFSET_Y = 541.5f;
+	Rectangle accessory_2 = { window_center.x + ACCESSORY_2_OFFSET_X, window_center.y + ACCESSORY_2_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	const float ACCESSORY_3_OFFSET_X = 1269.0f;
+	const float ACCESSORY_3_OFFSET_Y = 541.5f;
+	Rectangle accessory_3 = { window_center.x + ACCESSORY_3_OFFSET_X, window_center.y + ACCESSORY_3_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
+
+	DrawTextureEx(inventory, window_center, 0.0f, 1.0f, WHITE);
+
+	if (p.equipped_helm != nullptr)
+	{
+		Texture2D* icon = p.equipped_helm->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, helm_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+		if (CheckCollisionPointRec(mouse_pos, helm_slot))
+		{
+			DrawRectangleLinesEx(helm_slot, 2.0f, YELLOW);
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				p.equipped_helm->use(&p, -1);
+			}
+		}
+	}
+
+	if (p.equipped_weapon != nullptr)
+	{
+		Texture2D* icon = p.equipped_weapon->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, weapon_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+		if (CheckCollisionPointRec(mouse_pos, weapon_slot))
+		{
+			DrawRectangleLinesEx(weapon_slot, 2.0f, YELLOW);
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				p.equipped_weapon->use(&p, -1);
+			}
+		}
+	}
+
+	//// --- 3. TARCZA ---
+	//if (p.equipped_shield != nullptr)
+	//{
+	//	Texture2D* icon = p.equipped_shield->get_icon();
+	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+	//	DrawTexturePro(*icon, source_rec, shield_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+	//	if (CheckCollisionPointRec(mouse_pos, shield_slot))
+	//	{
+	//		DrawRectangleLinesEx(shield_slot, 2.0f, YELLOW);
+	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	//		{
+	//			p.equipped_shield->use(&p, -1);
+	//		}
+	//	}
+	//}
+
+
+	if (p.equipped_vest != nullptr)
+	{
+		Texture2D* icon = p.equipped_vest->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, vest_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+		if (CheckCollisionPointRec(mouse_pos, vest_slot))
+		{
+			DrawRectangleLinesEx(vest_slot, 2.0f, YELLOW);
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				p.equipped_vest->use(&p, -1);
+			}
+		}
+	}
+
+	if (p.equipped_gauntlets != nullptr)
+	{
+		Texture2D* icon = p.equipped_gauntlets->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, gloves_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+		if (CheckCollisionPointRec(mouse_pos, gloves_slot))
+		{
+			DrawRectangleLinesEx(gloves_slot, 2.0f, YELLOW);
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				p.equipped_gauntlets->use(&p, -1);
+			}
+		}
+	}
+
+	if (p.equipped_boots != nullptr)
+	{
+		Texture2D* icon = p.equipped_boots->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, boots_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+		if (CheckCollisionPointRec(mouse_pos, boots_slot))
+		{
+			DrawRectangleLinesEx(boots_slot, 2.0f, YELLOW);
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				p.equipped_boots->use(&p, -1);
+			}
+		}
+	}
+
+	//// --- 7. AKCESORIUM 1 ---
+	//if (p.equipped_accessory_1 != nullptr)
+	//{
+	//	Texture2D* icon = p.equipped_accessory_1->get_icon();
+	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+	//	DrawTexturePro(*icon, source_rec, accessory_1, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+	//	if (CheckCollisionPointRec(mouse_pos, accessory_1))
+	//	{
+	//		DrawRectangleLinesEx(accessory_1, 2.0f, YELLOW);
+	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	//		{
+	//			p.equipped_accessory_1->use(&p, -1);
+	//		}
+	//	}
+	//}
+
+	//// --- 8. AKCESORIUM 2 ---
+	//if (p.equipped_accessory_2 != nullptr)
+	//{
+	//	Texture2D* icon = p.equipped_accessory_2->get_icon();
+	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+	//	DrawTexturePro(*icon, source_rec, accessory_2, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+	//	if (CheckCollisionPointRec(mouse_pos, accessory_2))
+	//	{
+	//		DrawRectangleLinesEx(accessory_2, 2.0f, YELLOW);
+	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	//		{
+	//			p.equipped_accessory_2->use(&p, -1);
+	//		}
+	//	}
+	//}
+
+	//// --- 9. AKCESORIUM 3 ---
+	//if (p.equipped_accessory_3 != nullptr)
+	//{
+	//	Texture2D* icon = p.equipped_accessory_3->get_icon();
+	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+	//	DrawTexturePro(*icon, source_rec, accessory_3, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+	//	if (CheckCollisionPointRec(mouse_pos, accessory_3))
+	//	{
+	//		DrawRectangleLinesEx(accessory_3, 2.0f, YELLOW);
+	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	//		{
+	//			p.equipped_accessory_3->use(&p, -1);
+	//		}
+	//	}
+	//}
+
+	bool equipment_button_isHovered = CheckCollisionPointRec(mouse_pos, equipment_button);
+	bool item_button_isHovered = CheckCollisionPointRec(mouse_pos, item_button);
+	bool food_button_isHovered = CheckCollisionPointRec(mouse_pos, food_button);
+	bool books_button_isHovered = CheckCollisionPointRec(mouse_pos, books_button);
+
+	
 	p.sort_bag();
-	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
-	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
 
+	
 
-	auto& items = p.bag->items;
+	if (equipment_button_isHovered)
+	{
+		DrawRectangleLinesEx(equipment_button, 5, WHITE);
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			inv->equipment_tab = true;
+			inv->items_tab = false;
+			inv->food_tab = false;
+			inv->books_tab = false;
+		}
+	}
+	if (item_button_isHovered)
+	{
+		DrawRectangleLinesEx(item_button, 5, WHITE);
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			inv->equipment_tab = false;
+			inv->items_tab = true;
+			inv->food_tab = false;
+			inv->books_tab = false;
+		}
+	}
+	if (food_button_isHovered)
+	{
+		DrawRectangleLinesEx(food_button, 5, WHITE);
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			inv->equipment_tab = false;
+			inv->items_tab = false;
+			inv->food_tab = true;
+			inv->books_tab = false;
+		}
+	}
+	if (books_button_isHovered)
+	{
+		DrawRectangleLinesEx(books_button, 5, WHITE);
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			inv->equipment_tab = false;
+			inv->items_tab = false;
+			inv->food_tab = false;
+			inv->books_tab = true;
+		}
+	}
+	auto& all_items = p.bag->items;
 
 	auto& equipment = p.equipment->items;
-	auto& usables = p.usables->items;
-	auto& scrolls = p.scrolls->items;
+	auto& other_items = p.inv_items->items;
+	auto& food = p.food->items;
+	auto& books = p.books->items;
 
-	int startX = 140;
-	int startY = 400;
+	int startX = 80;
+	int startY = 250;
 	int btnWidth = 60;
 	int btnHeight = 60;
-	int padding = 15;
+	int bottom_padding = 15;
+	int right_padding = 140;
 
-
-	if (GuiButton({ 200, 180, 150, 80 }, "Equipment"))
-	{
-		inv->equipment_tab = true;
-		inv->usables_tab = false;
-		inv->scrolls_tab = false;
-
-	}
-	if (GuiButton({ 500, 180, 150, 80 }, "Usables"))
-	{
-		inv->usables_tab = true;
-		inv->equipment_tab = false;
-		inv->scrolls_tab = false;
-	}
-	if (GuiButton({ 800, 180, 150, 80 }, "Scrolls"))
-	{
-		inv->usables_tab = false;
-		inv->equipment_tab = false;
-		inv->scrolls_tab = true;
-	}
-
+	bool is_item_hovered;
 	if (inv->equipment_tab == true)
 	{
 		for (int i = 0; i < equipment.size(); i++)
 		{
 			item_icon = *(equipment[i]->icon_texture);
 
-			int row = i / 5;
-			int col = i % 5;
+			int col = i / 8;
+			int row = i % 8;
 			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
+				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
+				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
 				(float)btnWidth,
 				(float)btnHeight
 			};
+			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
 			std::string label = equipment[i]->get_name();
 
-
-			if (GuiButton(itemRect, ""))
+			if (is_item_hovered)
 			{
-				equipment[i]->use(&p, -1);
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					equipment[i]->use(&p, -1);
+				}
 			}
 			if (item_icon.id > 0)
 			{
@@ -497,36 +748,39 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			}
 			if (equipment[i]->is_equipped())
 			{
-				DrawTextEx(arial_font, "[E]", { itemRect.x + 55, itemRect.y + 35 }, 18, 1, WHITE);
+				
 			}
 			if (CheckCollisionPointRec(mouse_pos, itemRect))
 			{
-				DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
-				DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 18, 1, WHITE);
+				DrawRectangle(itemRect.x+btnWidth, itemRect.y, 180, 50, DARKBLUE);
+				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x+50, itemRect.y }, 36, 1, WHITE);
 			}
 		}
 	}
-	else if (inv->usables_tab == true)
+	else if (inv->items_tab == true)
 	{
 		int itemToUse = -1;
 
-		for (int i = 0; i < usables.size(); i++)
+		for (int i = 0; i < other_items.size(); i++)
 		{
-			item_icon = *(usables[i]->icon_texture);
+			item_icon = *(other_items[i]->icon_texture);
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
+				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
+				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
 				(float)btnWidth,
 				(float)btnHeight
 			};
+			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			std::string label = usables[i]->get_name();
-			if (GuiButton(itemRect, ""))
+			std::string label = other_items[i]->get_name();
+			if (is_item_hovered)
 			{
-				itemToUse = i;
-
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					other_items[i]->use(&p, -1);
+				}
 			}
 			if (item_icon.id > 0)
 			{
@@ -536,38 +790,86 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			if (CheckCollisionPointRec(mouse_pos, itemRect))
 			{
-				DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
-				DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 18, 1, WHITE);
+				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
+				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
 		}
 		if (itemToUse != -1)
 		{
-			usables[itemToUse]->use(&p, -1);
+			other_items[itemToUse]->use(&p, -1);
+			p.sort_bag();
+			return;
+		}
+	}
+	else if (inv->food_tab == true)
+	{
+		int itemToUse = -1;
+
+		for (int i = 0; i < food.size(); i++)
+		{
+			item_icon = *(food[i]->icon_texture);
+			int row = i / 5;
+			int col = i % 5;
+			Rectangle itemRect = {
+				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
+				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
+			std::string label = food[i]->get_name();
+			if (is_item_hovered)
+			{
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					food[i]->use(&p, -1);
+				}
+			}
+			if (item_icon.id > 0)
+			{
+				float scale = (float)(btnHeight - 10) / item_icon.height;
+				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+			}
+
+			if (CheckCollisionPointRec(mouse_pos, itemRect))
+			{
+				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
+				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
+			}
+		}
+		if (itemToUse != -1)
+		{
+			food[itemToUse]->use(&p, -1);
 			p.sort_bag();
 			return;
 		}
 
 	}
-	else if (inv->scrolls_tab == true)
+	else if (inv->books_tab == true)
 	{
 		int itemToUse = -1;
 
-		for (int i = 0; i < scrolls.size(); i++)
+		for (int i = 0; i < books.size(); i++)
 		{
-			item_icon = *(scrolls[i]->icon_texture);
+			item_icon = *(books[i]->icon_texture);
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
-				(float)(startX + col * (btnWidth + padding)),
-				(float)(startY + row * (btnHeight + padding)),
+				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
+				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
 				(float)btnWidth,
 				(float)btnHeight
 			};
+			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			std::string label = scrolls[i]->get_name();
-			if (GuiButton(itemRect, ""))
+			std::string label = books[i]->get_name();
+			if (is_item_hovered)
 			{
-				itemToUse = i;
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					books[i]->use(&p, -1);
+				}
 			}
 			if (item_icon.id > 0)
 			{
@@ -576,24 +878,26 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			}
 			if(CheckCollisionPointRec(mouse_pos, itemRect))
 			{
-				DrawRectangle(itemRect.x, itemRect.y-50, 120, 40, DARKBLUE);
-				DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y-50 }, 18, 1, WHITE);
+				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
+				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
 			
 		}
 		if (itemToUse != -1)
 		{
-			scrolls[itemToUse]->use(&p, -1);
+			books[itemToUse]->use(&p, -1);
 			p.sort_bag();
 			return;
 		}
 
 	}
 }
+
+
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 {
 	Texture2D item_icon;
-	Vector2 mouse_pos = GetMousePosition();
+	Vector2 mouse_pos = GetVirtualMousePosition();
 
 	if (current_chest == nullptr || !is_open)
 	{
@@ -670,7 +974,7 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 		if (CheckCollisionPointRec(mouse_pos, itemRect))
 		{
 			DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
-			DrawTextEx(arial_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 18, 1, WHITE);
+			DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 22, 1, WHITE);
 		}
 	}
 	if (clicked_item != nullptr)
@@ -696,7 +1000,7 @@ void draw_commentary()
 		float przesuniecie_y = 0.0;
 		for (const auto& log : gamestate::gameLogs | std::views::reverse | std::views::take(3))
 		{
-			DrawTextEx(arial_font, log.c_str(), { 50, 410 + przesuniecie_y }, 25, 2, WHITE);
+			DrawTextEx(cabin_sketch_font, log.c_str(), { 50, 410 + przesuniecie_y }, 32, 2, WHITE);
 			przesuniecie_y += 20.0;
 		}		
 	}
@@ -763,15 +1067,15 @@ void draw_buttons(exploration* e)
 {
 
 
-	screen_width = GetScreenWidth();
-	screen_height = GetScreenHeight();
+	const int GAME_WIDTH = 1920;
+	const int GAME_HEIGHT = 1080;
 
 
-	DrawRectangle(screen_width * 0.8 , screen_height * 0.9, 50, 20, WHITE);
-	DrawText("I", screen_width * 0.8 + 20, screen_height * 0.9, 20, DARKBROWN);
+	DrawRectangle(GAME_WIDTH * 0.8 , GAME_HEIGHT * 0.9, 50, 20, WHITE);
+	DrawText("I", GAME_WIDTH * 0.8 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 
-	DrawRectangle(screen_width * 0.9, screen_height * 0.9, 50, 20, WHITE);
-	DrawText("M", screen_width * 0.9 + 20, screen_height * 0.9, 20, DARKBROWN);
+	DrawRectangle(GAME_WIDTH * 0.9, GAME_HEIGHT * 0.9, 50, 20, WHITE);
+	DrawText("M", GAME_WIDTH * 0.9 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 }
 
 
@@ -818,14 +1122,16 @@ void DrawGlobalAnimation()
 	{
 		return;
 	}
+
+	float scale = 4.0f;
 	float frameWidth = (float)global_fx.texture.width / global_fx.frame_count;
 	float frameHeight = (float)global_fx.texture.height;
 
-	float scale = 2.5;
+	global_fx.position = { 1920.0f * 0.5f, 1080.0f * 0.5f };
 
 	Rectangle sourceRec = {
 		global_fx.current_frame * frameWidth,
-		0.0,
+		0.0f,
 		frameWidth,
 		frameHeight
 	};
@@ -838,11 +1144,11 @@ void DrawGlobalAnimation()
 	};
 
 	Vector2 origin = {
-		(frameWidth * scale) / 2,
-		(frameHeight * scale) / 2
+		(frameWidth * scale) * 0.5f,
+		(frameHeight * scale) * 0.5f
 	};
 
-	DrawTexturePro(global_fx.texture, sourceRec, destRec, origin, 0.0, WHITE);
+	DrawTexturePro(global_fx.texture, sourceRec, destRec, origin, 0.0f, WHITE);
 }
 
 	
@@ -852,6 +1158,7 @@ void graphics_init()
 	const int screenWidth = 1280;
 	const int screenHeight = 720;
 	InitWindow(screenWidth, screenHeight, "textRPG");
+	SetExitKey(KEY_NULL);
 	DisableCursor();
 	SetTargetFPS(60);
 
