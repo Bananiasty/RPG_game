@@ -17,7 +17,7 @@ private:
 public:
 	std::vector<item*>items;
 	void add_item(item* new_item);
-	void del_item(int index);
+	void del_item(item* rm_item);
 };
 
 struct chest
@@ -98,12 +98,12 @@ struct enemy_config {
 	int id = -1;
 	std::string name = "";
 	int hp = 20;
-	int mp = 0;
 	int armor = 0;
 	int damage = 0;
 	int block_chance = 0;
 	int crit_chance = 0;
 	int dodge_chance = 0;
+	int reduced_head_damage = 0;
 	Texture2D texture = {};
 	Vector3 position = { 0.0f, 1.0f, 0.0f };
 	float rotation = 0.0f;

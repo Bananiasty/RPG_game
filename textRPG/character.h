@@ -17,8 +17,10 @@ class character
 friend class item;
 protected:
 	std::string name;
-	int health, mana, base_defense, base_damage, block_chance, crit_chance, dodge_chance;
-	int max_health, max_mana;
+	int health, base_defense, base_damage;
+	int	block_chance, crit_chance, dodge_chance;
+	int reduced_head_damage;
+	int max_health;
 
 	Texture2D grafika;
 	
@@ -43,6 +45,8 @@ protected:
 			FRAME_HEIGHT
 		};
 	}
+
+
 	
 public:
 	Vector3 position;
@@ -55,15 +59,17 @@ public:
 	gauntlets* equipped_gauntlets = nullptr;
 	boots* equipped_boots = nullptr;
 	weapon* equipped_weapon = nullptr;
+	shield* equipped_shield = nullptr;
 		/*equipped_accessory_1 = nullptr;
 		equipped_accessory_2 = nullptr;
 		equipped_accessory_3 = nullptr;*/
+
 
 	
 
 	float queued_damage = 0.0;
 
-	character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot);
+	character(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
 
 	bool is_dead();
 
@@ -75,16 +81,16 @@ public:
 	
 	int get_health() { return health; }
 	int get_max_health() { return max_health; }
-	int get_max_mana() { return max_mana; }
+	//int get_max_mana() { return max_mana; }
 	int get_damage() { return base_damage; }
 	int get_defense() { return base_defense; }
 	int get_block_chance() { return block_chance; }
 	int get_crit_chance() { return crit_chance; }
 	int get_dodge_chance() { return dodge_chance; }
-	int get_mana() { return mana; }
+	int get_reduced_head_damage() { return reduced_head_damage; }
 
 	void set_max_health(int val) { max_health = val; }
-	void set_max_mana(int val) { max_mana = val; }
+	//void set_max_mana(int val) { max_mana = val; }
 
 	Vector3 get_position() const { return position; }
 	void set_position(Vector3 new_pos) { position = new_pos; }
@@ -135,10 +141,12 @@ private:
 
 	
 public:
-	player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
+	player(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
 
 	enemy* current_enemy = nullptr;
 	inventory* bag;
+	inventory* equipped_items;
+
 	inventory* equipment;
 	inventory* food;
 	inventory* inv_items;
@@ -183,7 +191,7 @@ private:
 	int difficulty;
 	int id_number;
 	int room_id_number;
-
+	float rotation = 0.0f;
 	bool moving = false;
 	Vector3 target_tile = { 0.0f, 0.0f, 0.0f };
 	Vector3 forward = { 0.0f, 0.0f, 1.0f };
@@ -205,6 +213,10 @@ public:
 
 
 	virtual enemy* clone() const = 0;
+
+
+	float get_rotation() const { return rotation; }
+	void set_rotation(float rot) { rotation = rot; }
 
 	int get_last_frame() const { return last_frame_index; }
 	void set_last_frame(int frame) { last_frame_index = frame; }

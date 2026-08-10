@@ -68,6 +68,9 @@ void LoadGameTextures()
 	textures.leather_boots = LoadTexture("graphics/GAME ASSETS/ARMOR/item261.png");
 	textures.iron_boots = LoadTexture("graphics/GAME ASSETS/ARMOR/item262.png");
 
+	textures.wooden_shield = LoadTexture("graphics/GAME ASSETS/ARMOR/item197.png");
+	textures.steel_shield = LoadTexture("graphics/GAME ASSETS/ARMOR/item199.png");
+
 	textures.apple = LoadTexture("graphics/GAME ASSETS/items/item322.png");
 
 	textures.wall_tile_tex = LoadTexture("graphics/textures/terrain/dark_rock_128.png");

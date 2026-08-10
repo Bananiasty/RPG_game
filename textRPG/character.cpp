@@ -9,17 +9,17 @@
 
 
 
-character::character(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, Texture2D g, Vector3 pos, float rot)
-    : name(n), health(hp), mana(mana), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), grafika(g)
+character::character(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
+    : name(n), health(hp), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
 {
     max_health = hp;
-    max_mana = mana;
 };
 
-player::player(std::string n, int hp, int mana, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, hp, mana, bdef, bdmg, b_ch, c_ch, d_ch, g, { 0.0f, 0.0f, 0.0f }, rot)
+player::player(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
+    : character(n, hp, bdef, bdmg, b_ch, c_ch, d_ch, rdh, g, { 0.0f, 0.0f, 0.0f }, rot)
 {
     bag = new inventory();
+    equipped_items = new inventory();
     equipment = new inventory();
     inv_items = new inventory();
     food = new inventory();
@@ -38,12 +38,12 @@ enemy::enemy(const enemy_config& config):
     character(
         config.name,
         config.hp,
-        config.mp,
         config.armor,
         config.damage,
         config.block_chance,
         config.crit_chance,
         config.dodge_chance,
+        config.reduced_head_damage,
         config.texture,
         config.position,
         config.rotation
@@ -228,44 +228,40 @@ void player::sort_bag()
     if (food != nullptr) food->items.clear();
     if (books != nullptr) books->items.clear();
 
-    if (bag->items.empty())
+    if (bag == nullptr || bag->items.empty())
     {
-       return;
-    }  
-    else
-    {
-        for (item* it : bag->items)
-        {
-            switch (it->get_type())
-            {
-                if (it == nullptr) continue;
-
-                case item_type::ARMOR:
-                {
-                    equipment->add_item(it);
-                    break;
-                }
-                case item_type::ITEM:
-                {
-                    inv_items->add_item(it);
-                    break;
-                }
-                case item_type::FOOD:
-                {
-                    food->add_item(it);
-                    break;
-                }
-                case item_type::BOOK:
-                {
-                    books->add_item(it);
-                    break;
-                }
-                default:
-                    break;
-
-            }
-        }
+        return;
     }
 
+    for (item* it : bag->items)
+    {
+        if (it == nullptr) continue;
+
+        switch (it->get_type())
+        {
+        case item_type::ARMOR:
+        {
+            equipment->add_item(it);
+            break;
+        }
+        case item_type::ITEM:
+        {
+            inv_items->add_item(it);
+            break;
+        }
+        case item_type::FOOD:
+        {
+            food->add_item(it);
+            break;
+        }
+        case item_type::BOOK:
+        {
+            books->add_item(it);
+            break;
+        }
+        default:
+            break;
+        }
+    }
 }
 

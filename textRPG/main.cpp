@@ -11,8 +11,6 @@
 #include "raymath.h"
 #include "textureManager.h"
 
-
-
 Font cabin_sketch_font;
 Font cabin_sketch_font_bold;
 
@@ -21,7 +19,7 @@ int main()
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
 
-    player bohater("", 100, 50, 0, 10, 0, 0, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
+    player bohater("", 100, 0, 10, 0, 0, 0, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -70,7 +68,7 @@ int main()
 
         SetExitKey(KEY_NULL);
 
-        if (current_state == 1)
+        if (current_state == 1 && !world.showMenu)
         {
             moveSpeed = 0.1f;
             mouseSensitivity = 0.1f;
@@ -158,12 +156,21 @@ int main()
         }
 
         static int prev_cursor_state = -1;
-        if (current_state != prev_cursor_state)
+        static bool prev_show_menu = false;
+
+        if (current_state != prev_cursor_state || world.showMenu != prev_show_menu)
         {
-            if (current_state == 1) DisableCursor();
-            else EnableCursor();
+            if (current_state == 1 && !world.showMenu)
+            {
+                DisableCursor();
+            }
+            else
+            {
+                EnableCursor();
+            }
 
             prev_cursor_state = current_state;
+            prev_show_menu = world.showMenu;
         }
 
         BeginTextureMode(target);

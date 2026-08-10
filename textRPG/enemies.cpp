@@ -85,14 +85,23 @@ BodyPart enemy::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, 
 
     if (collision.hit)
     {
-        float localX = (collision.point.x - (drawPos.x - targetWidth * 0.5f)) / targetWidth;
-        float localY = 1.0f - ((collision.point.y - (drawPos.y - targetHeight * 0.5f)) / targetHeight);
+
+        Vector3 bottomLeft = Vector3Subtract(Vector3Subtract(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+        Vector3 rel = Vector3Subtract(collision.point, bottomLeft);
+
+        float xOnQuad = Vector3DotProduct(rel, right);
+        float yOnQuad = Vector3DotProduct(rel, up); 
+
+        float localX = xOnQuad / targetWidth;
+        float localY = 1.0f - (yOnQuad / targetHeight);
+
+        localX = 1.0f - localX;
 
         localX = Clamp(localX, 0.0f, 1.0f);
         localY = Clamp(localY, 0.0f, 1.0f);
 
         if (localY < 0.20f)
-        {
+        {   
             return BodyPart::HEAD;
         }
         else if (localY < 0.60f)

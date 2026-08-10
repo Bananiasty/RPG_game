@@ -49,6 +49,13 @@ void item::add_player_dodge_chance(player* c, int val)
 		c->dodge_chance += val;
 	};
 }
+void item::add_player_head_damage_reduction(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->reduced_head_damage += val;
+	};
+}
 
 void item::reduce_player_defense(player* c, int val)
 {
@@ -119,7 +126,7 @@ void item::restore_player_health(player* c, int val)
 	
 }
 
-void item::restore_player_mana(player* c, int val)
+/*void item::restore_player_mana(player* c, int val)
 {
 	if (c != nullptr)
 	{
@@ -128,6 +135,7 @@ void item::restore_player_mana(player* c, int val)
 			c->mana = c->get_max_mana();
 	};
 }
+
 void item::reduce_player_mana(player* c, int val)
 {
 	if (c != nullptr)
@@ -137,6 +145,16 @@ void item::reduce_player_mana(player* c, int val)
 		{
 			c->mana = 0;
 		}
+	};
+}*/
+
+void item::reduce_player_head_damage_reduction(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->reduced_head_damage -= val;
+		if (c->reduced_head_damage < 0)
+			c->reduced_head_damage = 0;
 	};
 }
 

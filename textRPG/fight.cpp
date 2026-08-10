@@ -13,38 +13,37 @@
 
 void battle::initiate_fight_view()
 {
+    enemy& e = this->e_ref;
+    player& p = this->p_ref;
+    exploration* exp = this->exp;
 
-	enemy& e = this->e_ref;
-	player& p = this->p_ref;
-	exploration* exp = this->exp;
-	Vector3 e_pos = e.get_position();
-	Vector3 p_pos = p.get_position();
+    Vector3 e_pos = e.get_position();
+    Vector3 p_pos = p.get_position();
 
-	Vector3 dir = Vector3Subtract(e_pos, p_pos);
-	dir.y = 0.0f;
+    Vector3 dir = Vector3Subtract(e_pos, p_pos);
+    dir.y = 0.0f;
 
-	if (Vector3Length(dir) == 0.0f)
-	{
-		dir = { 0.0f, 0.0f, 1.0f };
-	}
-	dir = Vector3Normalize(dir);
-	float desired_distance = 2.5f;
+    if (Vector3Length(dir) == 0.0f)
+    {
+        dir = { 0.0f, 0.0f, 1.0f };
+    }
+    dir = Vector3Normalize(dir);
+    float desired_distance = 2.5f;
 
-	Vector3 target_e_pos = Vector3Add(p_pos, Vector3Scale(dir, desired_distance));
+    Vector3 target_e_pos = Vector3Add(p_pos, Vector3Scale(dir, desired_distance));
+    target_e_pos.y = e_pos.y;
 
-	target_e_pos.y = e_pos.y;
+    e.set_position(target_e_pos);
 
-	Vector3 look_at_player = Vector3Subtract(p_pos, target_e_pos);
-	look_at_player.y = 0.0f;
-	look_at_player = Vector3Normalize(look_at_player);
+    exp->camera.target = target_e_pos;
 
-	e.set_forward(look_at_player);
-	e.set_position(target_e_pos);
+    Vector3 dirToCamera = Vector3Subtract(exp->camera.position, target_e_pos);
+    dirToCamera.y = 0.0f;
 
-	Vector3 cam_target = target_e_pos;
-
-	exp->camera.target = cam_target;
-
+    if (Vector3Length(dirToCamera) > 0.0f)
+    {
+        e.set_forward(Vector3Normalize(dirToCamera));
+    }
 }
 
 int battle::player_turn()

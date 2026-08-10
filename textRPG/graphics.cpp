@@ -69,61 +69,6 @@ struct RenderObject
 };
 
 
-static Texture2D GetSingleLimbTexture(Image& atlasImage, int frameIndex, BodyPart part)
-{
-	float frameWidth = (float)atlasImage.width / 8.0f;
-	float frameHeight = (float)atlasImage.height / 2.0f;
-
-	// 1. Wycinamy klatkê koñczyn z dolnego rzêdu
-	Rectangle cropRec = { frameIndex * frameWidth, frameHeight, frameWidth, frameHeight };
-	Image limbImg = ImageFromImage(atlasImage, cropRec);
-
-	// 2. Czyszczymy piksele innych koñczyn – zostawiamy tylko wskazan¹!
-	for (int y = 0; y < limbImg.height; y++)
-	{
-		for (int x = 0; x < limbImg.width; x++)
-		{
-			float u = (float)x / limbImg.width;
-			float v = (float)y / limbImg.height;
-
-			bool keepPixel = false;
-
-			switch (part)
-			{
-			case BodyPart::HEAD:
-				if (v < 0.20f) keepPixel = true;
-				break;
-			case BodyPart::LEFT_ARM:
-				if (u < 0.40f && v >= 0.20f && v <= 0.65f) keepPixel = true;
-				break;
-			case BodyPart::RIGHT_ARM:
-				if (u > 0.60f && v >= 0.20f && v <= 0.65f) keepPixel = true;
-				break;
-			case BodyPart::LEFT_LEG:
-				if (u < 0.50f && v > 0.60f) keepPixel = true;
-				break;
-			case BodyPart::RIGHT_LEG:
-				if (u >= 0.50f && v > 0.60f) keepPixel = true;
-				break;
-			default:
-				break;
-			}
-
-			// Jeœli piksel nie nale¿y do wybranej koñczyny, robimy go w 100% przezroczystym
-			if (!keepPixel)
-			{
-				ImageDrawPixel(&limbImg, x, y, BLANK);
-			}
-		}
-	}
-
-	// 3. Zamieniamy przetworzony obrazek na tymczasow¹ teksturê dla GPU
-	Texture2D resultTex = LoadTextureFromImage(limbImg);
-	UnloadImage(limbImg); // zwalniamy pamiêæ RAM obrazka pomocniczego
-
-	return resultTex;
-}
-
 std::pair<float, int> GetOutlineParams(BodyPart part, float frameHeight)
 {
 	switch (part)
@@ -244,42 +189,6 @@ void DrawExploration(exploration* exp)
 			switch (current_id)
 			{
 			case 1:
-			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.4f, pos.z };
-				DrawBillboard(exp->camera, textures.skeleton, draw_pos, 3.0f, WHITE);
-				break;
-			}
-			case 2:
-			{
-				Vector3 draw_pos = { pos.x, pos.y, pos.z };
-				DrawBillboard(exp->camera, textures.goblin, draw_pos, 2.0f, WHITE);
-				break;
-			}
-			case 3:
-			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.63f, pos.z };
-				DrawBillboard(exp->camera, textures.troll, draw_pos, 3.5f, WHITE);
-				break;
-			}
-			case 4:
-			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.3f, pos.z };
-				DrawBillboard(exp->camera, textures.bandits, draw_pos, 2.8f, WHITE);
-				break;
-			}
-			case 5:
-			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.45f, pos.z };
-				DrawBillboard(exp->camera, textures.guard, draw_pos, 3.0f, WHITE);
-				break;
-			}
-			case 6:
-			{
-				Vector3 draw_pos = { pos.x, pos.y + 0.55f, pos.z };
-				DrawBillboard(exp->camera, textures.dragon, draw_pos, 3.5f, WHITE);
-				break;
-			}
-			case 10:
 			{
 				auto params = enemy->get_render_params(textures.ghoul);
 
@@ -509,7 +418,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			DrawRectangleLinesEx(helm_slot, 2.0f, YELLOW);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				p.equipped_helm->use(&p, -1);
+				p.equipped_helm->use(&p);
 			}
 		}
 	}
@@ -525,27 +434,26 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			DrawRectangleLinesEx(weapon_slot, 2.0f, YELLOW);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				p.equipped_weapon->use(&p, -1);
+				p.equipped_weapon->use(&p);
 			}
 		}
 	}
 
-	//// --- 3. TARCZA ---
-	//if (p.equipped_shield != nullptr)
-	//{
-	//	Texture2D* icon = p.equipped_shield->get_icon();
-	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-	//	DrawTexturePro(*icon, source_rec, shield_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+	if (p.equipped_shield != nullptr)
+	{
+		Texture2D* icon = p.equipped_shield->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, shield_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
 
-	//	if (CheckCollisionPointRec(mouse_pos, shield_slot))
-	//	{
-	//		DrawRectangleLinesEx(shield_slot, 2.0f, YELLOW);
-	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-	//		{
-	//			p.equipped_shield->use(&p, -1);
-	//		}
-	//	}
-	//}
+		if (CheckCollisionPointRec(mouse_pos, shield_slot))
+		{
+			DrawRectangleLinesEx(shield_slot, 2.0f, YELLOW);
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				p.equipped_shield->use(&p);
+			}
+		}
+	}
 
 
 	if (p.equipped_vest != nullptr)
@@ -559,7 +467,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			DrawRectangleLinesEx(vest_slot, 2.0f, YELLOW);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				p.equipped_vest->use(&p, -1);
+				p.equipped_vest->use(&p);
 			}
 		}
 	}
@@ -575,7 +483,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			DrawRectangleLinesEx(gloves_slot, 2.0f, YELLOW);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				p.equipped_gauntlets->use(&p, -1);
+				p.equipped_gauntlets->use(&p);
 			}
 		}
 	}
@@ -591,7 +499,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			DrawRectangleLinesEx(boots_slot, 2.0f, YELLOW);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				p.equipped_boots->use(&p, -1);
+				p.equipped_boots->use(&p);
 			}
 		}
 	}
@@ -599,7 +507,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//// --- 7. AKCESORIUM 1 ---
 	//if (p.equipped_accessory_1 != nullptr)
 	//{
-	//	Texture2D* icon = p.equipped_accessory_1->get_icon();
+	//	Texture2D* icon = p.equipped_accessory_1->icon_texture;
 	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
 	//	DrawTexturePro(*icon, source_rec, accessory_1, { 0.0f, 0.0f }, 0.0f, WHITE);
 
@@ -608,7 +516,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//		DrawRectangleLinesEx(accessory_1, 2.0f, YELLOW);
 	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	//		{
-	//			p.equipped_accessory_1->use(&p, -1);
+	//			p.equipped_accessory_1->use(&p);
 	//		}
 	//	}
 	//}
@@ -616,7 +524,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//// --- 8. AKCESORIUM 2 ---
 	//if (p.equipped_accessory_2 != nullptr)
 	//{
-	//	Texture2D* icon = p.equipped_accessory_2->get_icon();
+	//	Texture2D* icon = p.equipped_accessory_2->icon_texture;
 	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
 	//	DrawTexturePro(*icon, source_rec, accessory_2, { 0.0f, 0.0f }, 0.0f, WHITE);
 
@@ -625,7 +533,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//		DrawRectangleLinesEx(accessory_2, 2.0f, YELLOW);
 	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	//		{
-	//			p.equipped_accessory_2->use(&p, -1);
+	//			p.equipped_accessory_2->use(&p);
 	//		}
 	//	}
 	//}
@@ -633,7 +541,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//// --- 9. AKCESORIUM 3 ---
 	//if (p.equipped_accessory_3 != nullptr)
 	//{
-	//	Texture2D* icon = p.equipped_accessory_3->get_icon();
+	//	Texture2D* icon = p.equipped_accessory_3->icon_texture;
 	//	Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
 	//	DrawTexturePro(*icon, source_rec, accessory_3, { 0.0f, 0.0f }, 0.0f, WHITE);
 
@@ -642,7 +550,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//		DrawRectangleLinesEx(accessory_3, 2.0f, YELLOW);
 	//		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	//		{
-	//			p.equipped_accessory_3->use(&p, -1);
+	//			p.equipped_accessory_3->use(&p);
 	//		}
 	//	}
 	//}
@@ -652,10 +560,10 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	bool food_button_isHovered = CheckCollisionPointRec(mouse_pos, food_button);
 	bool books_button_isHovered = CheckCollisionPointRec(mouse_pos, books_button);
 
-	
+
 	p.sort_bag();
 
-	
+
 
 	if (equipment_button_isHovered)
 	{
@@ -718,12 +626,15 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	bool is_item_hovered;
 	if (inv->equipment_tab == true)
 	{
+		int renderIndex = 0;
 		for (int i = 0; i < equipment.size(); i++)
 		{
+			if (equipment[i]->is_equipped()) continue;
+
 			item_icon = *(equipment[i]->icon_texture);
 
-			int col = i / 8;
-			int row = i % 8;
+			int col = renderIndex / 8;
+			int row = renderIndex % 8;
 			Rectangle itemRect = {
 				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
 				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
@@ -732,38 +643,39 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			};
 			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			std::string label = equipment[i]->get_name();
-
 			if (is_item_hovered)
 			{
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 				{
-					equipment[i]->use(&p, -1);
+					equipment[i]->use(&p);
+					p.sort_bag();
+					break;
 				}
 			}
-			if (item_icon.id > 0)
+			if (!equipment[i]->is_equipped())
 			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+				if (item_icon.id > 0)
+				{
+					float scale = (float)(btnHeight - 10) / item_icon.height;
+					DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+				}
+
+				if (is_item_hovered)
+				{
+					std::string label = equipment[i]->get_name();
+					DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 50, DARKBLUE);
+					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 36, 1, WHITE);
+				}
 			}
-			if (equipment[i]->is_equipped())
-			{
-				
-			}
-			if (CheckCollisionPointRec(mouse_pos, itemRect))
-			{
-				DrawRectangle(itemRect.x+btnWidth, itemRect.y, 180, 50, DARKBLUE);
-				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x+50, itemRect.y }, 36, 1, WHITE);
-			}
+			renderIndex++;
 		}
 	}
 	else if (inv->items_tab == true)
 	{
-		int itemToUse = -1;
-
 		for (int i = 0; i < other_items.size(); i++)
 		{
 			item_icon = *(other_items[i]->icon_texture);
+
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -772,42 +684,36 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				(float)btnWidth,
 				(float)btnHeight
 			};
-			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			std::string label = other_items[i]->get_name();
-			if (is_item_hovered)
+			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
+			if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					other_items[i]->use(&p, -1);
-				}
+				other_items[i]->use(&p);
+				p.sort_bag();
+				break;
 			}
+
 			if (item_icon.id > 0)
 			{
 				float scale = (float)(btnHeight - 10) / item_icon.height;
 				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
 			}
 
-			if (CheckCollisionPointRec(mouse_pos, itemRect))
+			if (is_item_hovered)
 			{
+				std::string label = other_items[i]->get_name();
 				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
-		}
-		if (itemToUse != -1)
-		{
-			other_items[itemToUse]->use(&p, -1);
-			p.sort_bag();
-			return;
 		}
 	}
 	else if (inv->food_tab == true)
 	{
-		int itemToUse = -1;
-
 		for (int i = 0; i < food.size(); i++)
 		{
 			item_icon = *(food[i]->icon_texture);
+
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -816,43 +722,36 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				(float)btnWidth,
 				(float)btnHeight
 			};
-			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			std::string label = food[i]->get_name();
-			if (is_item_hovered)
+			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
+			if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					food[i]->use(&p, -1);
-				}
+				food[i]->use(&p);
+				p.sort_bag();
+				break;
 			}
+
 			if (item_icon.id > 0)
 			{
 				float scale = (float)(btnHeight - 10) / item_icon.height;
 				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
 			}
 
-			if (CheckCollisionPointRec(mouse_pos, itemRect))
+			if (is_item_hovered)
 			{
+				std::string label = food[i]->get_name();
 				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
 		}
-		if (itemToUse != -1)
-		{
-			food[itemToUse]->use(&p, -1);
-			p.sort_bag();
-			return;
-		}
-
 	}
 	else if (inv->books_tab == true)
 	{
-		int itemToUse = -1;
-
 		for (int i = 0; i < books.size(); i++)
 		{
 			item_icon = *(books[i]->icon_texture);
+
 			int row = i / 5;
 			int col = i % 5;
 			Rectangle itemRect = {
@@ -861,41 +760,43 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				(float)btnWidth,
 				(float)btnHeight
 			};
-			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			std::string label = books[i]->get_name();
-			if (is_item_hovered)
+			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
+			if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					books[i]->use(&p, -1);
-				}
+				books[i]->use(&p);
+				p.sort_bag();
+				break;
 			}
+
 			if (item_icon.id > 0)
 			{
 				float scale = (float)(btnHeight - 10) / item_icon.height;
 				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
 			}
-			if(CheckCollisionPointRec(mouse_pos, itemRect))
+
+			if (is_item_hovered)
 			{
+				std::string label = books[i]->get_name();
 				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
-			
 		}
-		if (itemToUse != -1)
-		{
-			books[itemToUse]->use(&p, -1);
-			p.sort_bag();
-			return;
-		}
-
 	}
 }
 
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 {
+	const int GAME_WIDTH = 1920;
+	const int GAME_HEIGHT = 1080;
+
+	int window_w = GAME_WIDTH / 2;
+	int window_h = GAME_HEIGHT / 2;
+	int window_x_start = GAME_WIDTH / 2 - window_w / 2; 
+	int windows_y_start = GAME_HEIGHT / 2 - window_h / 2;
+
 	Texture2D item_icon;
 	Vector2 mouse_pos = GetVirtualMousePosition();
 
@@ -906,24 +807,48 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 	std::vector<item*>& target_loot = (!current_chest->enemy_loot.empty()) ? current_chest->enemy_loot : current_chest->chest_loot;
 
-	
 	if (target_loot.empty())
 	{
 		is_open = false;
 		return true;
 	}
-	
-	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
-	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
 
-	int startX = 140;
-	int startY = 180;
-	int btnWidth = 60;
-	int btnHeight = 60;
-	int padding = 30;
+	DrawRectangle(window_x_start, windows_y_start, window_w, window_h, Fade(BLACK, 0.85f));
+	DrawRectangleLines(window_x_start, windows_y_start, window_w, window_h, RAYWHITE);
 
-	if (GuiButton({ 520,550,200,60 }, "Wez wszystko")) {
-		for (auto* it : target_loot) 
+	Rectangle closeBtnRect = {
+		(float)(window_x_start + window_w - 55),
+		(float)(windows_y_start + 15),
+		40.0f,
+		40.0f
+	};
+	bool is_close_hovered = CheckCollisionPointRec(mouse_pos, closeBtnRect);
+
+	DrawRectangleRec(closeBtnRect, is_close_hovered ? RED : MAROON);
+	DrawRectangleLinesEx(closeBtnRect, 1, RAYWHITE);
+	DrawTextEx(cabin_sketch_font, "X", { closeBtnRect.x + 12, closeBtnRect.y + 5 }, 28, 1, WHITE);
+
+	if (is_close_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		is_open = false;
+		return true;
+	}
+
+	Rectangle takeAllRect = {
+		(float)(window_x_start + (window_w - 210) / 2),
+		(float)(windows_y_start + window_h - 100),
+		200.0f,
+		80.0f
+	};
+	bool is_take_all_hovered = CheckCollisionPointRec(mouse_pos, takeAllRect);
+
+	DrawRectangleRec(takeAllRect, is_take_all_hovered ? DARKGRAY : DARKGREEN);
+	DrawRectangleLinesEx(takeAllRect, 1, RAYWHITE);
+	DrawTextEx(cabin_sketch_font, "Take all", { takeAllRect.x + 12, takeAllRect.y + 20 }, 40, 1, WHITE);
+
+	if (is_take_all_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		for (auto* it : target_loot)
 		{
 			if (it != nullptr)
 			{
@@ -936,22 +861,26 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 		return true;
 	}
 
-	if (GuiButton({ 1000,100,50,50 }, "X")) {
-		is_open = false;
-		return true;
-	}
+	int startX = window_x_start + 60;
+	int startY = windows_y_start + 80;
+	int btnWidth = 60;
+	int btnHeight = 60;
+	int padding = 25;
 
 	item* clicked_item = nullptr;
 
 	for (int i = 0; i < target_loot.size(); i++)
 	{
-		item_icon = *target_loot[i]->icon_texture;
 		if (target_loot[i] == nullptr)
 		{
 			continue;
 		}
-		int row = i / 5;
-		int col = i % 5;
+
+		item_icon = *target_loot[i]->icon_texture;
+
+		int row = i / 6;
+		int col = i % 6;
+
 		Rectangle itemRect = {
 			(float)(startX + col * (btnWidth + padding)),
 			(float)(startY + row * (btnHeight + padding)),
@@ -959,40 +888,48 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 			(float)btnHeight
 		};
 
-		std::string label = target_loot[i]->get_name();
+		bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-		if (GuiButton(itemRect, ""))
+		DrawRectangleRec(itemRect, is_item_hovered ? GRAY : DARKGRAY);
+		DrawRectangleLinesEx(itemRect, 1, RAYWHITE);
+
+		if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
 			clicked_item = target_loot[i];
 			break;
 		}
+
 		if (item_icon.id > 0)
 		{
 			float scale = (float)(btnHeight - 10) / item_icon.height;
 			DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
 		}
-		if (CheckCollisionPointRec(mouse_pos, itemRect))
+
+		if (is_item_hovered)
 		{
-			DrawRectangle(itemRect.x, itemRect.y - 50, 120, 40, DARKBLUE);
-			DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x, itemRect.y - 50 }, 22, 1, WHITE);
+			std::string label = target_loot[i]->get_name();
+			DrawRectangle(itemRect.x, itemRect.y - 45, 140, 35, DARKBLUE);
+			DrawRectangleLines(itemRect.x, itemRect.y - 45, 140, 35, WHITE);
+			DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 5, itemRect.y - 40 }, 20, 1, WHITE);
 		}
 	}
+
 	if (clicked_item != nullptr)
 	{
 		exp->bohater.take_item(current_chest, clicked_item);
 
-		if (target_loot.empty()) {
+		if (target_loot.empty())
+		{
 			is_open = false;
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
 
 
-//RANGES
 void draw_commentary()
 {
 	if (!gamestate::gameLogs.empty())
@@ -1033,7 +970,6 @@ void draw_dungeon_map(exploration* exp, float player_x, float player_y)
 	int player_x_pos_int = (int)std::floor(exact_player_x_pos);
 	int player_y_pos_int = (int)std::floor(exact_player_y_pos);
 
-	//Srodek ramki
 	int center_box_x = 640;
 	int center_box_y = 360;
 
@@ -1085,35 +1021,82 @@ void draw_buttons(exploration* e)
 
 		
 
-
 void gamestate::draw_menu()
 {
 	if (IsKeyPressed(KEY_ESCAPE))
-	{ 
+	{
 		showMenu = !showMenu;
 	}
 
-	if (showMenu)
+	if (!showMenu) return;
+
+	const int GAME_WIDTH = 1920;
+	const int GAME_HEIGHT = 1080;
+
+	int windowWidth = GAME_WIDTH / 3.5f; 
+	int windowHeight = GAME_HEIGHT / 2.0f;
+	int windowX = (GAME_WIDTH - windowWidth) / 2;
+	int windowY = (GAME_HEIGHT - windowHeight) / 2;
+
+	DrawRectangle(windowX, windowY, windowWidth, windowHeight, Fade(BLACK, 0.85f));
+	DrawRectangleLines(windowX, windowY, windowWidth, windowHeight, RAYWHITE);
+
+	Vector2 mouse_pos = GetVirtualMousePosition();
+
+	int btnWidth = windowWidth * 0.75f;
+	int btnHeight = 60;
+	int btnX = windowX + (windowWidth - btnWidth) / 2;
+
+	Rectangle loadBtnRect = { (float)btnX, (float)(windowY + windowHeight * 0.22f), (float)btnWidth, (float)btnHeight };
+	bool is_load_hovered = CheckCollisionPointRec(mouse_pos, loadBtnRect);
+
+	DrawRectangleRec(loadBtnRect, is_load_hovered ? GRAY : DARKGRAY);
+	DrawRectangleLinesEx(loadBtnRect, 1, RAYWHITE);
+
+	Vector2 loadTextSize = MeasureTextEx(cabin_sketch_font, "Wczytaj Gre", 26, 1);
+	DrawTextEx(cabin_sketch_font, "Wczytaj Gre", { loadBtnRect.x + (btnWidth - loadTextSize.x) / 2, loadBtnRect.y + (btnHeight - loadTextSize.y) / 2 }, 26, 1, WHITE);
+
+	if (is_load_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
-		DrawRectangle(350, 100, 580, 550, Fade(BLACK, 0.8));
-		DrawRectangleLines(350, 100, 580, 550, LIGHTGRAY);
-		if (!can_save_game)
+		load_game();
+	}
+
+	Rectangle saveBtnRect = { (float)btnX, (float)(windowY + windowHeight * 0.42f), (float)btnWidth, (float)btnHeight };
+	Vector2 saveTextSize = MeasureTextEx(cabin_sketch_font, "Zapisz Gre", 26, 1);
+
+	if (can_save_game)
+	{
+		bool is_save_hovered = CheckCollisionPointRec(mouse_pos, saveBtnRect);
+
+		DrawRectangleRec(saveBtnRect, is_save_hovered ? GRAY : DARKGRAY);
+		DrawRectangleLinesEx(saveBtnRect, 1, RAYWHITE);
+		DrawTextEx(cabin_sketch_font, "Zapisz Gre", { saveBtnRect.x + (btnWidth - saveTextSize.x) / 2, saveBtnRect.y + (btnHeight - saveTextSize.y) / 2 }, 26, 1, WHITE);
+
+		if (is_save_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
-			GuiDisable();
-		}
-		if (GuiButton({ 550, 325, 200, 80 }, "Zapisz Gre")) {
 			save_game();
 		}
-		if (GuiButton({ 550, 200, 200, 80 }, "Wczytaj Gre")) {
-			load_game();
-		}
-		if (!can_save_game)
-		{
-			GuiEnable();
-		}
 	}
-	
-		
+	else
+	{
+		DrawRectangleRec(saveBtnRect, Fade(BLACK, 0.6f));
+		DrawRectangleLinesEx(saveBtnRect, 1, GRAY);
+		DrawTextEx(cabin_sketch_font, "Zapisz Gre", { saveBtnRect.x + (btnWidth - saveTextSize.x) / 2, saveBtnRect.y + (btnHeight - saveTextSize.y) / 2 }, 26, 1, GRAY);
+	}
+
+	Rectangle closeBtnRect = { (float)btnX, (float)(windowY + windowHeight * 0.62f), (float)btnWidth, (float)btnHeight };
+	bool is_close_hovered = CheckCollisionPointRec(mouse_pos, closeBtnRect);
+
+	DrawRectangleRec(closeBtnRect, is_close_hovered ? GRAY : DARKGRAY);
+	DrawRectangleLinesEx(closeBtnRect, 1, RAYWHITE);
+
+	Vector2 closeTextSize = MeasureTextEx(cabin_sketch_font, "Powrot", 26, 1);
+	DrawTextEx(cabin_sketch_font, "Powrot", { closeBtnRect.x + (btnWidth - closeTextSize.x) / 2, closeBtnRect.y + (btnHeight - closeTextSize.y) / 2 }, 26, 1, WHITE);
+
+	if (is_close_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		showMenu = false;
+	}
 }
 
 void DrawGlobalAnimation()

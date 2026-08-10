@@ -86,7 +86,13 @@ struct textureManager {
 	Texture2D leather_helm;
 	Texture2D iron_helm;
 
+
+	Texture2D wooden_shield;
+	Texture2D steel_shield;
+
 	Texture2D apple;
+
+
 
 	Texture2D wall_tile_tex;
 	Texture2D floor_tile_tex;
