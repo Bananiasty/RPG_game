@@ -9,7 +9,7 @@
 #include "inventory_class.h"
 
 
-enum class BodyPart { NONE, TORSO, HEAD, LEFT_ARM, RIGHT_ARM, LEFT_LEG, RIGHT_LEG };
+
 
 class character
 {
@@ -17,20 +17,16 @@ class character
 friend class item;
 protected:
 	std::string name;
-	int health, base_defense, base_damage;
+	int base_defense, base_damage;
 	int	block_chance, crit_chance, dodge_chance;
 	int reduced_head_damage;
-	int max_health;
+	int current_health, max_health;
 
 	Texture2D grafika;
 	
 	float rotation;
 
-	bool has_head = true;
-	bool has_left_arm = true;
-	bool has_right_arm = true;
-	bool has_left_leg = true;
-	bool has_right_leg = true;
+
 
 	BodyPart hovered_part = BodyPart::NONE;
 
@@ -49,6 +45,8 @@ protected:
 
 	
 public:
+
+	limbs_struct limbs;
 	Vector3 position;
 	
 	bool is_guard = false;
@@ -66,20 +64,21 @@ public:
 
 
 	
-
+	BodyPart queued_hit_part = BodyPart::NONE;
 	float queued_damage = 0.0;
 
-	character(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
 
-	bool is_dead();
+	character(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
 
-	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard);
+	virtual bool is_dead() = 0;
+
+	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part);
 
 	std::pair<int, bool> calculate_dmg();
 
 	std::string get_name() { return name; }
 	
-	int get_health() { return health; }
+	int get_health() { return current_health; }
 	int get_max_health() { return max_health; }
 	//int get_max_mana() { return max_mana; }
 	int get_damage() { return base_damage; }
@@ -89,46 +88,28 @@ public:
 	int get_dodge_chance() { return dodge_chance; }
 	int get_reduced_head_damage() { return reduced_head_damage; }
 
+
 	void set_max_health(int val) { max_health = val; }
+	void set_health(int val) { current_health = val; }
 	//void set_max_mana(int val) { max_mana = val; }
 
 	Vector3 get_position() const { return position; }
 	void set_position(Vector3 new_pos) { position = new_pos; }
 
-	bool get_has_head() const { return has_head; }
-	bool get_has_left_arm() const { return has_left_arm; }
-	bool get_has_right_arm() const { return has_right_arm; }
-	bool get_has_left_leg() const { return has_left_leg; }
-	bool get_has_right_leg() const { return has_right_leg; }
+	limbs_struct get_limbs() const { return limbs; }
+	bool get_has_head() const { return limbs.head.is_intact; }
+	bool get_has_left_arm() const { return limbs.left_arm.is_intact; }
+	bool get_has_right_arm() const { return limbs.right_arm.is_intact; }
+	bool get_has_left_leg() const { return limbs.left_leg.is_intact; }
+	bool get_has_right_leg() const { return limbs.right_leg.is_intact; }
 
-	void set_has_head(bool state) { has_head = state; }
-	void set_has_left_arm(bool state) { has_left_arm = state; }
-	void set_has_right_arm(bool state) { has_right_arm = state; }
-	void set_has_left_leg(bool state) { has_left_leg = state; }
-	void set_has_right_leg(bool state) { has_right_leg = state; }
-	
-	void draw_composite(Vector2 screen_pos, int angle_index) const {
+	void set_has_head(bool state) { limbs.head.is_intact = state; }
+	void set_has_left_arm(bool state) { limbs.left_arm.is_intact = state; }
+	void set_has_right_arm(bool state) { limbs.right_arm.is_intact = state; }
+	void set_has_left_leg(bool state) { limbs.left_leg.is_intact = state; }
+	void set_has_right_leg(bool state) { limbs.right_leg.is_intact = state; }
 
-		DrawTextureRec(grafika, get_limb_rec(angle_index, 0), screen_pos, WHITE);
-
-		Vector2 limb_screen_pos = { screen_pos.x, screen_pos.y - FRAME_HEIGHT };
-
-		if (has_head) {
-			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
-		}
-		if (has_left_arm) {
-			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
-		}
-		if (has_right_arm) {
-			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
-		}
-		if (has_left_leg) {
-			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
-		}
-		if (has_right_leg) {
-			DrawTextureRec(grafika, get_limb_rec(angle_index, 1), limb_screen_pos, WHITE);
-		}
-	}
+	void recalculate_max_health();
 };
 
 class player :public character
@@ -141,7 +122,7 @@ private:
 
 	
 public:
-	player(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
+	player(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
 
 	enemy* current_enemy = nullptr;
 	inventory* bag;
@@ -161,7 +142,7 @@ public:
 
 	int xp_from_enemy_dif;
 
-	
+	bool is_dead() override;
 
 	void player_guard();
 	void player_attack();
@@ -199,9 +180,13 @@ private:
 	int last_frame_index = 0;
 	BodyPart current_hovered_part = BodyPart::NONE; 
 
+	bool can_survive_without_head = false;
+
 public:
 
 	virtual ~enemy() = default;
+
+	bool is_dead() override;
 
 	virtual BodyPart calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera);
 
@@ -214,9 +199,8 @@ public:
 
 	virtual enemy* clone() const = 0;
 
-
+	BodyPart select_random_target_part(const character& target);
 	float get_rotation() const { return rotation; }
-	void set_rotation(float rot) { rotation = rot; }
 
 	int get_last_frame() const { return last_frame_index; }
 	void set_last_frame(int frame) { last_frame_index = frame; }
@@ -225,6 +209,7 @@ public:
 	Vector3 get_forward() const { return this->forward; }
 	bool is_moving() const { return moving; }
 	void set_is_moving(bool state) { moving = state; }
+	void set_can_survive_without_head(bool status) { can_survive_without_head = status; }
 
 	void set_target_tile(Vector3 tile) { target_tile = tile; }
 	Vector3 get_target_tile() const { return target_tile; }

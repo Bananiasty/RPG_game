@@ -99,37 +99,77 @@ BodyPart enemy::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, 
 
         localX = Clamp(localX, 0.0f, 1.0f);
         localY = Clamp(localY, 0.0f, 1.0f);
+        if(this->limbs.torso.is_intact)
+        { 
+            if (this->limbs.head.is_intact && localY < 0.20f)
+            {
+                return BodyPart::HEAD;
+            }
+            else if (localY < 0.60f)
+            {
+                if (this->limbs.left_arm.is_intact && localX < 0.30f)
+                {
+                    return BodyPart::LEFT_ARM;
+                }
+                else if (this->limbs.right_arm.is_intact && localX > 0.70f)
+                {
+                    return BodyPart::RIGHT_ARM;
+                }
+                else
+                {
+                    return BodyPart::TORSO;
+                }
+            }
+            else
+            {
+                if (this->limbs.left_leg.is_intact && localX < 0.50f)
+                {
+                    return BodyPart::LEFT_LEG;
+                }
 
-        if (localY < 0.20f)
-        {   
-            return BodyPart::HEAD;
+                else if (this->limbs.right_leg.is_intact && localX > 0.50f)
+                {
+                    return BodyPart::RIGHT_LEG;
+                }
+            }
         }
-        else if (localY < 0.60f)
-        {
-            if (localX < 0.30f)      return BodyPart::LEFT_ARM;
-            else if (localX > 0.70f) return BodyPart::RIGHT_ARM;
-            else                     return BodyPart::TORSO;
-        }
-        else
-        {
-            if (localX < 0.50f)      return BodyPart::LEFT_LEG;
-            else                     return BodyPart::RIGHT_LEG;
-        }
+        
     }
 
     return BodyPart::NONE;
+}
+
+BodyPart enemy::select_random_target_part(const character& target)
+{
+    std::vector<BodyPart> valid_parts;
+
+    if (target.limbs.torso.is_intact)     valid_parts.push_back(BodyPart::TORSO);
+    if (target.limbs.head.is_intact)      valid_parts.push_back(BodyPart::HEAD);
+    if (target.limbs.left_arm.is_intact)  valid_parts.push_back(BodyPart::LEFT_ARM);
+    if (target.limbs.right_arm.is_intact) valid_parts.push_back(BodyPart::RIGHT_ARM);
+    if (target.limbs.left_leg.is_intact)  valid_parts.push_back(BodyPart::LEFT_LEG);
+    if (target.limbs.right_leg.is_intact) valid_parts.push_back(BodyPart::RIGHT_LEG);
+
+    if (valid_parts.empty())
+    {
+        return BodyPart::TORSO;
+    }
+
+    int randomIndex = GetRandomValue(0, (int)valid_parts.size() - 1);
+    return valid_parts[randomIndex];
 }
 
 int enemy::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
     {
-        this->take_damage(target.queued_damage, &target, false, false);
+        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part);
         target.queued_damage = 0.0;
+		target.queued_hit_part = BodyPart::NONE;
     }
 
     auto [e_dmg, crit] = this->calculate_dmg();
-    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard);
+    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, target.queued_hit_part);
 
     target.is_guard = false;
 

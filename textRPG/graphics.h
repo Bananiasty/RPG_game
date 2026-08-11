@@ -2,6 +2,9 @@
 #include "character.h"
 #include "gamestates.h"
 
+constexpr float GAME_WIDTH = 1920.0f;
+constexpr float GAME_HEIGHT = 1080.0f;
+
 void draw_login_screen(const std::string& current_name, bool has_error);
 
 void graphics_init();

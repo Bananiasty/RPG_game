@@ -12,6 +12,7 @@
 #include "textureManager.h"
 #include <ranges>
 #include <utility>
+#include <map>	
 
 extern Font cabin_sketch_font;
 extern Font cabin_sketch_font_bold;
@@ -19,7 +20,7 @@ float screen_width = 0.0f;
 float screen_height = 0.0f;
 
 
-
+	
 
 void draw_game_scene(exploration* exp)
 {
@@ -197,13 +198,61 @@ void DrawExploration(exploration* exp)
 				enemy->set_last_frame(frameIndex);
 
 				BodyPart hoveredPart = enemy->get_hovered_body_part();
+				const auto& limbs = enemy->get_limbs();
+
+				SetShaderValue(textures.fogShader, GetShaderLocation(textures.fogShader, "viewPos"), &exp->camera.position, SHADER_UNIFORM_VEC3);
+
+				int sideLimitLoc = GetShaderLocation(textures.fogShader, "sideLimit");
 
 				BeginShaderMode(textures.fogShader);
-				for (int row = 0; row < 4; ++row)
+
+				if (limbs.torso.is_intact)
 				{
-					Rectangle rowSourceRec = { frameIndex * params.frameWidth, row * params.frameHeight, params.frameWidth, params.frameHeight };
+					int sideLimit = 0;
+					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
+
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 0 * params.frameHeight, params.frameWidth, params.frameHeight };
 					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
 				}
+
+				if (limbs.head.is_intact)
+				{
+					int sideLimit = 0;
+					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
+
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 1 * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
+				}
+
+				if (limbs.left_arm.is_intact || limbs.right_arm.is_intact)
+				{
+					int sideLimit = 0;
+					if (!limbs.left_arm.is_intact)      sideLimit = 1;
+					else if (!limbs.right_arm.is_intact) sideLimit = 2;
+
+					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
+
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 2 * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
+				}
+
+				if (limbs.left_leg.is_intact || limbs.right_leg.is_intact)
+				{
+					int sideLimit = 0;
+					if (!limbs.left_leg.is_intact)      sideLimit = 1;
+					else if (!limbs.right_leg.is_intact) sideLimit = 2;
+
+					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
+
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 3 * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
+				}
+				int resetSide = 0;
+				SetShaderValue(textures.fogShader, sideLimitLoc, &resetSide, SHADER_UNIFORM_INT);
 				EndShaderMode();
 
 				if (hoveredPart != BodyPart::NONE)
@@ -212,11 +261,13 @@ void DrawExploration(exploration* exp)
 					Rectangle outlineRec = { frameIndex * params.frameWidth, rowY, params.frameWidth, params.frameHeight };
 
 					DrawOutlineBillboard(exp->camera, textures.ghoul, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
+
 				}
 				break;
 			}
 			}
 		}
+	}
 
 
 
@@ -269,14 +320,11 @@ void DrawExploration(exploration* exp)
 			}
 		}
 
-	}
 }
+
 
 void draw_battle_ui(battle* fight)
 {
-	const int GAME_WIDTH = 1920;
-	const int GAME_HEIGHT = 1080;
-
 	Vector2 mouse = GetVirtualMousePosition();
 
 	std::string e = fight->get_enemy_name();
@@ -353,8 +401,6 @@ void DrawHUD(exploration* exp)
 
 void draw_inventory_ui(player& p, inventory_state* inv)
 {
-	const int GAME_WIDTH = 1920;
-	const int GAME_HEIGHT = 1080;
 
 	Texture2D inventory = textures.inventory_UI;
 	Texture2D item_icon;
@@ -789,8 +835,6 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 {
-	const int GAME_WIDTH = 1920;
-	const int GAME_HEIGHT = 1080;
 
 	int window_w = GAME_WIDTH / 2;
 	int window_h = GAME_HEIGHT / 2;
@@ -1002,11 +1046,6 @@ void draw_dungeon_map(exploration* exp, float player_x, float player_y)
 void draw_buttons(exploration* e) 
 {
 
-
-	const int GAME_WIDTH = 1920;
-	const int GAME_HEIGHT = 1080;
-
-
 	DrawRectangle(GAME_WIDTH * 0.8 , GAME_HEIGHT * 0.9, 50, 20, WHITE);
 	DrawText("I", GAME_WIDTH * 0.8 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 
@@ -1029,9 +1068,6 @@ void gamestate::draw_menu()
 	}
 
 	if (!showMenu) return;
-
-	const int GAME_WIDTH = 1920;
-	const int GAME_HEIGHT = 1080;
 
 	int windowWidth = GAME_WIDTH / 3.5f; 
 	int windowHeight = GAME_HEIGHT / 2.0f;

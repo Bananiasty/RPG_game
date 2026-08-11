@@ -20,14 +20,6 @@ void item::add_player_block_chance(player* c, int val)
 		c->block_chance += val;
 	};
 }
-void item::add_player_health(player* c, int val)
-{
-	if (c != nullptr)
-	{
-		c->max_health += val;
-		c->health += val;
-	};
-}
 void item::add_player_damage(player* c, int val)
 {
 	if (c != nullptr)
@@ -66,16 +58,7 @@ void item::reduce_player_defense(player* c, int val)
 			c->base_defense = 0;
 	};
 }
-void item::reduce_player_health(player* c, int val)
-{
-	if (c != nullptr)
-	{
-		c->health -= val;
-		c->max_health -= val;
-		if (c->health < 0)
-			c->health = 0;
-	};
-}
+
 
 
 void item::reduce_player_damage(player* c, int val)
@@ -119,9 +102,9 @@ void item::restore_player_health(player* c, int val)
 {
 	if (c != nullptr)
 	{
-		c->health += val;
+		c->current_health += val;
 		if(c->get_health() > c->get_max_health())
-			c->health = c->get_max_health();
+			c->current_health = c->get_max_health();
 	};
 	
 }

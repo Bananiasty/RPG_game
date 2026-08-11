@@ -3,7 +3,10 @@
 #include <vector>
 #include "raylib.h"
 #include "textureManager.h"
+#include <cstddef>
 
+enum class BodyPart { NONE, TORSO, HEAD, LEFT_ARM, RIGHT_ARM, LEFT_LEG, RIGHT_LEG };
+			
 
 class item;
 class enemy;
@@ -94,10 +97,83 @@ struct collisions
 };
 
 
+struct limb
+{
+	int hp = 1;
+	int max_hp = 1;
+	bool is_intact = true;
+
+	limb() = default;
+	limb(int max_val) : hp(max_val), max_hp(max_val), is_intact(true) {}
+	limb(int current_hp, int max_val, bool intact) : hp(current_hp), max_hp(max_val), is_intact(intact) {}
+
+	bool take_damage(int amount)
+	{
+		if (!is_intact) return false;
+
+		hp -= amount;
+		if (hp <= 0)
+		{
+			hp = 0;
+			is_intact = false;
+			return true;
+		}
+		return false;
+	}
+};
+struct limbs_struct
+{
+	limb head = 1;
+	limb torso = 1;
+	limb left_arm = 1;
+	limb right_arm = 1;
+	limb left_leg = 1;
+	limb right_leg = 1;
+
+	limbs_struct() = default;
+	limbs_struct(int h, int t, int la, int ra, int ll, int rl) : head(h), torso(t), left_arm(la), right_arm(ra), left_leg(ll), right_leg(rl) {}
+
+	limb& get_limb(BodyPart part)
+	{
+		switch (part)
+		{
+		case BodyPart::HEAD:
+			return head;
+		case BodyPart::TORSO:
+			return torso;
+		case BodyPart::LEFT_ARM:
+			return left_arm;
+		case BodyPart::RIGHT_ARM:
+			return right_arm;
+		case BodyPart::LEFT_LEG:
+			return left_leg;
+		case BodyPart::RIGHT_LEG:
+			return right_leg;
+		default:
+			return torso;
+		}
+	}
+	int get_total_max_hp() const
+	{
+		int total = 0;
+
+		if (head.is_intact)      total += head.max_hp;
+		if (torso.is_intact)     total += torso.max_hp;
+		if (left_arm.is_intact)  total += left_arm.max_hp;
+		if (right_arm.is_intact) total += right_arm.max_hp;
+		if (left_leg.is_intact)  total += left_leg.max_hp;
+		if (right_leg.is_intact) total += right_leg.max_hp;
+
+		return total;
+	}
+
+};
+
 struct enemy_config {
 	int id = -1;
 	std::string name = "";
-	int hp = 20;
+	int max_health;	
+	limbs_struct limbs;
 	int armor = 0;
 	int damage = 0;
 	int block_chance = 0;

@@ -219,7 +219,16 @@ void exploration::delete_enemy(enemy* target)
 {
     if (target != nullptr)
     {
+        for (auto& [id, node] : world_map)
+        {
+            if (node.enemy == target)
+            {
+                node.enemy = nullptr;
+            }
+        }
+
         std::erase(enemy_pool, target);
+
         delete target;
 
         bohater.current_enemy = nullptr;

@@ -104,12 +104,12 @@ void vest::use(player* c)
 
     if (was_equipped == false && this->item_equipped == true)
     {
-        add_player_health(c, this->add_health);
+        //add_player_health(c, this->add_health);
         c->equipped_vest = this;
     }
     else if (was_equipped == true && this->item_equipped == false)
     {
-        this->reduce_player_health(c, this->add_health);
+        //this->reduce_player_health(c, this->add_health);
         c->equipped_vest = nullptr;
     }
 }

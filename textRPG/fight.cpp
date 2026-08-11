@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include "graphics.h"
 #include "character.h"
 #include "inventory_class.h"
 #include "gamestates.h"
@@ -80,8 +81,7 @@ int battle::player_turn()
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hovered != BodyPart::NONE)
                 {
                     auto [p_dmg, crit] = p_ref.calculate_dmg();
-                    int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard);
-
+                    int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard, hovered);
                     this->waiting_for_enemy = true;
                     this->click_cooldown = true;
                     this->enemy_cooldown = 1.5;
@@ -112,7 +112,7 @@ int battle::player_turn()
                 global_fx.frame_count = p_ref.queued_frame_count;
                 global_fx.frame_time = p_ref.queued_frame_time;
 
-                Vector2 target_pos = { 680, 260 };
+                Vector2 target_pos = { GAME_WIDTH / 2.0f, GAME_HEIGHT / 2.0f };
                 global_fx.play(target_pos);
 
                 this->waiting_for_enemy = true;

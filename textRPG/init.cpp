@@ -12,8 +12,6 @@
 
 void exploration::player_stats_init(player* c)
 {
-	c->set_max_health(c->get_health());
-
 	auto& start_node = world_map[1];
 
 	float start_tile_x = start_node.room_x + (start_node.room_width / 2);
@@ -76,7 +74,7 @@ void exploration::loot_init()
 }
 void exploration::enemies_init()
 {
-	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .hp = 40, .armor = 0, .damage = 5, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .reduced_head_damage = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
+	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .max_health = 50, .limbs = {5, 50, 20, 20, 20, 20}, .armor = 0, .damage = 5, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .reduced_head_damage = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
 
 }
 void exploration::world_map_init()

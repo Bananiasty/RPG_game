@@ -9,14 +9,18 @@
 
 
 
-character::character(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
-    : name(n), health(hp), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
+character::character(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
+    : name(n), limbs(l), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
 {
-    max_health = hp;
+    this->position = pos;
+    this->rotation = rot;
+
+    this->recalculate_max_health();
+    this->current_health = this->max_health;
 };
 
-player::player(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, hp, bdef, bdmg, b_ch, c_ch, d_ch, rdh, g, { 0.0f, 0.0f, 0.0f }, rot)
+player::player(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
+    : character(n, l, bdef, bdmg, b_ch, c_ch, d_ch, rdh, g, pos, rot)
 {
     bag = new inventory();
     equipped_items = new inventory();
@@ -24,20 +28,20 @@ player::player(std::string n, int hp, int bdef, int bdmg, int b_ch, int c_ch, in
     inv_items = new inventory();
     food = new inventory();
     books = new inventory();
-    this->level = 1;
-    this->xp = 0;
+    this->level = level;
+    this->xp = xp;
     gold = 0;
+	
 
     queued_animation_texture = nullptr;
     queued_frame_count = 0;
     queued_frame_time = 0.0;
 };
 
-enemy::enemy(const enemy_config& config): 
-    id_number(config.id),
-    character(
+enemy::enemy(const enemy_config& config)
+    : character(
         config.name,
-        config.hp,
+		config.limbs,
         config.armor,
         config.damage,
         config.block_chance,
@@ -48,12 +52,11 @@ enemy::enemy(const enemy_config& config):
         config.position,
         config.rotation
     ),
-    
+    id_number(config.id),
     difficulty(config.level),
     intro_text(config.description)
 {
     this->position = config.position;
-
 }
 
 void player::set_name(const std::string& new_name)
@@ -75,9 +78,39 @@ bool player::validate_and_set_name(const std::string& new_name)
     return false;
 }
 
-bool character::is_dead()
+bool player::is_dead()
 {
-    return health <= 0;
+    if (!limbs.torso.is_intact)
+    {
+        return true;
+    }
+    if (!limbs.head.is_intact)
+    {
+        return true;
+    }
+    if (current_health <= 0)
+    {
+        return true;
+    }
+
+    return false;
+}
+bool enemy::is_dead()
+{
+    if (!limbs.torso.is_intact)
+    {
+        return true;
+    }
+    if (!limbs.head.is_intact && !can_survive_without_head)
+    {
+        return true;
+    }
+    if(current_health<=0)
+    {
+        return true;
+    }
+
+    return false;
 }
 
 std::pair<int, bool> character::calculate_dmg()
@@ -97,7 +130,7 @@ std::pair<int, bool> character::calculate_dmg()
     return std::make_pair(damage_amount, is_crit);
 }
 
-int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard)
+int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -143,8 +176,17 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
         else
             gamestate::gameLogs.push_back(TextFormat("Zadales %d obrazen", incoming_damage)); 
     }
-    
-    this->health -= incoming_damage;
+
+    if (incoming_damage > this->limbs.get_limb(hit_part).hp)
+    {
+		incoming_damage = this->limbs.get_limb(hit_part).hp;
+    }
+	this->limbs.get_limb(hit_part).take_damage(incoming_damage);
+	this->current_health -= incoming_damage;
+	if (this->limbs.get_limb(hit_part).is_intact == false)
+	{
+		this->recalculate_max_health();
+	}
     return incoming_damage;
 }
 
@@ -263,5 +305,12 @@ void player::sort_bag()
             break;
         }
     }
+}
+
+void character::recalculate_max_health()
+{
+    int max_hp = this->limbs.get_total_max_hp();
+    int max_hp_calc = (int)(max_hp * 0.8);
+	this->set_max_health(max_hp_calc);
 }
 
