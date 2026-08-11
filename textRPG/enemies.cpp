@@ -163,13 +163,13 @@ int enemy::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
     {
-        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part);
+        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
         target.queued_damage = 0.0;
 		target.queued_hit_part = BodyPart::NONE;
     }
 
     auto [e_dmg, crit] = this->calculate_dmg();
-    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, target.queued_hit_part);
+    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, target.queued_hit_part, this->gs);
 
     target.is_guard = false;
 

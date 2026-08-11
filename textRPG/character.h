@@ -7,9 +7,12 @@
 #include "struct.h"
 #include "raylib.h"
 #include "inventory_class.h"
+#include "gamestates.h"
 
 
 
+class gamestate;
+class exploration;
 
 class character
 {
@@ -45,6 +48,8 @@ protected:
 
 	
 public:
+	gamestate* gs;
+	exploration* exp;
 
 	limbs_struct limbs;
 	Vector3 position;
@@ -72,7 +77,7 @@ public:
 
 	virtual bool is_dead() = 0;
 
-	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part);
+	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
 
 	std::pair<int, bool> calculate_dmg();
 
@@ -87,6 +92,8 @@ public:
 	int get_crit_chance() { return crit_chance; }
 	int get_dodge_chance() { return dodge_chance; }
 	int get_reduced_head_damage() { return reduced_head_damage; }
+
+	Vector3 get_visual_position() const{return this->position;}
 
 
 	void set_max_health(int val) { max_health = val; }

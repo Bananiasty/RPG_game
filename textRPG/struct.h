@@ -214,6 +214,17 @@ struct SpriteRenderParams
 };
 SpriteRenderParams GetGhoulRenderParams(Vector3 entityPos, Texture2D texture);
 
+struct floating_text
+{
+	Vector3 hit_limb;
+	std::string text;
+	bool is_crit;
+	float max_lifetime = 1.0f;
+	float offsetY;
+	
+
+};
+
 
 
 

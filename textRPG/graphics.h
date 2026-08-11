@@ -39,3 +39,12 @@ inline Vector2 GetVirtualMousePosition()
 {
     return virtual_mouse_pos;
 }
+
+inline Vector2 GetWorldToVirtualScreen(Vector3 position, Camera3D camera, float gameWidth, float gameHeight)
+{
+    Vector2 windowPos = GetWorldToScreen(position, camera);
+    float scaleX = gameWidth / (float)GetScreenWidth();
+    float scaleY = gameHeight / (float)GetScreenHeight();
+
+    return Vector2{ windowPos.x * scaleX, windowPos.y * scaleY };
+}

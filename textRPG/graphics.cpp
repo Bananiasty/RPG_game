@@ -37,6 +37,8 @@ void draw_game_scene(exploration* exp)
 
 	EndMode3D();
 
+	exp->update_and_draw_floating_texts(exp->camera);
+
 	DrawHUD(exp);
 	 
 

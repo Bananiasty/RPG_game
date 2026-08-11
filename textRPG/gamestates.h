@@ -15,7 +15,11 @@ public:
 	virtual int update_state() = 0;
 	virtual ~gamestate() {}
 	virtual void draw() = 0;
+
 	static std::vector<std::string> gameLogs;
+	std::vector<floating_text> active_texts;
+	void spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit = false);
+	void update_and_draw_floating_texts(Camera3D current_camera);
 
 	bool showMenu = false;
 

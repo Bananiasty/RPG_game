@@ -4,6 +4,7 @@
 #include "gamestates.h"
 #include "struct.h"
 #include "raylib.h"
+#include "raymath.h"
 #include <utility>
 #include <regex>
 
@@ -130,29 +131,70 @@ std::pair<int, bool> character::calculate_dmg()
     return std::make_pair(damage_amount, is_crit);
 }
 
-int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part)
+int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> distr(1, 100);
+    static std::uniform_real_distribution<float> jitter(-0.05f, 0.05f);
 
     bool czy_to_gracz = (this == player_ptr);
-    
+
+    Vector3 text_pos;
+
+    if (impact_pos.x != 0.0f || impact_pos.y != 0.0f || impact_pos.z != 0.0f)
+    {
+        text_pos = impact_pos;
+    }
+    else
+    {
+        text_pos = this->get_visual_position();
+
+        switch (hit_part)
+        {
+        case BodyPart::HEAD:
+            text_pos.y += 1.8f;
+            break;
+        case BodyPart::TORSO:
+            text_pos.y += 1.2f;
+            break;
+        case BodyPart::LEFT_ARM:
+        case BodyPart::RIGHT_ARM:
+            text_pos.y += 1.2f;
+            break;
+        case BodyPart::LEFT_LEG:
+        case BodyPart::RIGHT_LEG:
+            text_pos.y += 0.5f;
+            break;
+        default:
+            text_pos.y += 1.2f;
+            break;
+        }
+    }
+
+    text_pos.y += 0.25f;
+    text_pos.x += jitter(gen);
+    text_pos.z += jitter(gen);
+
     if (distr(gen) <= this->get_dodge_chance())
     {
-        gamestate::gameLogs.push_back(TextFormat("Unik!"));
+        gamestate::gameLogs.push_back(TextFormat("Missed!"));
+        if (gs)
+        {
+            gs->spawn_floating_text(text_pos, "Missed!", false);
+        }
         return 0;
     }
 
     int final_dmg = dmg_amount;
     bool is_blocked = false;
-    
-    if (czy_to_gracz==true && is_guard==true)
+
+    if (czy_to_gracz && is_guard)
     {
         final_dmg /= 2;
         is_blocked = true;
     }
-    
+
     int incoming_damage = std::max(0, final_dmg - this->get_defense());
 
     if (is_blocked)
@@ -172,21 +214,29 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
     else
     {
         if (czy_to_gracz)
-            gamestate::gameLogs.push_back(TextFormat("Otrzymales %d obrazen", incoming_damage)); 
+            gamestate::gameLogs.push_back(TextFormat("Otrzymales %d obrazen", incoming_damage));
         else
-            gamestate::gameLogs.push_back(TextFormat("Zadales %d obrazen", incoming_damage)); 
+            gamestate::gameLogs.push_back(TextFormat("Zadales %d obrazen", incoming_damage));
     }
 
-    if (incoming_damage > this->limbs.get_limb(hit_part).hp)
+    if (gs)
     {
-		incoming_damage = this->limbs.get_limb(hit_part).hp;
+        std::string floating_str = std::to_string(incoming_damage);
+        gs->spawn_floating_text(text_pos, floating_str, is_crit);
     }
-	this->limbs.get_limb(hit_part).take_damage(incoming_damage);
-	this->current_health -= incoming_damage;
-	if (this->limbs.get_limb(hit_part).is_intact == false)
-	{
-		this->recalculate_max_health();
-	}
+
+    auto& target_limb = this->limbs.get_limb(hit_part);
+    int actual_limb_damage = std::min(incoming_damage, target_limb.hp);
+
+    target_limb.take_damage(actual_limb_damage);
+    this->current_health = std::max(0, this->current_health - actual_limb_damage);
+
+    if (!target_limb.is_intact)
+    {
+        this->recalculate_max_health();
+        this->current_health = std::min(this->current_health, this->max_health);
+    }
+
     return incoming_damage;
 }
 
@@ -224,11 +274,8 @@ void player::take_item(chest* c, item* it)
     {
         return;
     }
-    std::cout << "[TAKE_ITEM] Adres obiektu gracza: " << this
-        << " | Adres torby: " << this->bag << std::endl;
 
     this->bag->add_item(it);
-    std::cout << "[TAKE_ITEM] Przedmiotow w torbie: " << this->bag->items.size() << std::endl;
 
     auto it_chest = std::find(c->chest_loot.begin(), c->chest_loot.end(), it);
     if (it_chest != c->chest_loot.end())

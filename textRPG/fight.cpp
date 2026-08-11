@@ -16,7 +16,7 @@ void battle::initiate_fight_view()
 {
     enemy& e = this->e_ref;
     player& p = this->p_ref;
-    exploration* exp = this->exp;
+    e.exp = this->exp;
 
     Vector3 e_pos = e.get_position();
     Vector3 p_pos = p.get_position();
@@ -51,8 +51,6 @@ int battle::player_turn()
 {
     auto params = e_ref.get_render_params(textures.ghoul);
 
-    
-
     if (!p_ref.is_dead() && !e_ref.is_dead())
     {
         if (click_cooldown)
@@ -67,7 +65,6 @@ int battle::player_turn()
         {
             if (this->attack_clicked)
             {
-               
                 if (IsKeyPressed(KEY_ESCAPE))
                 {
                     this->attack_clicked = false;
@@ -80,8 +77,28 @@ int battle::player_turn()
 
                 if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && hovered != BodyPart::NONE)
                 {
+                    Vector3 forward = Vector3Normalize(Vector3Subtract(exp->camera.target, exp->camera.position));
+                    Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, exp->camera.up));
+                    Vector3 up = Vector3Normalize(exp->camera.up);
+
+                    float halfW = params.targetWidth * 0.5f;
+                    float halfH = params.targetHeight * 0.5f;
+                    Vector3 center = params.drawPos;
+
+                    Vector3 topLeft = Vector3Add(Vector3Subtract(center, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+                    Vector3 topRight = Vector3Add(Vector3Add(center, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+                    Vector3 bottomRight = Vector3Subtract(Vector3Add(center, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+                    Vector3 bottomLeft = Vector3Subtract(Vector3Subtract(center, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+
+                    Ray ray = GetScreenToWorldRay(GetMousePosition(), exp->camera);
+                    RayCollision collision = GetRayCollisionQuad(ray, topLeft, topRight, bottomRight, bottomLeft);
+
+                    Vector3 hit_point = collision.hit ? collision.point : center;
+
                     auto [p_dmg, crit] = p_ref.calculate_dmg();
-                    int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard, hovered);
+
+                    int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard, hovered, this->exp, hit_point);
+
                     this->waiting_for_enemy = true;
                     this->click_cooldown = true;
                     this->enemy_cooldown = 1.5;
@@ -91,7 +108,6 @@ int battle::player_turn()
 
                     return final_dmg;
                 }
-                
             }
             if (this->guard_clicked)
             {

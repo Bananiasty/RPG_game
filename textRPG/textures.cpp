@@ -163,27 +163,22 @@ int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPo
 	while (relativeAngle < 0.0f) relativeAngle += 360.0f;
 	while (relativeAngle >= 360.0f) relativeAngle -= 360.0f;
 
-	// 2. Wyznaczamy "idealn¹" now¹ klatkê (0-7)
 	int newFrame = (int)((relativeAngle + 22.5f) / 45.0f) % 8;
 
-	// Jeœli klatka jest taka sama jak poprzednio, nic nie zmieniamy
 	if (newFrame == lastFrame)
 	{
 		return newFrame;
 	}
 
-	// 3. Histereza (Margines)
-	// Srodek idealny dla danej klatki to: newFrame * 45.0f
+
 	float targetCenterAngle = newFrame * 45.0f;
 	float angleDiff = std::abs(relativeAngle - targetCenterAngle);
 
 	// Normalizacja ró¿nicy k¹tów
 	if (angleDiff > 180.0f) angleDiff = 360.0f - angleDiff;
 
-	// Margines np. 6 stopni: zmieniamy klatkê tylko wtedy, gdy g³êboko weszliœmy w nowy sektor
 	float margin = 6.0f;
 
-	// Jeœli jesteœmy zbyt blisko krawêdzi poprzedniego sektora, zostawiamy star¹ klatkê
 	if (angleDiff > (22.5f - margin))
 	{
 		return lastFrame;

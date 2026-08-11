@@ -1,6 +1,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstdlib>
+#include <algorithm>
 #include "character.h"
 #include "inventory_class.h"
 #include "gamestates.h"
@@ -9,6 +10,7 @@
 #include "raylib.h"
 #include "textureManager.h"
 #include "raymath.h"
+
 
 std::vector<std::string> gamestate::gameLogs;
 
@@ -221,6 +223,50 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id)
     return final_enemy_pos;
 }
 
+void gamestate::spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit)
+{
+    floating_text ft;
+    ft.hit_limb = pos;
+    ft.text = text;
+    ft.is_crit = is_crit;
+    ft.max_lifetime = 1.0f;
+    ft.offsetY = 0.0f;
+
+    this->active_texts.push_back(ft);
+}
+
+void gamestate::update_and_draw_floating_texts(Camera3D current_camera)
+{
+    float deltaTime = GetFrameTime();
+
+    for (auto& dt : this->active_texts)
+    {
+        dt.max_lifetime -= deltaTime;
+        dt.offsetY += 35.0f * deltaTime;
+
+        Vector2 screenPos = GetWorldToVirtualScreen(dt.hit_limb, current_camera, (float)GAME_WIDTH, (float)GAME_HEIGHT);
+        screenPos.y -= dt.offsetY;
+
+        float alpha = std::clamp(dt.max_lifetime, 0.0f, 1.0f);
+
+        Color baseColor = dt.is_crit ? RED : WHITE;
+        Color textColor = Fade(baseColor, alpha);
+        Color shadowColor = Fade(BLACK, alpha);
+
+        int fontSize = dt.is_crit ? 60 : 50;
+
+        int textWidth = MeasureText(dt.text.c_str(), fontSize);
+        int drawX = static_cast<int>(screenPos.x - textWidth / 2.0f);
+        int drawY = static_cast<int>(screenPos.y);
+
+        DrawText(dt.text.c_str(), drawX + 2, drawY + 2, fontSize, shadowColor);
+        DrawText(dt.text.c_str(), drawX, drawY, fontSize, textColor);
+    }
+
+    std::erase_if(this->active_texts, [](const floating_text& dt) {
+        return dt.max_lifetime <= 0.0f;
+        });
+}
 
 
 void chest_drop::draw_event(exploration* exp)
