@@ -2,6 +2,7 @@
 #include "raylib.h"
 
 
+
 struct fx_animation
 {
 	Texture2D texture;
@@ -117,6 +118,7 @@ struct ModelManager {
 	Model m_chest;
 
 };
+
 
 extern fx_animation global_fx;
 extern textureManager textures;

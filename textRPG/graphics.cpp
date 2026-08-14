@@ -205,56 +205,55 @@ void DrawExploration(exploration* exp)
 				SetShaderValue(textures.fogShader, GetShaderLocation(textures.fogShader, "viewPos"), &exp->camera.position, SHADER_UNIFORM_VEC3);
 
 				int sideLimitLoc = GetShaderLocation(textures.fogShader, "sideLimit");
+				int noLimit = 0;
 
 				BeginShaderMode(textures.fogShader);
 
-				if (limbs.torso.is_intact)
-				{
-					int sideLimit = 0;
-					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
-
-					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 0 * params.frameHeight, params.frameWidth, params.frameHeight };
-					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
-					rlDrawRenderBatchActive();
-				}
-
-				if (limbs.head.is_intact)
-				{
-					int sideLimit = 0;
-					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
-
-					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 1 * params.frameHeight, params.frameWidth, params.frameHeight };
-					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
-					rlDrawRenderBatchActive();
-				}
-
+				// 1. RÊCE (Rysowane z ty³u, bez side limitu)
 				if (limbs.left_arm.is_intact || limbs.right_arm.is_intact)
 				{
-					int sideLimit = 0;
-					if (!limbs.left_arm.is_intact)      sideLimit = 1;
-					else if (!limbs.right_arm.is_intact) sideLimit = 2;
-
-					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
-
+					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
 					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 2 * params.frameHeight, params.frameWidth, params.frameHeight };
 					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
 					rlDrawRenderBatchActive();
 				}
 
+				// 2. KORPUS (Bez side limitu)
+				if (limbs.torso.is_intact)
+				{
+					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 0 * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
+				}
+
+				// 3. G£OWA (Bez side limitu)
+				if (limbs.head.is_intact)
+				{
+					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 1 * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
+				}
+
+				// 4. NOGI (Z obs³ug¹ ucinania lewej lub prawej)
 				if (limbs.left_leg.is_intact || limbs.right_leg.is_intact)
 				{
-					int sideLimit = 0;
-					if (!limbs.left_leg.is_intact)      sideLimit = 1;
-					else if (!limbs.right_leg.is_intact) sideLimit = 2;
+					int legSideLimit = 0;
+					if (!limbs.left_leg.is_intact)       legSideLimit = 1;
+					else if (!limbs.right_leg.is_intact) legSideLimit = 2;
 
-					SetShaderValue(textures.fogShader, sideLimitLoc, &sideLimit, SHADER_UNIFORM_INT);
+					int adjustedLimit = enemy->GetAdjustedSideLimit(legSideLimit, frameIndex);
+					SetShaderValue(textures.fogShader, sideLimitLoc, &adjustedLimit, SHADER_UNIFORM_INT);
 
 					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 3 * params.frameHeight, params.frameWidth, params.frameHeight };
 					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
 					rlDrawRenderBatchActive();
+
+					// Reset limitu w shaderze
+					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
 				}
-				int resetSide = 0;
-				SetShaderValue(textures.fogShader, sideLimitLoc, &resetSide, SHADER_UNIFORM_INT);
+
 				EndShaderMode();
 
 				if (hoveredPart != BodyPart::NONE)
@@ -263,7 +262,6 @@ void DrawExploration(exploration* exp)
 					Rectangle outlineRec = { frameIndex * params.frameWidth, rowY, params.frameWidth, params.frameHeight };
 
 					DrawOutlineBillboard(exp->camera, textures.ghoul, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
-
 				}
 				break;
 			}

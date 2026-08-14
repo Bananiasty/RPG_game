@@ -181,6 +181,7 @@ private:
 	int room_id_number;
 	float rotation = 0.0f;
 	bool moving = false;
+
 	Vector3 target_tile = { 0.0f, 0.0f, 0.0f };
 	Vector3 forward = { 0.0f, 0.0f, 1.0f };
 
@@ -225,6 +226,8 @@ public:
 	Texture2D get_texture() const { return grafika; }
 	std::string get_intro_text() { return intro_text; }
 
+	int GetAdjustedSideLimit(int baseSideLimit, int frameIndex);
+
 	enemy(const enemy_config& config);
 
 	int get_dif() { return difficulty; }
@@ -235,8 +238,12 @@ public:
 class ghoul : public enemy
 {
 public:
-	ghoul(const enemy_config& config) : enemy(config) {}
-
+	ghoul(const enemy_config& config) : enemy(config) 
+	{
+		this->limbs.left_arm.is_intact = false;
+		this->limbs.left_arm.hp = 0;
+	}
+	
 	SpriteRenderParams get_render_params(Texture2D texture) const override
 	{
 		constexpr float GHOUL_Y_OFFSET = 0.15f;

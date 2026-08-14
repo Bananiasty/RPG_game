@@ -72,7 +72,7 @@ int exploration::update_state()
         showMap = !showMap;
         return 4;
     }
-    update_enemies();
+    //update_enemies();
     event_check();
     if (active_ui_event != nullptr)
     {

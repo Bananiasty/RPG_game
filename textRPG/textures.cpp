@@ -77,10 +77,10 @@ void LoadGameTextures()
 	textures.floor_tile_tex = LoadTexture("graphics/textures/terrain/cobblestone_floor_128.png");
 	textures.ceiling_tile_tex = LoadTexture("graphics/textures/terrain/dark_rock_128.png");
 
-	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
-	textures.ghoulImage = LoadImage("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
+	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul_limbs — kopia.png");
+	textures.ghoulImage = LoadImage("graphics/textures/enemies/ghoul_64/ghoul_limbs — kopia.png");
 
-
+			
 	// Kontury przeciwnikow
 	textures.outlineShader = LoadShader("graphics/shaders/outline.vs", "graphics/shaders/outline.fs");
 

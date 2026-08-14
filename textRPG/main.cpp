@@ -10,6 +10,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "textureManager.h"
+#include "AudioManager.h"
 
 Font cabin_sketch_font;
 Font cabin_sketch_font_bold;
@@ -19,7 +20,7 @@ int main()
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
 
-    player bohater("", {20, 60, 30, 30, 30, 30}, 0, 10, 0, 0, 0, 0, 0, 1, textures.player, {0.0f, 0.0f, 0.0f}, 0);
+    player bohater("", {20, 60, 30, 30, 30, 30}, 0, 10, 30, 30, 30, 0, 0, 1, textures.player, {0.0f, 0.0f, 0.0f}, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -31,10 +32,11 @@ int main()
     float moveSpeed;
     float mouseSensitivity;
     
-
     graphics_init();
     LoadGameTextures();
     LoadGameModels();
+    LoadGameAudio();
+    audio.play_music(MusicID::EXPLORATION);
 
     RenderTexture2D target = LoadRenderTexture(GAME_WIDTH, GAME_HEIGHT);
     SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
@@ -50,6 +52,7 @@ int main()
 
     while (!WindowShouldClose())
     {
+        audio.update();
         float scale = fminf((float)GetScreenWidth() / GAME_WIDTH, (float)GetScreenHeight() / GAME_HEIGHT);
         Vector2 real_mouse = GetMousePosition();
 

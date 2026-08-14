@@ -148,6 +148,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Audio.cpp" />
     <ClCompile Include="character.cpp" />
     <ClCompile Include="chest.cpp" />
     <ClCompile Include="enemies.cpp" />
@@ -165,6 +166,7 @@
     <ClCompile Include="textures.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AudioManager.h" />
     <ClInclude Include="gamestates.h" />
     <ClInclude Include="inventory_class.h" />
     <ClInclude Include="character.h" />

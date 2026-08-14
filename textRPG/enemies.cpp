@@ -176,5 +176,20 @@ int enemy::execute_ai_turn(character& target)
     return final_dmg;
 }
 
+int enemy::GetAdjustedSideLimit(int baseSideLimit, int frameIndex)
+{
+    if (baseSideLimit == 0)
+    {
+        return 0;
+    }
+
+    bool isBackView = (frameIndex >= 2 && frameIndex <= 6); 
+    if (isBackView)
+    {
+        return (baseSideLimit == 1) ? 2 : 1;
+    }
+
+    return baseSideLimit;
+}
    
 
