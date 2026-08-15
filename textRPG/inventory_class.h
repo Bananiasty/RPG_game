@@ -14,7 +14,7 @@ class item
 protected:
 	void add_player_defense(player* c, int val);
 	//void add_player_health(player* c, int val);
-	void add_player_damage(player* c, int val);
+	void add_player_damage(player* c, int val, BodyPart part);
 	void add_player_block_chance(player* c, int val);
 	void add_player_crit_chance(player* c, int val);
 	void add_player_dodge_chance(player* c, int val);
@@ -22,7 +22,7 @@ protected:
 
 	void reduce_player_defense(player* c, int val);
 	//void reduce_player_health(player* c, int val);
-	void reduce_player_damage(player* c, int val);
+	void reduce_player_damage(player* c, int val, BodyPart part);
 	void reduce_player_block_chance(player* c, int val);
 	void reduce_player_crit_chance(player* c, int val);
 	void reduce_player_dodge_chance(player* c, int val);
@@ -115,7 +115,8 @@ public:
 class weapon:public armor
 {
 private:
-	int damage_stat;
+	BodyPart equip_slot = BodyPart::RIGHT_ARM;
+	int damage_stat = 0;
 	bool weapon_slot=false;
 
 public:

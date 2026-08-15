@@ -24,11 +24,14 @@ struct AudioManager {
 	std::unordered_map<SoundID, Sound> sound_effects;
 
 	MusicID current_music_id = MusicID::EXPLORATION;
+	SoundID current_enemy_detect_sound_id = SoundID::ENEMY_DETECT;
+
 	bool is_music_playing = false;
+
 
 	float master_volume = 1.0f;
 	float music_volume = 0.6f;
-	float sound_volume = 1.0f;
+	float sound_volume = 0.6f;
 
 	AudioManager() = default;
 	~AudioManager();
@@ -44,6 +47,8 @@ struct AudioManager {
 
 	void set_music_volume(float vol);
 	void set_sound_volume(float vol);
+
+	bool is_sound_playing(SoundID id);
 
 };
 

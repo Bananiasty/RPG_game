@@ -20,7 +20,7 @@ int main()
     setlocale(LC_CTYPE, "Polish");
     srand(time(NULL));
 
-    player bohater("", {20, 60, 30, 30, 30, 30}, 0, 10, 30, 30, 30, 0, 0, 1, textures.player, {0.0f, 0.0f, 0.0f}, 0);
+    player bohater("", {60, 60, 40, 40, 40, 40}, 0, 30, 30, 30, 0, 0, 1, textures.player, {0.0f, 0.0f, 0.0f}, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -33,9 +33,7 @@ int main()
     float mouseSensitivity;
     
     graphics_init();
-    LoadGameTextures();
-    LoadGameModels();
-    LoadGameAudio();
+
     audio.play_music(MusicID::EXPLORATION);
 
     RenderTexture2D target = LoadRenderTexture(GAME_WIDTH, GAME_HEIGHT);

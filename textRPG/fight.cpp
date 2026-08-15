@@ -9,6 +9,7 @@
 #include "raylib.h"
 #include "raymath.h"
 #include "TextureManager.h"
+#include "AudioManager.h"
 
 
 
@@ -21,21 +22,81 @@ void battle::initiate_fight_view()
     Vector3 e_pos = e.get_position();
     Vector3 p_pos = p.get_position();
 
-    Vector3 dir = Vector3Subtract(e_pos, p_pos);
-    dir.y = 0.0f;
+    const float DUNGEON_TILE = 2.0f;
 
-    if (Vector3Length(dir) == 0.0f)
+    Vector3 raw_diff = Vector3Subtract(e_pos, p_pos);
+    raw_diff.y = 0.0f;
+
+    Vector3 primary_dir = { 0.0f, 0.0f, 0.0f };
+    if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
     {
-        dir = { 0.0f, 0.0f, 1.0f };
+        primary_dir.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
     }
-    dir = Vector3Normalize(dir);
-    float desired_distance = 2.5f;
+    else
+    {
+        primary_dir.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
+    }
 
-    Vector3 target_e_pos = Vector3Add(p_pos, Vector3Scale(dir, desired_distance));
+    float p_center_x = floorf(p_pos.x / DUNGEON_TILE) * DUNGEON_TILE + (DUNGEON_TILE * 0.5f);
+    float p_center_z = floorf(p_pos.z / DUNGEON_TILE) * DUNGEON_TILE + (DUNGEON_TILE * 0.5f);
+    Vector3 target_p_pos = { p_center_x, p_pos.y, p_center_z };
+
+    Vector3 test_pos = Vector3Add(target_p_pos, Vector3Scale(primary_dir, DUNGEON_TILE));
+    int check_x = (int)floorf(test_pos.x / DUNGEON_TILE) + 1;
+    int check_z = (int)floorf(test_pos.z / DUNGEON_TILE);
+
+    Vector3 final_dir = primary_dir;
+
+    bool primary_blocked = true;
+    if (check_x >= 0 && check_x < exp->szerokosc && check_z >= 0 && check_z < exp->dlugosc)
+    {
+        if (exp->dungeon[check_x][check_z] == 1)
+        {
+            primary_blocked = false;
+        }
+    }
+
+    if (primary_blocked)
+    {
+        const Vector3 CARDINAL_DIRS[4] = {
+            {  1.0f, 0.0f,  0.0f },
+            { -1.0f, 0.0f,  0.0f },
+            {  0.0f, 0.0f,  1.0f },
+            {  0.0f, 0.0f, -1.0f }
+        };
+
+        Vector3 norm_raw = Vector3Normalize(raw_diff);
+        float best_score = -999.0f;
+
+        for (int i = 0; i < 4; i++)
+        {
+            Vector3 alt_test = Vector3Add(target_p_pos, Vector3Scale(CARDINAL_DIRS[i], DUNGEON_TILE));
+            int alt_x = (int)floorf(alt_test.x / DUNGEON_TILE) + 1;
+            int alt_z = (int)floorf(alt_test.z / DUNGEON_TILE);
+
+            if (alt_x >= 0 && alt_x < exp->szerokosc && alt_z >= 0 && alt_z < exp->dlugosc)
+            {
+                if (exp->dungeon[alt_x][alt_z] == 1)
+                {
+                    float score = Vector3DotProduct(norm_raw, CARDINAL_DIRS[i]);
+                    if (score > best_score)
+                    {
+                        best_score = score;
+                        final_dir = CARDINAL_DIRS[i];
+                    }
+                }
+            }
+        }
+    }
+
+    Vector3 target_e_pos = Vector3Add(target_p_pos, Vector3Scale(final_dir, DUNGEON_TILE));
     target_e_pos.y = e_pos.y;
 
+    p.set_position(target_p_pos);
     e.set_position(target_e_pos);
 
+    exp->camera.position.x = target_p_pos.x;
+    exp->camera.position.z = target_p_pos.z;
     exp->camera.target = target_e_pos;
 
     Vector3 dirToCamera = Vector3Subtract(exp->camera.position, target_e_pos);
@@ -95,7 +156,8 @@ int battle::player_turn()
 
                     Vector3 hit_point = collision.hit ? collision.point : center;
 
-                    auto [p_dmg, crit] = p_ref.calculate_dmg();
+					audio.play_sound(SoundID::PLAYER_HIT);
+                    auto [p_dmg, crit] = p_ref.calculate_dmg(p_ref.limbs.get_limb(BodyPart::RIGHT_ARM).damage);
 
                     int final_dmg = e_ref.take_damage(p_dmg, &p_ref, crit, p_ref.is_guard, hovered, this->exp, hit_point);
 

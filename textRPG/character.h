@@ -73,13 +73,13 @@ public:
 	float queued_damage = 0.0;
 
 
-	character(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
+	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
 
 	virtual bool is_dead() = 0;
 
 	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
 
-	std::pair<int, bool> calculate_dmg();
+	std::pair<int, bool> calculate_dmg(int limb_damage);
 
 	std::string get_name() { return name; }
 	
@@ -103,7 +103,6 @@ public:
 	Vector3 get_position() const { return position; }
 	void set_position(Vector3 new_pos) { position = new_pos; }
 
-	limbs_struct get_limbs() const { return limbs; }
 	bool get_has_head() const { return limbs.head.is_intact; }
 	bool get_has_left_arm() const { return limbs.left_arm.is_intact; }
 	bool get_has_right_arm() const { return limbs.right_arm.is_intact; }
@@ -129,7 +128,7 @@ private:
 
 	
 public:
-	player(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
+	player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
 
 	enemy* current_enemy = nullptr;
 	inventory* bag;
@@ -181,6 +180,7 @@ private:
 	int room_id_number;
 	float rotation = 0.0f;
 	bool moving = false;
+	bool is_alerted = false;
 
 	Vector3 target_tile = { 0.0f, 0.0f, 0.0f };
 	Vector3 forward = { 0.0f, 0.0f, 1.0f };
@@ -191,10 +191,12 @@ private:
 	bool can_survive_without_head = false;
 
 public:
+	std::vector<item*> loot;
 
 	virtual ~enemy() = default;
 
 	bool is_dead() override;
+	
 
 	virtual BodyPart calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera);
 
@@ -215,15 +217,22 @@ public:
 
 	void set_forward(Vector3 f) { this->forward = f; }
 	Vector3 get_forward() const { return this->forward; }
+
 	bool is_moving() const { return moving; }
 	void set_is_moving(bool state) { moving = state; }
+
+	bool get_is_alerted() const { return is_alerted; }
+	void set_is_alerted(bool state) { is_alerted = state; }
+	
+
 	void set_can_survive_without_head(bool status) { can_survive_without_head = status; }
 
 	void set_target_tile(Vector3 tile) { target_tile = tile; }
+	
 	Vector3 get_target_tile() const { return target_tile; }
 
-	std::vector<item*> loot;
 	Texture2D get_texture() const { return grafika; }
+
 	std::string get_intro_text() { return intro_text; }
 
 	int GetAdjustedSideLimit(int baseSideLimit, int frameIndex);
@@ -240,8 +249,14 @@ class ghoul : public enemy
 public:
 	ghoul(const enemy_config& config) : enemy(config) 
 	{
-		this->limbs.left_arm.is_intact = false;
-		this->limbs.left_arm.hp = 0;
+		limbs.left_arm.is_intact = false;
+		limbs.left_arm.hp = 0;
+
+		limbs.right_arm.can_attack = true;
+		limbs.right_arm.damage = 25;
+
+		limbs.head.can_attack = true;
+		limbs.head.damage = 7;
 	}
 	
 	SpriteRenderParams get_render_params(Texture2D texture) const override
@@ -250,7 +265,7 @@ public:
 
 		float frameWidth = (float)texture.width / 8.0f;
 		float frameHeight = (float)texture.height / 4.0f;
-		float targetHeight = 2.3f;
+		float targetHeight = 2.0f;
 		float targetWidth = targetHeight * (frameWidth / frameHeight);
 
 		Vector3 pos = get_position();
@@ -264,9 +279,6 @@ public:
 		return new ghoul(*this);
 	}
 
-	int execute_ai_turn(character& target) override
-	{
-		return enemy::execute_ai_turn(target);
-	}
+	int execute_ai_turn(character& target) override;
 };
 

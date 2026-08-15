@@ -100,6 +100,7 @@ struct textureManager {
 	Texture2D ceiling_tile_tex;
 
 	Texture2D inventory_UI;
+	Texture2D man_silhouette;
 
 	Shader outlineShader;
 	Shader fogShader;

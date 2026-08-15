@@ -102,10 +102,10 @@ struct limb
 	int hp = 1;
 	int max_hp = 1;
 	bool is_intact = true;
+	bool can_attack = false;
+	int damage = 0;
 
-	limb() = default;
-	limb(int max_val) : hp(max_val), max_hp(max_val), is_intact(true) {}
-	limb(int current_hp, int max_val, bool intact) : hp(current_hp), max_hp(max_val), is_intact(intact) {}
+	limb(int max_val = 1, bool can_atk = false, int dmg = 0): hp(max_val), max_hp(max_val), is_intact(true), can_attack(can_atk), damage(dmg) {}
 
 	bool take_damage(int amount)
 	{

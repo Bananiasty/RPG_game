@@ -10,8 +10,8 @@
 
 
 
-character::character(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
-    : name(n), limbs(l), base_defense(bdef), base_damage(bdmg), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
+character::character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
+    : name(n), limbs(l), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
 {
     this->position = pos;
     this->rotation = rot;
@@ -20,8 +20,8 @@ character::character(std::string n, const limbs_struct& l, int bdef, int bdmg, i
     this->current_health = this->max_health;
 };
 
-player::player(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, l, bdef, bdmg, b_ch, c_ch, d_ch, rdh, g, pos, rot)
+player::player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
+    : character(n, l, bdef, b_ch, c_ch, d_ch, rdh, g, pos, rot)
 {
     bag = new inventory();
     equipped_items = new inventory();
@@ -32,7 +32,12 @@ player::player(std::string n, const limbs_struct& l, int bdef, int bdmg, int b_c
     this->level = level;
     this->xp = xp;
     gold = 0;
-	
+
+	limbs.left_arm.can_attack = true;
+	limbs.left_arm.damage = 10;
+
+	limbs.right_arm.can_attack = true;
+	limbs.right_arm.damage = 10;
 
     queued_animation_texture = nullptr;
     queued_frame_count = 0;
@@ -44,7 +49,6 @@ enemy::enemy(const enemy_config& config)
         config.name,
 		config.limbs,
         config.armor,
-        config.damage,
         config.block_chance,
         config.crit_chance,
         config.dodge_chance,
@@ -114,12 +118,12 @@ bool enemy::is_dead()
     return false;
 }
 
-std::pair<int, bool> character::calculate_dmg()
+std::pair<int, bool> character::calculate_dmg(int limb_damage)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> distr(1, 100);
-    int damage_amount = this->get_damage();
+    int damage_amount = limb_damage;
     bool is_crit = false;
 
     if (distr(gen) <= this->get_crit_chance())

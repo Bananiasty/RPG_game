@@ -3,6 +3,7 @@
 #include "raymath.h"
 #include "gamestates.h"
 #include "struct.h"
+#include "AudioManager.h"
 
 
 
@@ -26,6 +27,14 @@ void exploration::update_enemies()
 
         if (distance <= detectionRange)
         {
+            if (!e->get_is_alerted())
+            {
+                e->set_is_alerted(true);
+                if(!audio.is_sound_playing(SoundID::ENEMY_DETECT))
+                {
+                    audio.play_sound(SoundID::ENEMY_DETECT);
+                }
+            }
 
             if (!e->is_moving())
             {
@@ -168,8 +177,38 @@ int enemy::execute_ai_turn(character& target)
 		target.queued_hit_part = BodyPart::NONE;
     }
 
-    auto [e_dmg, crit] = this->calculate_dmg();
+    auto [e_dmg, crit] = this->calculate_dmg(this->get_damage());
+    audio.play_sound(SoundID::ENEMY_HIT);
     int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, target.queued_hit_part, this->gs);
+
+    target.is_guard = false;
+
+    return final_dmg;
+}
+int ghoul::execute_ai_turn(character& target)
+{
+    if (!global_fx.is_playing && target.queued_damage > 0)
+    {
+        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
+        target.queued_damage = 0.0;
+        target.queued_hit_part = BodyPart::NONE;
+    }
+
+    int ghoul_base_dmg = 0;
+    if (this->limbs.get_limb(BodyPart::RIGHT_ARM).is_intact && this->limbs.get_limb(BodyPart::RIGHT_ARM).can_attack)
+    {
+        ghoul_base_dmg = this->limbs.get_limb(BodyPart::RIGHT_ARM).damage;
+    }
+    else if (this->limbs.get_limb(BodyPart::HEAD).is_intact && this->limbs.get_limb(BodyPart::HEAD).can_attack)
+    {
+        ghoul_base_dmg = this->limbs.get_limb(BodyPart::HEAD).damage;
+    }
+
+    BodyPart hit_part = this->select_random_target_part(target);
+
+    auto [e_dmg, crit] = this->calculate_dmg(ghoul_base_dmg);
+    audio.play_sound(SoundID::ENEMY_HIT);
+    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, hit_part, this->gs);
 
     target.is_guard = false;
 

@@ -20,12 +20,17 @@ void item::add_player_block_chance(player* c, int val)
 		c->block_chance += val;
 	};
 }
-void item::add_player_damage(player* c, int val)
+void item::add_player_damage(player* c, int val, BodyPart part)
 {
 	if (c != nullptr)
 	{
-		c->base_damage += val;
-	};
+		limb& target_limb = c->limbs.get_limb(part);
+		if (target_limb.is_intact)
+		{
+			target_limb.damage += val;
+			target_limb.can_attack = true;
+		}
+	}
 }
 void item::add_player_crit_chance(player* c, int val)
 {
@@ -61,14 +66,17 @@ void item::reduce_player_defense(player* c, int val)
 
 
 
-void item::reduce_player_damage(player* c, int val)
+void item::reduce_player_damage(player* c, int val, BodyPart part)
 {
 	if (c != nullptr)
 	{
-		c->base_damage -= val;
-		if (c->base_damage < 0)
-			c->base_damage = 0;
-	};
+		limb& target_limb = c->limbs.get_limb(part);
+		target_limb.damage -= val;
+		if (target_limb.damage < 0)
+		{
+			target_limb.damage = 0;
+		}
+	}
 }
 
 void item::reduce_player_block_chance(player* c, int val)

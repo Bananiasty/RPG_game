@@ -154,20 +154,22 @@ void boots::use(player* c)
 
 void weapon::use(player* c)
 {
-    if (this->item_equipped == false && c->equipped_weapon != nullptr) return;
+    if (!this->item_equipped && c->equipped_weapon != nullptr)
+        return;
 
     bool was_equipped = this->is_equipped();
     armor::use(c);
 
-    if (was_equipped == false && this->item_equipped == true)
-    {
+    BodyPart target_slot = BodyPart::RIGHT_ARM;
 
-        add_player_damage(c, this->damage_stat);
+    if (!was_equipped && this->item_equipped)
+    {
+        this->add_player_damage(c, this->damage_stat, this->equip_slot);
         c->equipped_weapon = this;
     }
-    else if (was_equipped == true && this->item_equipped == false)
+    else if (was_equipped && !this->item_equipped)
     {
-        this->reduce_player_damage(c, this->damage_stat);
+        this->reduce_player_damage(c, this->damage_stat, this->equip_slot);
         c->equipped_weapon = nullptr;
     }
 }

@@ -10,6 +10,8 @@
 #include "struct.h"
 #include "inventory_class.h"
 #include "textureManager.h"
+#include "AudioManager.h"
+#include "battle_UI.h"
 #include <ranges>
 #include <utility>
 #include <map>	
@@ -18,6 +20,8 @@ extern Font cabin_sketch_font;
 extern Font cabin_sketch_font_bold;
 float screen_width = 0.0f;
 float screen_height = 0.0f;
+
+BodyStatusUI body_UI;
 
 
 	
@@ -200,7 +204,7 @@ void DrawExploration(exploration* exp)
 				enemy->set_last_frame(frameIndex);
 
 				BodyPart hoveredPart = enemy->get_hovered_body_part();
-				const auto& limbs = enemy->get_limbs();
+				const auto& limbs = enemy->limbs;
 
 				SetShaderValue(textures.fogShader, GetShaderLocation(textures.fogShader, "viewPos"), &exp->camera.position, SHADER_UNIFORM_VEC3);
 
@@ -209,7 +213,6 @@ void DrawExploration(exploration* exp)
 
 				BeginShaderMode(textures.fogShader);
 
-				// 1. RÊCE (Rysowane z ty³u, bez side limitu)
 				if (limbs.left_arm.is_intact || limbs.right_arm.is_intact)
 				{
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
@@ -218,7 +221,6 @@ void DrawExploration(exploration* exp)
 					rlDrawRenderBatchActive();
 				}
 
-				// 2. KORPUS (Bez side limitu)
 				if (limbs.torso.is_intact)
 				{
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
@@ -227,7 +229,6 @@ void DrawExploration(exploration* exp)
 					rlDrawRenderBatchActive();
 				}
 
-				// 3. G£OWA (Bez side limitu)
 				if (limbs.head.is_intact)
 				{
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
@@ -236,7 +237,6 @@ void DrawExploration(exploration* exp)
 					rlDrawRenderBatchActive();
 				}
 
-				// 4. NOGI (Z obs³ug¹ ucinania lewej lub prawej)
 				if (limbs.left_leg.is_intact || limbs.right_leg.is_intact)
 				{
 					int legSideLimit = 0;
@@ -250,7 +250,6 @@ void DrawExploration(exploration* exp)
 					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
 					rlDrawRenderBatchActive();
 
-					// Reset limitu w shaderze
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
 				}
 
@@ -330,6 +329,9 @@ void draw_battle_ui(battle* fight)
 	std::string e = fight->get_enemy_name();
 
 	float p_hp_width = ((float)fight->p_ref.get_health() / fight->p_ref.get_max_health()) * 400.0f;
+
+	Vector2 body_pos = { GAME_WIDTH * 0.85f, GAME_HEIGHT * 0.60f };
+	body_UI.draw(fight->p_ref, body_pos, 2.0f);
 
 	//PASEK ZDROWIA GRACZA
 	float player_hp_x = 100.0f;
@@ -600,6 +602,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	//		}
 	//	}
 	//}
+	Vector2 body_pos = { GAME_WIDTH * 0.78f, GAME_HEIGHT* 0.15f};
+	body_UI.draw(p, body_pos, 2.0f);
 
 	bool equipment_button_isHovered = CheckCollisionPointRec(mouse_pos, equipment_button);
 	bool item_button_isHovered = CheckCollisionPointRec(mouse_pos, item_button);
@@ -1049,8 +1053,8 @@ void draw_buttons(exploration* e)
 	DrawRectangle(GAME_WIDTH * 0.8 , GAME_HEIGHT * 0.9, 50, 20, WHITE);
 	DrawText("I", GAME_WIDTH * 0.8 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 
-	DrawRectangle(GAME_WIDTH * 0.9, GAME_HEIGHT * 0.9, 50, 20, WHITE);
-	DrawText("M", GAME_WIDTH * 0.9 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
+	DrawRectangle(GAME_WIDTH * 0.7, GAME_HEIGHT * 0.9, 50, 20, WHITE);
+	DrawText("M", GAME_WIDTH * 0.7 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 }
 
 
@@ -1180,6 +1184,11 @@ void graphics_init()
 	SetExitKey(KEY_NULL);
 	DisableCursor();
 	SetTargetFPS(60);
+
+	LoadGameTextures();
+	LoadGameModels();
+	LoadGameAudio();
+	body_UI.init();
 
 	
 }

@@ -16,6 +16,21 @@ void LoadGameAudio()
 {
 	audio.init();
 	audio.load_music(MusicID::EXPLORATION, "music/background/dungeon.wav");
+
+	audio.load_sound(SoundID::ENEMY_DETECT, "music/effects/chase/chase_1.wav");
+
+	audio.load_sound(SoundID::PLAYER_HIT, "music/effects/attack/weapon_attack_1.wav");
+	/*audio.load_sound(SoundID::PLAYER_HIT, "music/effects/attack/weapon_attack_2.wav");
+	audio.load_sound(SoundID::PLAYER_HIT, "music/effects/attack/weapon_attack_3.wav");
+	audio.load_sound(SoundID::PLAYER_HIT, "music/effects/attack/weapon_attack_4.wav");
+	audio.load_sound(SoundID::PLAYER_HIT, "music/effects/attack/weapon_attack_5.wav");*/
+
+	//audio.load_sound(SoundID::ENEMY_HIT, "music/effects/attack/weapon_attack_1.wav");
+	audio.load_sound(SoundID::ENEMY_HIT, "music/effects/attack/weapon_attack_2.wav");
+	/*audio.load_sound(SoundID::ENEMY_HIT, "music/effects/attack/weapon_attack_3.wav");
+	audio.load_sound(SoundID::ENEMY_HIT, "music/effects/attack/weapon_attack_4.wav");
+	audio.load_sound(SoundID::ENEMY_HIT, "music/effects/attack/weapon_attack_5.wav");*/
+
 }
 
 AudioManager::~AudioManager() {
@@ -86,4 +101,14 @@ void AudioManager::set_sound_volume(float vol)
 	for (auto& [id, sound] : sound_effects) {
 		SetSoundVolume(sound, sound_volume);
 	}
+}
+
+bool AudioManager::is_sound_playing(SoundID id)
+{
+	auto it = sound_effects.find(id);
+	if (it != sound_effects.end())
+	{
+		return IsSoundPlaying(it->second);
+	}
+	return false;
 }
