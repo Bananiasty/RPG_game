@@ -71,7 +71,7 @@ struct RenderObject
 {
 	float distance_sqr = 0.0f;
 
-	chest* chest_ptr = nullptr;
+	drop_object* drop_ptr = nullptr;
 	enemy* enemy_ptr = nullptr;
 };
 
@@ -112,6 +112,9 @@ void DrawOutlineBillboard(Camera3D camera, Texture2D texture, Shader shader, Rec
 
 void DrawExploration(exploration* exp)
 {
+
+	dungeon_floor& current_floor = exp->floors[exp->current_floor_id];
+
 	int promienWidzenia = 20;
 
 	int playerGridX = (int)(exp->camera.position.x / 2.0f);
@@ -126,8 +129,9 @@ void DrawExploration(exploration* exp)
 
 	Vector3 enemyForward = { 0.0f, 0.0f, 1.0f };
 
-	for (auto* c : exp->world_chests)
+	for (auto* c : current_floor.world_loot)
 	{
+		if (c == nullptr) continue;
 		int chestGridX = (int)(c->position.x / 2.0f);
 		int chestGridY = (int)(c->position.z / 2.0f);
 
@@ -138,12 +142,13 @@ void DrawExploration(exploration* exp)
 			float dz = c->position.z - exp->camera.position.z;
 
 			RenderObject object;
-			object.chest_ptr = c;
+			object.drop_ptr = c;
 			object.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
 			object_to_draw.push_back(object);
 		}
 	}
-	for (auto& [id, node] : exp->world_map)
+
+	for (auto& [id, node] : current_floor.world_map)
 	{
 		if (node.enemy != nullptr && !node.enemy->is_dead())
 		{
@@ -172,10 +177,10 @@ void DrawExploration(exploration* exp)
 
 	for (const auto& object : object_to_draw)
 	{
-		if (object.chest_ptr != nullptr)
+		if (object.drop_ptr != nullptr)
 		{
-			auto* c = object.chest_ptr;
-			if (c->enemy_ptr != nullptr)
+			auto* c = object.drop_ptr;
+			if (auto* db = dynamic_cast<dead_body*>(c); db != nullptr && db->enemy_ptr != nullptr)
 			{
 				DrawCube(c->position, 0.7f, 0.1f, 0.7f, RED);
 				DrawCubeWires(c->position, 0.7f, 0.1f, 0.7f, MAROON);
@@ -268,56 +273,55 @@ void DrawExploration(exploration* exp)
 		}
 	}
 
-
-
-
-		for (int cx = startX; cx < endX; cx++)
+	for (int cx = startX; cx < endX; cx++)
+	{
+		for (int cy = startY; cy < endY; cy++)
 		{
-			for (int cy = startY; cy < endY; cy++)
-			{
-				if (exp->dungeon[cx][cy] == 2)
-				{
-					Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
-					Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
+			int tile = current_floor.dungeon[cx][cy];
 
-					//ŒCIANA PO£UDNIOWA
-					if (cy > 0 && exp->dungeon[cx][cy - 1] == 1)
-					{
-						DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-						DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					}
-					//ŒCIANA PÓ£NOCNA
-					if (cy < exp->dlugosc - 1 && exp->dungeon[cx][cy + 1] == 1)
-					{
-						Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
-						Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
-						DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-						DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					}
-					//ŒCIANA WSCHODNIA
-					if (cx > 0 && exp->dungeon[cx - 1][cy] == 1)
-					{
-						Vector3 p_dolna = Vector3{ p_dolna.x = pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
-						Vector3 p_gorna = Vector3{ p_gorna.x = pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
-						DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-						DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					}
-					//ŒCIANA ZACHODNIA
-					if (cx < exp->szerokosc - 1 && exp->dungeon[cx + 1][cy] == 1)
-					{
-						Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
-						Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
-						DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-						DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					}
-				}
-				if (exp->dungeon[cx][cy] == 1)
+			if (tile == 2)
+			{
+				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
+				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
+
+				// ŒCIANA PO£UDNIOWA
+				if (cy > 0 && current_floor.dungeon[cx][cy - 1] == 1)
 				{
-					DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f , (float)cy * 2.0f }, 1.0f, WHITE);
-					DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f , (float)cy * 2.0f }, 1.0f, WHITE);
+					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+				// ŒCIANA PÓ£NOCNA
+				if (cy < exp->dlugosc - 1 && current_floor.dungeon[cx][cy + 1] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+				// ŒCIANA WSCHODNIA
+				if (cx > 0 && current_floor.dungeon[cx - 1][cy] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+				// ŒCIANA ZACHODNIA
+				if (cx < exp->szerokosc - 1 && current_floor.dungeon[cx + 1][cy] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
 			}
+			else if (tile == 1)
+			{
+				DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f }, 1.0f, WHITE);
+				DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f, (float)cy * 2.0f }, 1.0f, WHITE);
+			}
 		}
+	}
 
 }
 
@@ -399,7 +403,22 @@ void DrawHUD(exploration* exp)
 }
 
 
+void draw_player_stats(player& p)
+{
+	float x = (GAME_WIDTH * 0.58f);
+	float y = (GAME_HEIGHT * 0.73f);
 
+	int offset_x = 200;
+	int offset_y = 40;
+	//DrawTextEx(cabin_sketch_font, TextFormat("Level: %d", p.get_level()), { 10, 10 }, 20, 2, WHITE);
+	//DrawTextEx(cabin_sketch_font, TextFormat("XP: %d/%d", p.get_xp(), p.get_xp_to_level_up()), { 10, 40 }, 20, 2, WHITE);
+	//DrawTextEx(cabin_sketch_font, TextFormat("HP: %d/%d", p.get_health(), p.get_max_health()), { (GAME_WIDTH*0.7f), (GAME_HEIGHT * 0.8f)}, 30, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Damage: %d", p.get_damage()), { x, y }, 30, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Armor: %d", p.get_defense()), { x, y + offset_y }, 30, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Block Chance: %d%%", p.get_block_chance()), { x + offset_x, y }, 30, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Crit Chance: %d%%", p.get_crit_chance()), { x + offset_x, y + offset_y }, 30, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Dodge Chance: %d%%", p.get_dodge_chance()), { x + offset_x, y + offset_y * 2 }, 30, 2, WHITE);
+}
 
 void draw_inventory_ui(player& p, inventory_state* inv)
 {
@@ -454,7 +473,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	Rectangle accessory_3 = { window_center.x + ACCESSORY_3_OFFSET_X, window_center.y + ACCESSORY_3_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
 
 	DrawTextureEx(inventory, window_center, 0.0f, 1.0f, WHITE);
-
+	draw_player_stats(p);
 	if (p.equipped_helm != nullptr)
 	{
 		Texture2D* icon = p.equipped_helm->icon_texture;
@@ -463,7 +482,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, helm_slot))
 		{
-			DrawRectangleLinesEx(helm_slot, 2.0f, YELLOW);
+			DrawRectangleLinesEx(helm_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_helm->use(&p);
@@ -479,7 +498,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, weapon_slot))
 		{
-			DrawRectangleLinesEx(weapon_slot, 2.0f, YELLOW);
+			DrawRectangleLinesEx(weapon_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_weapon->use(&p);
@@ -495,7 +514,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, shield_slot))
 		{
-			DrawRectangleLinesEx(shield_slot, 2.0f, YELLOW);
+			DrawRectangleLinesEx(shield_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_shield->use(&p);
@@ -512,7 +531,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, vest_slot))
 		{
-			DrawRectangleLinesEx(vest_slot, 2.0f, YELLOW);
+			DrawRectangleLinesEx(vest_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_vest->use(&p);
@@ -528,7 +547,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, gloves_slot))
 		{
-			DrawRectangleLinesEx(gloves_slot, 2.0f, YELLOW);
+			DrawRectangleLinesEx(gloves_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_gauntlets->use(&p);
@@ -544,7 +563,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, boots_slot))
 		{
-			DrawRectangleLinesEx(boots_slot, 2.0f, YELLOW);
+			DrawRectangleLinesEx(boots_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_boots->use(&p);
@@ -695,6 +714,36 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			if (is_item_hovered)
 			{
+				if (dynamic_cast<helm*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(helm_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(helm_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<weapon*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(weapon_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(weapon_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<shield*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(shield_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(shield_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<vest*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(vest_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(vest_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<gauntlets*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(gloves_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(gloves_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<boots*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(boots_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(boots_slot, 2.5f, WHITE);
+				}
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 				{
 					equipment[i]->use(&p);
@@ -713,8 +762,24 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				if (is_item_hovered)
 				{
 					std::string label = equipment[i]->get_name();
-					DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 50, DARKBLUE);
-					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 36, 1, WHITE);
+					int item_armor = equipment[i]->get_defense_stat();
+					int item_damage = equipment[i]->get_attack_stat();
+					DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
+					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y+10 }, 34, 1, WHITE);
+					int y_offset = 0;
+					if (item_armor != 0)
+					{	
+						y_offset += 40;
+						DrawTextEx(cabin_sketch_font_bold, TextFormat("Armor: %d", item_armor), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
+					}
+					if (item_damage != 0)
+					{	
+						y_offset += 40;
+						DrawTextEx(cabin_sketch_font_bold, TextFormat("Damage: %d", item_damage), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
+					}
+					
+					
+
 				}
 			}
 			renderIndex++;
@@ -787,12 +852,20 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				float scale = (float)(btnHeight - 10) / item_icon.height;
 				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
 			}
-
+			std::string label = food[i]->get_name();
+			int item_restore_health = food[i]->get_restore_health();
+	
 			if (is_item_hovered)
 			{
-				std::string label = food[i]->get_name();
-				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
-				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
+				DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
+				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
+				int y_offset = 0;
+				if (item_restore_health != 0)
+				{
+					y_offset += 40;
+					DrawTextEx(cabin_sketch_font_bold, TextFormat("Health Restore: %d", item_restore_health), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
+				}
+
 			}
 		}
 	}
@@ -829,7 +902,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			if (is_item_hovered)
 			{
 				std::string label = books[i]->get_name();
-				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
+				DrawRectangle(itemRect.x + 50, itemRect.y, 180, 30, DARKBLUE);
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
 		}
@@ -837,9 +910,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 }
 
 
-bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
+bool draw_drop(exploration* exp, drop_object* current_drop, bool& is_open)
 {
-
 	int window_w = GAME_WIDTH / 2;
 	int window_h = GAME_HEIGHT / 2;
 	int window_x_start = GAME_WIDTH / 2 - window_w / 2; 
@@ -848,14 +920,16 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 	Texture2D item_icon;
 	Vector2 mouse_pos = GetVirtualMousePosition();
 
-	if (current_chest == nullptr || !is_open)
+	if (current_drop == nullptr || !is_open)
 	{
 		return false;
 	}
 
-	std::vector<item*>& target_loot = (!current_chest->enemy_loot.empty()) ? current_chest->enemy_loot : current_chest->chest_loot;
+	std::vector<item*> raw_loot;
+	raw_loot.reserve(current_drop->drop_loot.size());
+	for (auto& up : current_drop->drop_loot) raw_loot.push_back(up.get());
 
-	if (target_loot.empty())
+	if (raw_loot.empty())
 	{
 		is_open = false;
 		return true;
@@ -896,14 +970,14 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 	if (is_take_all_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
-		for (auto* it : target_loot)
+		for (auto& up : current_drop->drop_loot)
 		{
-			if (it != nullptr)
+			if (up)
 			{
-				exp->bohater.bag->add_item(it);
+				exp->bohater.bag->add_item(up.release());
 			}
 		}
-		target_loot.clear();
+		current_drop->drop_loot.clear();
 		exp->bohater.sort_bag();
 		is_open = false;
 		return true;
@@ -915,16 +989,16 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 	int btnHeight = 60;
 	int padding = 25;
 
-	item* clicked_item = nullptr;
+	int clicked_index = -1;
 
-	for (int i = 0; i < target_loot.size(); i++)
+	for (int i = 0; i < (int)raw_loot.size(); i++)
 	{
-		if (target_loot[i] == nullptr)
+		if (raw_loot[i] == nullptr)
 		{
 			continue;
 		}
 
-		item_icon = *target_loot[i]->icon_texture;
+		item_icon = *raw_loot[i]->icon_texture;
 
 		int row = i / 6;
 		int col = i % 6;
@@ -943,7 +1017,7 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 		if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 		{
-			clicked_item = target_loot[i];
+			clicked_index = i;
 			break;
 		}
 
@@ -955,18 +1029,27 @@ bool draw_drop(exploration* exp, chest* current_chest, bool& is_open)
 
 		if (is_item_hovered)
 		{
-			std::string label = target_loot[i]->get_name();
+			std::string label = raw_loot[i]->get_name();
 			DrawRectangle(itemRect.x, itemRect.y - 45, 140, 35, DARKBLUE);
 			DrawRectangleLines(itemRect.x, itemRect.y - 45, 140, 35, WHITE);
 			DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 5, itemRect.y - 40 }, 20, 1, WHITE);
 		}
 	}
 
-	if (clicked_item != nullptr)
+	if (clicked_index != -1)
 	{
-		exp->bohater.take_item(current_chest, clicked_item);
+		// transfer ownership of the clicked item into player's bag
+		if (clicked_index >= 0 && clicked_index < (int)current_drop->drop_loot.size())
+		{
+			auto& up = current_drop->drop_loot[clicked_index];
+			if (up)
+			{
+				exp->bohater.bag->add_item(up.release());
+				current_drop->drop_loot.erase(current_drop->drop_loot.begin() + clicked_index);
+			}
+		}
 
-		if (target_loot.empty())
+		if (current_drop->drop_loot.empty())
 		{
 			is_open = false;
 			return true;
@@ -985,8 +1068,8 @@ void draw_commentary()
 		float przesuniecie_y = 0.0;
 		for (const auto& log : gamestate::gameLogs | std::views::reverse | std::views::take(3))
 		{
-			DrawTextEx(cabin_sketch_font, log.c_str(), { 50, 410 + przesuniecie_y }, 32, 2, WHITE);
-			przesuniecie_y += 20.0;
+			DrawTextEx(cabin_sketch_font, log.c_str(), { 50, 410 + przesuniecie_y }, 50, 2, WHITE);
+			przesuniecie_y += 70.0;
 		}		
 	}
 }
@@ -1001,41 +1084,43 @@ void draw_map_tile(exploration* exp, int x, int y, int start_x, int start_y, int
 
 void draw_dungeon_map(exploration* exp, float player_x, float player_y)
 {
-	if (exp == nullptr || exp->world_map.empty())
+	if (exp == nullptr || exp->floors.empty() ||
+		exp->current_floor_id < 0 || exp->current_floor_id >= static_cast<int>(exp->floors.size()))
 	{
 		return;
 	}
 
-	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8));
+	const auto& current_dungeon = exp->floors[exp->current_floor_id].dungeon;
+
+	DrawRectangle(100, 100, 1080, 520, Fade(BLACK, 0.8f));
 	DrawRectangleLines(100, 100, 1080, 520, RAYWHITE);
 
 	int tile = 10;
 	int vision_range = 20;
 
-	float exact_player_x_pos = (player_x) / 2.0f;
-	float exact_player_y_pos = (player_y) / 2.0f;
+	float exact_player_x_pos = player_x / 2.0f;
+	float exact_player_y_pos = player_y / 2.0f;
 
-	int player_x_pos_int = (int)std::floor(exact_player_x_pos);
-	int player_y_pos_int = (int)std::floor(exact_player_y_pos);
+	int player_x_pos_int = static_cast<int>(std::floor(exact_player_x_pos));
+	int player_y_pos_int = static_cast<int>(std::floor(exact_player_y_pos));
 
 	int center_box_x = 640;
 	int center_box_y = 360;
 
-	int start_x = center_box_x - (exact_player_x_pos * tile);
-	int start_y = center_box_y - (exact_player_y_pos * tile);
-
+	int start_x = center_box_x - static_cast<int>(exact_player_x_pos * tile);
+	int start_y = center_box_y - static_cast<int>(exact_player_y_pos * tile);
 
 	int min_x = std::max(0, player_x_pos_int - vision_range);
-	int max_x = std::min(exp->szerokosc, player_x_pos_int + vision_range);
+	int max_x = std::min(exp->szerokosc - 1, player_x_pos_int + vision_range);
 
 	int min_y = std::max(0, player_y_pos_int - vision_range);
-	int max_y = std::min(exp->dlugosc, player_y_pos_int + vision_range);
+	int max_y = std::min(exp->dlugosc - 1, player_y_pos_int + vision_range);
 
 	for (int x = min_x; x <= max_x; x++)
 	{
 		for (int y = min_y; y <= max_y; y++)
 		{
-			if (exp->dungeon[x][y] == 1)
+			if (current_dungeon[x][y] == 1)
 			{
 				draw_map_tile(exp, x, y, start_x, start_y, tile);
 			}

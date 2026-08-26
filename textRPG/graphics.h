@@ -31,7 +31,9 @@ void draw_map_tile(exploration* exp, int x, int y);
 
 void draw_dungeon_map(exploration* exp, float player_x, float player_y);
 
-bool draw_drop(exploration* exp, chest* current_chest, bool& is_open);
+bool draw_drop(exploration* exp, drop_object* current_drop, bool& is_open);
+
+void draw_player_stats(player& p);
 
 inline Vector2 virtual_mouse_pos = { 0.0f, 0.0f };
 

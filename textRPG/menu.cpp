@@ -15,11 +15,14 @@ void exploration::save_game()
 
     if (plik.is_open())
     {
-        plik << current_node_id << "\n\n";
+        plik << current_floor_id << " " << current_node_id << "\n\n";
 
-        for (auto const& [id, node] : world_map)
+        for (size_t floor_idx = 0; floor_idx < floors.size(); ++floor_idx)
         {
-            plik << id << " " << node.discovered << "\n";
+            for (auto const& [id, node] : floors[floor_idx].world_map)
+            {
+                plik << floor_idx << " " << id << " " << node.discovered << "\n";
+            }
         }
 
         plik.close();
@@ -39,17 +42,21 @@ bool exploration::load_game()
 
     if (plik.is_open())
     {
+        plik >> current_floor_id >> current_node_id;
 
-        plik >> current_node_id;
-
+        int floor_idx;
         int id;
         bool status_discovered;
 
-        while (plik >> id >> status_discovered)
+        while (plik >> floor_idx >> id >> status_discovered)
         {
-            if (world_map.find(id) != world_map.end())
+            if (floor_idx >= 0 && floor_idx < static_cast<int>(floors.size()))
             {
-                world_map[id].discovered = status_discovered;
+                auto& floor_map = floors[floor_idx].world_map;
+                if (floor_map.find(id) != floor_map.end())
+                {
+                    floor_map[id].discovered = status_discovered;
+                }
             }
         }
 

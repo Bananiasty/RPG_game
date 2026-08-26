@@ -9,83 +9,92 @@
 
 collisions check_collisions(Vector3 pos, exploration* exp)
 {
-	collisions c;
+    collisions c;
 
-	float p_hitbox = 0.25;
+    const auto& current_dungeon = exp->floors[exp->current_floor_id].dungeon;
+    float p_hitbox = 0.25f;
 
-	if (exp->dungeon[(pos.x + p_hitbox)/2][pos.z/2] != 1)
-	{
-		c.blokuj_ruch_plus_x = true;
-	}
-	if (exp->dungeon[(pos.x - p_hitbox) / 2][pos.z / 2] != 1)
-	{
-		c.blokuj_ruch_minus_x = true;
-	}
-	if (exp->dungeon[(pos.x) / 2][(pos.z + p_hitbox) / 2] != 1)
-	{
-		c.blokuj_ruch_plus_z = true;
-	}
-	if (exp->dungeon[(pos.x) / 2][(pos.z - p_hitbox) / 2] != 1)
-	{
-		c.blokuj_ruch_minus_z = true;
-	}
+    int idx_plus_x = static_cast<int>((pos.x + p_hitbox) / 2.0f);
+    int idx_minus_x = static_cast<int>((pos.x - p_hitbox) / 2.0f);
+    int idx_z = static_cast<int>(pos.z / 2.0f);
 
-	
-	return c;
+    int idx_x = static_cast<int>(pos.x / 2.0f);
+    int idx_plus_z = static_cast<int>((pos.z + p_hitbox) / 2.0f);
+    int idx_minus_z = static_cast<int>((pos.z - p_hitbox) / 2.0f);
+
+    if (idx_plus_x >= 0 && idx_plus_x < exp->szerokosc && idx_z >= 0 && idx_z < exp->dlugosc)
+    {
+        if (current_dungeon[idx_plus_x][idx_z] != 1) c.blokuj_ruch_plus_x = true;
+    }
+
+    if (idx_minus_x >= 0 && idx_minus_x < exp->szerokosc && idx_z >= 0 && idx_z < exp->dlugosc)
+    {
+        if (current_dungeon[idx_minus_x][idx_z] != 1) c.blokuj_ruch_minus_x = true;
+    }
+
+    if (idx_x >= 0 && idx_x < exp->szerokosc && idx_plus_z >= 0 && idx_plus_z < exp->dlugosc)
+    {
+        if (current_dungeon[idx_x][idx_plus_z] != 1) c.blokuj_ruch_plus_z = true;
+    }
+
+    if (idx_x >= 0 && idx_x < exp->szerokosc && idx_minus_z >= 0 && idx_minus_z < exp->dlugosc)
+    {
+        if (current_dungeon[idx_x][idx_minus_z] != 1) c.blokuj_ruch_minus_z = true;
+    }
+
+    return c;
 }
 
 void exploration::apply_collision(Vector3 stara_pos)
 {
-	check_collisions(camera.position, this);
-	float p_hitbox = 0.25;
+    if (floors.empty() || current_floor_id < 0 || current_floor_id >= static_cast<int>(floors.size()))
+    {
+        return;
+    }
 
-	int check_x = (int)((camera.position.x + (camera.position.x > stara_pos.x ? p_hitbox : -p_hitbox)) / 2.0f)+1;
-	int current_z = (int)(camera.position.z / 2.0f);
+    const auto& current_dungeon = floors[current_floor_id].dungeon;
+    float p_hitbox = 0.25f;
 
-	if (check_x >= 0 && check_x < szerokosc && current_z >= 0 && current_z < dlugosc)
-	{
-		if (dungeon[check_x][current_z] != 1)
-		{
-			float delta_x = camera.position.x - stara_pos.x;
+    int check_x = static_cast<int>((camera.position.x + (camera.position.x > stara_pos.x ? p_hitbox : -p_hitbox)) / 2.0f) + 1;
+    int current_z = static_cast<int>(camera.position.z / 2.0f);
 
-			camera.position.x = stara_pos.x;
+    if (check_x >= 0 && check_x < szerokosc && current_z >= 0 && current_z < dlugosc)
+    {
+        if (current_dungeon[check_x][current_z] != 1)
+        {
+            float delta_x = camera.position.x - stara_pos.x;
+            camera.position.x = stara_pos.x;
+            camera.target.x -= delta_x;
+        }
+    }
 
-			camera.target.x -= delta_x;
-		}
+    int current_x = static_cast<int>(camera.position.x / 2.0f) + 1;
+    int check_z = static_cast<int>((camera.position.z + (camera.position.z > stara_pos.z ? p_hitbox : -p_hitbox)) / 2.0f);
 
-	}
-
-	int current_x = (int)(camera.position.x / 2.0f)+1;
-	int check_z = (int)((camera.position.z + (camera.position.z > stara_pos.z ? p_hitbox : -p_hitbox)) / 2.0f);
-
-	if (current_x >= 0 && current_x < szerokosc && check_z >= 0 && check_z < dlugosc)
-	{
-		if (dungeon[current_x][check_z] != 1)
-		{
-			float delta_z = camera.position.z - stara_pos.z;
-
-			camera.position.z = stara_pos.z;
-
-			camera.target.z -= delta_z;
-		}
-	}
-
+    if (current_x >= 0 && current_x < szerokosc && check_z >= 0 && check_z < dlugosc)
+    {
+        if (current_dungeon[current_x][check_z] != 1)
+        {
+            float delta_z = camera.position.z - stara_pos.z;
+            camera.position.z = stara_pos.z;
+            camera.target.z -= delta_z;
+        }
+    }
 }
+
 bool exploration::is_walkable(int x, int y)
 {
-	if (x < 0 || x >= szerokosc || y < 0 || y >= dlugosc)
-	{
-		return false;
-	}
-	if (dungeon[x][y] == 1)
-	{
-		return true;
-	}
-	else 
-	{
-		return false;
-	}
-	
+    if (x < 0 || x >= szerokosc || y < 0 || y >= dlugosc)
+    {
+        return false;
+    }
+
+    if (floors.empty() || current_floor_id < 0 || current_floor_id >= static_cast<int>(floors.size()))
+    {
+        return false;
+    }
+
+    return floors[current_floor_id].dungeon[x][y] == 1;
 }
 bool exploration::is_walkable_subgrid(int gridX, int gridZ)
 {

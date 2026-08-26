@@ -47,10 +47,9 @@ public:
 	int szerokosc;
 
 
-	std::map<int, Node> world_map;
-	std::vector<std::vector<int>> dungeon;
-	std::vector<chest*> world_chests;
+	std::vector<dungeon_floor> floors;
 
+	int current_floor_id = 0;
 
 	std::vector<item*>item_pool;
 	std::vector<enemy*> enemy_pool;
@@ -63,7 +62,7 @@ public:
 	bool showInventory = false;
 	bool showMap = false;
 	
-	void generate_dungeon();
+	void generate_floor(int floor_id);
 
 	void apply_collision(Vector3 stara_pos);
 	void apply_pathfinding(enemy* e);
@@ -81,17 +80,17 @@ public:
 	void enemies_init();
 	void world_map_init();
 	void loot_init();
+	drop_object* rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f });
 
 	Node* get_node(int room_id);
 
-	Vector3 set_enemy_pos(int enemy_id, int room_id);
+	Vector3 set_enemy_pos(int enemy_id, int room_id, int floor_id);
 	enemy* get_current_enemy();
 	enemy* get_enemy_by_id(int id);
-	Node* get_room_by_id(int id);
+	Node* get_room_by_id(int room_id, int floor_id);
 	int get_enemy_dif();
 
-	int rand_chest_slots();
-	chest* rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f});
+	
 
 	void delete_enemy(enemy* target);
 
@@ -206,41 +205,27 @@ protected:
 	exploration* exp;
 
 public:
-	virtual ~Event() {}
+	explicit Event(exploration* e) : exp(e) {}
+	virtual ~Event() = default;
+
+	virtual void update() = 0;
 	virtual void draw_event(exploration* exp) = 0;
 };
 
-class chest_drop : public Event
+class loot_event : public Event
 {
-
 public:
 	player& p_ref;
+	drop_object* target_container;
+	bool is_active = true;
 
-	chest* chest_ptr;
-	bool is_chest_open=false;
-	void discard_chest();
-	
-	void collect_chest_loot();
-	chest_drop(player& p, chest* chest);
+	loot_event(exploration* e, player& p, drop_object* container) : Event(e), p_ref(p), target_container(container) {}
 
-	void draw_event(exploration* exp) override;
-};
+	void collect_item(size_t index);
+	void collect_all();
+	void close_event();
 
-class enemy_loot : public Event
-{
-
-public:
-	player& p_ref;
-	enemy* e_ref;
-
-	battle* current_fight;
-	chest* chest_ptr;
-
-	bool is_loot_open = true;
-	void discard_enemy_items();
-	void collect_enemy_loot();
-
-	enemy_loot(player& p, enemy* e, chest* chest);
+	void update() override;
 	void draw_event(exploration* exp) override;
 };
 

@@ -64,6 +64,9 @@ enemy::enemy(const enemy_config& config)
     this->position = config.position;
 }
 
+dead_body::dead_body(enemy* e, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : drop_object(e ? e->get_position() : Vector3{ 0, 0, 0 }, model, slots_count, std::move(loot)), enemy_ptr(e){}
+
+
 void player::set_name(const std::string& new_name)
 {
     this->name = new_name;
@@ -135,14 +138,14 @@ std::pair<int, bool> character::calculate_dmg(int limb_damage)
     return std::make_pair(damage_amount, is_crit);
 }
 
-int character::take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos)
+int character::take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
     static std::uniform_int_distribution<> distr(1, 100);
     static std::uniform_real_distribution<float> jitter(-0.05f, 0.05f);
 
-    bool czy_to_gracz = (this == player_ptr);
+    bool gracz_take_dmg = (dynamic_cast<const player*>(this) != nullptr);
 
     Vector3 text_pos;
 
@@ -193,7 +196,7 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
     int final_dmg = dmg_amount;
     bool is_blocked = false;
 
-    if (czy_to_gracz && is_guard)
+    if (gracz_take_dmg && is_guard)
     {
         final_dmg /= 2;
         is_blocked = true;
@@ -203,24 +206,24 @@ int character::take_damage(int dmg_amount, const character* player_ptr, bool is_
 
     if (is_blocked)
     {
-        if (czy_to_gracz)
-            gamestate::gameLogs.push_back(TextFormat("Blok! Otrzymales %d obrazen", incoming_damage));
+        if (gracz_take_dmg)
+            gamestate::gameLogs.push_back(TextFormat("Block! Received %d damage", incoming_damage));
         else
-            gamestate::gameLogs.push_back(TextFormat("Blok! Zadales %d obrazen", incoming_damage));
+            gamestate::gameLogs.push_back(TextFormat("Block! Dealt %d damage", incoming_damage));
     }
     else if (is_crit)
     {
-        if (czy_to_gracz)
-            gamestate::gameLogs.push_back(TextFormat("Cios krytyczny! Otrzymales %d obrazen", incoming_damage));
+        if (gracz_take_dmg)
+            gamestate::gameLogs.push_back(TextFormat("Crit! Received %d damage", incoming_damage));
         else
-            gamestate::gameLogs.push_back(TextFormat("Cios krytyczny! Zadales %d obrazen", incoming_damage));
+            gamestate::gameLogs.push_back(TextFormat("Critical Hit! Dealt %d damage", incoming_damage));
     }
     else
     {
-        if (czy_to_gracz)
-            gamestate::gameLogs.push_back(TextFormat("Otrzymales %d obrazen", incoming_damage));
+        if (gracz_take_dmg)
+            gamestate::gameLogs.push_back(TextFormat("Received %d damage", incoming_damage));
         else
-            gamestate::gameLogs.push_back(TextFormat("Zadales %d obrazen", incoming_damage));
+            gamestate::gameLogs.push_back(TextFormat("Dealt %d damage", incoming_damage));
     }
 
     if (gs)
@@ -263,35 +266,37 @@ void player::player_attack()
 }
 
 
-void player::take_all_loot(chest* c)
+void player::take_all_loot(drop_object* o)
 {
-    for (item* i : c->chest_loot)
+    if (o == nullptr) return;
+
+    for (const auto& i : o->drop_loot)
     {
-        bag->add_item(i);
+        bag->add_item(i.get());
     }
-    c->chest_loot.clear();
+    o->drop_loot.clear();
 }
 
-void player::take_item(chest* c, item* it)
+void player::take_item(drop_object* o, item* it)
 {
-    if (c == nullptr || it == nullptr)
+    if (o == nullptr || it == nullptr)
     {
         return;
     }
 
     this->bag->add_item(it);
 
-    auto it_chest = std::find(c->chest_loot.begin(), c->chest_loot.end(), it);
-    if (it_chest != c->chest_loot.end())
+    auto loot_container = std::find_if(o->drop_loot.begin(), o->drop_loot.end(), [it](const std::unique_ptr<item>& ptr) 
+        {
+            return ptr.get() == it;
+        }
+    );
+
+    if (loot_container != o->drop_loot.end())
     {
-        c->chest_loot.erase(it_chest);
+        o->drop_loot.erase(loot_container);
     }
     
-    auto it_enemy = std::find(c->enemy_loot.begin(), c->enemy_loot.end(), it);
-    if (it_enemy != c->enemy_loot.end())
-    {
-        c->enemy_loot.erase(it_enemy);
-    }
     this->sort_bag();
 }
 

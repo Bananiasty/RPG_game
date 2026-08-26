@@ -12,13 +12,20 @@
 
 void exploration::player_stats_init(player* c)
 {
-	auto& start_node = world_map[1];
 
-	float start_tile_x = start_node.room_x + (start_node.room_width / 2);
-	float start_tile_y = start_node.room_y + (start_node.room_length / 2);
+	auto& start_map = floors[current_floor_id].world_map;
+	auto it = start_map.find(1);
 
-	c->position.x = (float)start_tile_x * 2.0f;
-	c->position.z = (float)start_tile_y * 2.0f;
+	if (it != start_map.end())
+	{
+		const Node& start_node = it->second;
+
+		float start_tile_x = start_node.room_x + (start_node.room_width / 2.0f);
+		float start_tile_y = start_node.room_y + (start_node.room_length / 2.0f);
+
+		c->position.x = start_tile_x * 2.0f;
+		c->position.z = start_tile_y * 2.0f;
+	}
 }
 
 void exploration::loot_init()
@@ -82,15 +89,15 @@ void exploration::world_map_init()
 	
 	loot_init();
 	enemies_init();
-
-	add_Node({ .id = 1, .left = 2,.s_chest = rand_loot(nullptr, {21.0f, 0, 21.0f}), .dungeon_pos = {10,10}, .room_size = {5, 5} });
-	add_Node({ .id = 2, .enemy_id = 1, .right = 3,  .dungeon_pos = { 10, 25 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 3, .enemy_id = 1, .left = 4, .right = 5, .dungeon_pos = { 10, 40 }, .room_size = { 8, 8 } });
-	add_Node({ .id = 4, .left = 5, .dungeon_pos = { 25, 40 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 5, .enemy_id = 1,.left = 6, .right = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 111.0f}), .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 } });
-	add_Node({ .id = 6, .left = 7, .dungeon_pos = { 25, 55 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 7, .enemy_id = 1,.left = 8, .dungeon_pos = { 25, 70 }, .room_size = { 6, 6 } });
-	add_Node({ .id = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 141.0f}), .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 } });
+	
+	add_Node({ .floor_id = 0, .room_id = 1, .left = 2, .s_chest = rand_loot(nullptr, {21.0f, 0, 21.0f}), .dungeon_pos = {10, 10}, .room_size = {5, 5} });
+	add_Node({ .floor_id = 0, .room_id = 2, .enemy_id = 1, .right = 3, .dungeon_pos = { 10, 25 }, .room_size = { 6, 6 } });
+	add_Node({ .floor_id = 0, .room_id = 3, .enemy_id = 1, .left = 4, .right = 5, .dungeon_pos = { 10, 40 }, .room_size = { 8, 8 } });
+	add_Node({ .floor_id = 0, .room_id = 4, .left = 5, .dungeon_pos = { 25, 40 }, .room_size = { 6, 6 } });
+	add_Node({ .floor_id = 0, .room_id = 5, .enemy_id = 1, .left = 6, .right = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 111.0f}), .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 } });
+	add_Node({ .floor_id = 0, .room_id = 6, .left = 7, .dungeon_pos = { 25, 55 }, .room_size = { 6, 6 } });
+	add_Node({ .floor_id = 0, .room_id = 7, .enemy_id = 1, .left = 8, .dungeon_pos = { 25, 70 }, .room_size = { 6, 6 } });
+	add_Node({ .floor_id = 0, .room_id = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 141.0f}), .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 } });		
 
 	//draw_dungeon_map();
 }

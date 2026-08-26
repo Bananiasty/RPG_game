@@ -77,7 +77,7 @@ public:
 
 	virtual bool is_dead() = 0;
 
-	int take_damage(int dmg_amount, const character* player_ptr, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
+	int take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
 
 	std::pair<int, bool> calculate_dmg(int limb_damage);
 
@@ -161,8 +161,8 @@ public:
 
 	void set_name(const std::string& new_name);
 
-	void take_all_loot(chest* c);
-	void take_item(chest* c, item* it);
+	void take_all_loot(drop_object* c);
+	void take_item(drop_object* c, item* it);
 
 	void grant_xp();
 

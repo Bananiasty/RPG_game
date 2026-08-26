@@ -1,13 +1,14 @@
 #pragma once
 #include <iostream>
 #include <vector>
+#include <map>
 #include "raylib.h"
 #include "textureManager.h"
 #include <cstddef>
 
 enum class BodyPart { NONE, TORSO, HEAD, LEFT_ARM, RIGHT_ARM, LEFT_LEG, RIGHT_LEG };
 			
-
+class exploration;
 class item;
 class enemy;
 class player; 
@@ -23,36 +24,63 @@ public:
 	void del_item(item* rm_item);
 };
 
-struct chest
+
+
+
+
+
+
+
+
+
+struct object
 {
-private:
-
-public:
 	Vector3 position;
-	enemy* enemy_ptr;
-	int slots;
-	std::vector<item*>chest_loot;
-	std::vector<item*>enemy_loot;
-	Model chest_model;
+	const Model* model_ptr;
+	const ModelAnimation* animation_ptr;
+	int animation_frame_count = 0;
 
-	//KONSTRUKTOR DLA SKRZYNI
-	chest(std::vector<item*> ch_l, int slots_number, Vector3 pos)
-		: position(pos), enemy_ptr(nullptr), slots(slots_number), chest_loot(ch_l), enemy_loot() 
-	{
-		chest_model = objects.m_chest;
-	}
+	object(Vector3 pos, const Model* model = nullptr, const ModelAnimation* animation = nullptr, int frame_count = 0) : position(pos), model_ptr(model), animation_ptr(animation), animation_frame_count(frame_count) {}
 
-	// KONSTRUKTOR DLA WROGA
-	chest(std::vector<item*> e_l, int slots_number, enemy* e) :
-		position(Vector3{ 0.0f, 0.0f, 0.0f }),
-		enemy_ptr(e),
-		slots(slots_number),
-		chest_loot(),
-		enemy_loot(e_l){}
-	
-	~chest();
-	
+	virtual ~object() = default;
 };
+	struct drop_object : object
+	{
+		int slots;
+		std::vector<std::unique_ptr<item>> drop_loot;
+
+		drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : object(pos, model), slots(slots_count), drop_loot(std::move(loot)) {}
+
+		virtual ~drop_object() = default;
+
+		int rand_drop_slots();
+		drop_object* rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f });
+	};
+		struct chest : public drop_object
+		{
+			bool is_open = false;
+
+			chest(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : drop_object(pos, model, slots_count, std::move(loot)) {}
+		};
+		struct dead_body : public drop_object
+		{
+			enemy* enemy_ptr;
+
+			dead_body(enemy* e, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot);
+		};
+
+	struct trapdoor : object
+	{
+
+		trapdoor(Vector3 pos, const Model* model, const ModelAnimation* animation, int frame_count) : object(pos, &objects.trapdoor, objects.trapdoor_open_animation, frame_count) {}
+	};
+
+
+
+
+
+
+
 
 class Event;
 struct Node
@@ -73,17 +101,25 @@ struct Node
 	int room_length;
 
 	enemy* enemy;
-	chest* spawn_chest;
+	drop_object* spawn_chest;
 };
 
+
+struct dungeon_floor
+{
+	std::map<int, Node> world_map;
+	std::vector<std::vector<int>> dungeon;
+	std::vector<drop_object*> world_loot;
+};
 struct NodeConfig {
-	int id;
+	int floor_id;
+	int room_id;
 	int enemy_id = -1;
 	int left = -1;
 	int right = -1;
 	int previous = -1;
 	bool discovered = false;
-	chest* s_chest = nullptr;
+	drop_object* s_chest = nullptr;
 	Vector2 dungeon_pos = { 0, 0 };
 	Vector2 room_size = { 5, 5 };
 };

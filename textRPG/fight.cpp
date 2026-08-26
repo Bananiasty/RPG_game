@@ -18,6 +18,7 @@ void battle::initiate_fight_view()
     enemy& e = this->e_ref;
     player& p = this->p_ref;
     e.exp = this->exp;
+    auto& current_dungeon = exp->floors[exp->current_floor_id].dungeon;
 
     Vector3 e_pos = e.get_position();
     Vector3 p_pos = p.get_position();
@@ -50,7 +51,7 @@ void battle::initiate_fight_view()
     bool primary_blocked = true;
     if (check_x >= 0 && check_x < exp->szerokosc && check_z >= 0 && check_z < exp->dlugosc)
     {
-        if (exp->dungeon[check_x][check_z] == 1)
+        if (current_dungeon[check_x][check_z] == 1)
         {
             primary_blocked = false;
         }
@@ -76,7 +77,7 @@ void battle::initiate_fight_view()
 
             if (alt_x >= 0 && alt_x < exp->szerokosc && alt_z >= 0 && alt_z < exp->dlugosc)
             {
-                if (exp->dungeon[alt_x][alt_z] == 1)
+                if (current_dungeon[alt_x][alt_z] == 1)
                 {
                     float score = Vector3DotProduct(norm_raw, CARDINAL_DIRS[i]);
                     if (score > best_score)

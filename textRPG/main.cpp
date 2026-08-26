@@ -18,9 +18,12 @@ Font cabin_sketch_font_bold;
 int main()
 {
     setlocale(LC_CTYPE, "Polish");
-    srand(time(NULL));
+    srand(static_cast<unsigned int>(time(NULL)));
 
-    player bohater("", {60, 60, 40, 40, 40, 40}, 0, 30, 30, 30, 0, 0, 1, textures.player, {0.0f, 0.0f, 0.0f}, 0);
+    graphics_init();
+    SetExitKey(KEY_NULL);
+
+    player bohater("", { 60, 60, 40, 40, 40, 40 }, 0, 30, 30, 30, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -29,10 +32,8 @@ int main()
     bool niepoprawny_nick = false;
 
     int current_state = 1;
-    float moveSpeed;
-    float mouseSensitivity;
-    
-    graphics_init();
+    float moveSpeed = 0.1f;
+    float mouseSensitivity = 0.1f;
 
     audio.play_music(MusicID::EXPLORATION);
 
@@ -47,7 +48,6 @@ int main()
 
     battle* current_fight = nullptr;
 
-
     while (!WindowShouldClose())
     {
         audio.update();
@@ -61,15 +61,11 @@ int main()
         virtual_mouse_pos = virtual_mouse;
 
         global_fx.update();
-        Vector3 stara_pozycja = world.camera.position;
-        Vector3 stara_camera = world.camera.target;
-
-        SetExitKey(KEY_NULL);
 
         if (current_state == 1 && !world.showMenu)
         {
-            moveSpeed = 0.1f;
-            mouseSensitivity = 0.1f;
+            Vector3 stara_pozycja = world.camera.position;
+
             Vector3 movement = {
                 ((float)IsKeyDown(KEY_W) - (float)IsKeyDown(KEY_S)) * moveSpeed,
                 ((float)IsKeyDown(KEY_D) - (float)IsKeyDown(KEY_A)) * moveSpeed,
@@ -81,34 +77,74 @@ int main()
                 GetMouseDelta().y * mouseSensitivity,
                 0.0f
             };
+
             UpdateCameraPro(&world.camera, movement, rotation, 0.0f);
             world.apply_collision(stara_pozycja);
             world.event_check();
 
-            for (auto& [id, node] : world.world_map)
+            if (!world.floors.empty() &&
+                world.current_floor_id >= 0 &&
+                world.current_floor_id < static_cast<int>(world.floors.size()))
             {
-                enemy* current_enemy = node.enemy;
-                if (current_enemy == nullptr || current_enemy->is_dead())
-                    continue;
+                auto& current_map = world.floors[world.current_floor_id].world_map;
 
-                float dystans = Vector3Distance(world.camera.position, current_enemy->get_position());
-                if (dystans < 1.2f)
+                for (auto& [id, node] : current_map)
                 {
-                    current_state = 2;
-                    current_fight = new battle(bohater, *current_enemy);
-                    bohater.xp_from_enemy_dif = current_enemy->get_dif();
-                    current_fight->exp = &world;
-                    current_fight->initiate_fight_view();
-                    active_state = current_fight;
+                    enemy* current_enemy = node.enemy;
+                    if (current_enemy == nullptr || current_enemy->is_dead())
+                    {
+                        continue;
+                    }
+
+                    float dystans = Vector3Distance(world.camera.position, current_enemy->get_position());
+                    if (dystans < 1.2f)
+                    {
+                        current_state = 2;
+                        current_fight = new battle(bohater, *current_enemy);
+                        bohater.xp_from_enemy_dif = current_enemy->get_dif();
+                        current_fight->exp = &world;
+                        current_fight->initiate_fight_view();
+                        active_state = current_fight;
+                        break;
+                    }
                 }
             }
         }
-        else
+
+        if (current_state == 2 && current_fight != nullptr)
         {
-            world.camera.projection = CAMERA_PERSPECTIVE;
+            enemy* your_opponent = &current_fight->get_enemy();
+            if (your_opponent != nullptr)
+            {
+                your_opponent->set_last_frame(0);
+                if (your_opponent->is_dead())
+                {
+                    bohater.grant_xp();
+                    bohater.check_level_up();
+
+                    drop_object* dropped_loot = world.rand_loot(your_opponent, your_opponent->get_position());
+                    if (dropped_loot != nullptr &&
+                        world.current_floor_id >= 0 &&
+                        world.current_floor_id < static_cast<int>(world.floors.size()))
+                    {
+                        world.floors[world.current_floor_id].world_loot.push_back(dropped_loot);
+                    }
+
+                    active_state = &world;
+                    current_state = 1;
+
+                    delete current_fight;
+                    current_fight = nullptr;
+
+                    world.delete_enemy(your_opponent);
+                }
+            }
         }
 
-        if (bohater.is_dead()) current_state = 5;
+        if (bohater.is_dead())
+        {
+            current_state = 5;
+        }
 
         int nextID = active_state->update_state();
 
@@ -201,34 +237,6 @@ int main()
 
         DrawTexturePro(target.texture, source_rec, dest_rec, { 0.0f, 0.0f }, 0.0f, WHITE);
         EndDrawing();
-
-        if (current_state == 2 && current_fight != nullptr)
-        {
-            enemy* your_opponent = &current_fight->get_enemy();
-            if (your_opponent != nullptr)
-            {
-                your_opponent->set_last_frame(0);
-                if (your_opponent->is_dead())
-                {
-                    bohater.grant_xp();
-                    bohater.check_level_up();
-
-                    chest* dropped_loot = world.rand_loot(your_opponent);
-                    if (dropped_loot != nullptr)
-                    {
-                        world.world_chests.push_back(dropped_loot);
-                    }
-
-                    active_state = &world;
-                    current_state = 1;
-
-                    delete current_fight;
-                    current_fight = nullptr;
-
-                    world.delete_enemy(your_opponent);
-                }
-            }
-        }
     }
 
     UnloadRenderTexture(target);
@@ -238,4 +246,3 @@ int main()
 
     return 0;
 }
-        

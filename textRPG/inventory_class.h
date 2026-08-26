@@ -33,6 +33,8 @@ protected:
 	//void restore_player_mana(player* c, int val);
 
 
+
+
 private:
 	std::string name;
 	std::string rarity;
@@ -48,6 +50,14 @@ public:
 	virtual void use(player* c) {};
 	std::string get_name();
 	virtual bool is_equipped() { return false; };
+
+	//EQUIPMENT STATS
+	virtual int get_defense_stat() const { return 0; }
+	virtual int get_attack_stat() const { return 0; }
+
+	//FOOD STATS
+	virtual int get_restore_health() const { return 0; }
+	//virtual int get_restore_hunger() const { return 0; }	
 	
 };
 class armor:public item
@@ -58,6 +68,7 @@ protected:
 	virtual item* clone() const = 0;
 
 public:
+	int get_defense_stat() const override{ return defense_stat; }
 	armor(std::string n, std::string r, int c, Texture2D* icon, int def) :item(n, r, c, icon), defense_stat(def) {};
 	item_type get_type() override;
 	void use(player* player) override;
@@ -124,6 +135,7 @@ public:
 	item* clone() const override;
 	void use(player* player) override;
 	bool is_equipped() override;
+	int get_attack_stat() const override { return damage_stat; }
 };
 
 class shield :public armor
@@ -184,6 +196,8 @@ public:
 	item_type get_type() override;
 	virtual item* clone() const override;
 	void use(player* player) override;
+	
+	//int get_restore_hunger() const { return 0; }
 };
 class health_potion:public food
 {
@@ -193,6 +207,8 @@ public:
 	health_potion(std::string n, std::string r, int c, Texture2D* icon, int r_h) :food(n, r, c, icon), restore_health(r_h) {};
 	item* clone() const override;
 	void use(player* player) override;
+
+	int get_restore_health() const override { return restore_health; }
 };
 /*class mana_potion:public food
 {

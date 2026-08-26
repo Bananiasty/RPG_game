@@ -9,11 +9,14 @@
 
 void exploration::update_enemies()
 {
+
+    dungeon_floor& current_floor = floors[current_floor_id];
+
     float dt = GetFrameTime();
     float detectionRange = 8.0f;
     float enemySpeed = 2.0f;
 
-    for (auto& [id, node] : world_map)
+    for (auto& [id, node] : current_floor.world_map)
     {
         enemy* e = node.enemy;
 
@@ -30,7 +33,7 @@ void exploration::update_enemies()
             if (!e->get_is_alerted())
             {
                 e->set_is_alerted(true);
-                if(!audio.is_sound_playing(SoundID::ENEMY_DETECT))
+                if (!audio.is_sound_playing(SoundID::ENEMY_DETECT))
                 {
                     audio.play_sound(SoundID::ENEMY_DETECT);
                 }
@@ -43,7 +46,6 @@ void exploration::update_enemies()
 
             if (e->is_moving())
             {
-
                 Vector3 target = e->get_target_tile();
                 Vector3 nextPos = Vector3MoveTowards(enemyPos, target, enemySpeed * dt);
 

@@ -149,7 +149,10 @@ void LoadGameModels()
 	objects.wall_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 	objects.wall_tile.materials[1].shader = textures.fogShader;
 
-	
+
+	objects.trapdoor = LoadModel("graphics/models/objects/trapdoor.glb");
+	int animationCount = 0;
+	objects.trapdoor_open_animation = LoadModelAnimations("graphics/models/objects/trapdoor_open.glb", &animationCount);
 }
 
 int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPos, int lastFrame)

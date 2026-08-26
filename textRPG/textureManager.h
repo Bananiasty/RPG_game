@@ -118,6 +118,9 @@ struct ModelManager {
 	Model ceiling_tile;
 	Model m_chest;
 
+	Model trapdoor;
+	ModelAnimation* trapdoor_open_animation;
+
 };
 
 
