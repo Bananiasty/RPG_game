@@ -19,7 +19,7 @@ void exploration::save_game()
 
         for (size_t floor_idx = 0; floor_idx < floors.size(); ++floor_idx)
         {
-            for (auto const& [id, node] : floors[floor_idx].world_map)
+            for (const auto& [id, node] : floors[floor_idx].world_map)
             {
                 plik << floor_idx << " " << id << " " << node.discovered << "\n";
             }

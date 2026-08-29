@@ -70,8 +70,7 @@ void draw_login_screen(const std::string& current_name, bool has_error)
 struct RenderObject
 {
 	float distance_sqr = 0.0f;
-
-	drop_object* drop_ptr = nullptr;
+	object* object_ptr = nullptr;
 	enemy* enemy_ptr = nullptr;
 };
 
@@ -125,34 +124,86 @@ void DrawExploration(exploration* exp)
 	int startY = std::max(0, playerGridY - promienWidzenia);
 	int endY = std::min(exp->dlugosc, playerGridY + promienWidzenia);
 
+
+	for (int cx = startX; cx < endX; cx++)
+	{
+		for (int cy = startY; cy < endY; cy++)
+		{
+			int tile = current_floor.dungeon[cx][cy];
+
+			if (tile == 2)
+			{
+				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
+				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
+
+				// ŒCIANA PO£UDNIOWA
+				if (cy > 0 && current_floor.dungeon[cx][cy - 1] == 1)
+				{
+					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+				// ŒCIANA PÓ£NOCNA
+				if (cy < exp->dlugosc - 1 && current_floor.dungeon[cx][cy + 1] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+				// ŒCIANA WSCHODNIA
+				if (cx > 0 && current_floor.dungeon[cx - 1][cy] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+				// ŒCIANA ZACHODNIA
+				if (cx < exp->szerokosc - 1 && current_floor.dungeon[cx + 1][cy] == 1)
+				{
+					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
+					Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
+					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+			}
+			else if (tile == 1)
+			{
+				DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f }, 1.0f, WHITE);
+				DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f, (float)cy * 2.0f }, 1.0f, WHITE);
+			}
+		}
+	}
+
 	std::vector<RenderObject> object_to_draw;
 
 	Vector3 enemyForward = { 0.0f, 0.0f, 1.0f };
 
-	for (auto* c : current_floor.world_loot)
+	for (const auto& object : current_floor.world_objects)
 	{
-		if (c == nullptr) continue;
-		int chestGridX = (int)(c->position.x / 2.0f);
-		int chestGridY = (int)(c->position.z / 2.0f);
+		if (!object) continue;
+		int chestGridX = (int)(object->position.x / 2.0f);
+		int chestGridY = (int)(object->position.z / 2.0f);
 
 		if (chestGridX >= startX && chestGridX < endX && chestGridY >= startY && chestGridY < endY)
 		{
-			float dx = c->position.x - exp->camera.position.x;
-			float dy = c->position.y - exp->camera.position.y;
-			float dz = c->position.z - exp->camera.position.z;
+			float dx = object->position.x - exp->camera.position.x;
+			float dy = object->position.y - exp->camera.position.y;
+			float dz = object->position.z - exp->camera.position.z;
 
-			RenderObject object;
-			object.drop_ptr = c;
-			object.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
-			object_to_draw.push_back(object);
+			RenderObject renderObject;
+			renderObject.object_ptr = object.get();
+			renderObject.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
+			object_to_draw.push_back(renderObject);
 		}
 	}
 
-	for (auto& [id, node] : current_floor.world_map)
+	// Draw active enemies on the current floor
+	for (enemy* e : current_floor.active_enemies)
 	{
-		if (node.enemy != nullptr && !node.enemy->is_dead())
+		if (e != nullptr && !e->is_dead())
 		{
-			Vector3 pos = node.enemy->get_position();
+			Vector3 pos = e->get_position();
 			int enemyGridX = (int)(pos.x / 2.0f);
 			int enemyGridY = (int)(pos.z / 2.0f);
 
@@ -163,10 +214,10 @@ void DrawExploration(exploration* exp)
 				float dy = pos.y - exp->camera.position.y;
 				float dz = pos.z - exp->camera.position.z;
 
-				RenderObject object;
-				object.enemy_ptr = node.enemy;
-				object.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
-				object_to_draw.push_back(object);
+				RenderObject renderObject;
+				renderObject.enemy_ptr = e;
+				renderObject.distance_sqr = (dx * dx) + (dy * dy) + (dz * dz);
+				object_to_draw.push_back(renderObject);
 			}
 		}
 	}
@@ -175,26 +226,15 @@ void DrawExploration(exploration* exp)
 			return a.distance_sqr > b.distance_sqr;
 		});
 
-	for (const auto& object : object_to_draw)
+	for (const auto& item : object_to_draw)
 	{
-		if (object.drop_ptr != nullptr)
+		if (item.object_ptr != nullptr)
 		{
-			auto* c = object.drop_ptr;
-			if (auto* db = dynamic_cast<dead_body*>(c); db != nullptr && db->enemy_ptr != nullptr)
-			{
-				DrawCube(c->position, 0.7f, 0.1f, 0.7f, RED);
-				DrawCubeWires(c->position, 0.7f, 0.1f, 0.7f, MAROON);
-			}
-			else
-			{
-				DrawModel(objects.m_chest, c->position, 1.5f, WHITE);
-				DrawCubeWires(c->position, 0.6f, 0.6f, 0.6f, DARKBROWN);
-			}
+			item.object_ptr->draw(exp->camera);
 		}
-
-		else if (object.enemy_ptr != nullptr)
+		else if (item.enemy_ptr != nullptr)
 		{
-			auto* enemy = object.enemy_ptr;
+			auto* enemy = item.enemy_ptr;
 			int current_id = enemy->get_id();
 			Vector3 pos = enemy->get_position();
 
@@ -273,55 +313,7 @@ void DrawExploration(exploration* exp)
 		}
 	}
 
-	for (int cx = startX; cx < endX; cx++)
-	{
-		for (int cy = startY; cy < endY; cy++)
-		{
-			int tile = current_floor.dungeon[cx][cy];
-
-			if (tile == 2)
-			{
-				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
-				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
-
-				// ŒCIANA PO£UDNIOWA
-				if (cy > 0 && current_floor.dungeon[cx][cy - 1] == 1)
-				{
-					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-				}
-				// ŒCIANA PÓ£NOCNA
-				if (cy < exp->dlugosc - 1 && current_floor.dungeon[cx][cy + 1] == 1)
-				{
-					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
-					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z + 2.0f };
-					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-				}
-				// ŒCIANA WSCHODNIA
-				if (cx > 0 && current_floor.dungeon[cx - 1][cy] == 1)
-				{
-					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
-					Vector3 p_gorna = Vector3{ pozycja_gorna.x - 2.0f, 2.0f, pozycja_gorna.z };
-					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-				}
-				// ŒCIANA ZACHODNIA
-				if (cx < exp->szerokosc - 1 && current_floor.dungeon[cx + 1][cy] == 1)
-				{
-					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
-					Vector3 p_gorna = Vector3{ pozycja_gorna.x, 2.0f, pozycja_gorna.z + 2.0f };
-					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 270.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
-				}
-			}
-			else if (tile == 1)
-			{
-				DrawModel(objects.floor_tile, Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f }, 1.0f, WHITE);
-				DrawModel(objects.ceiling_tile, Vector3{ (float)cx * 2.0f, 4.0f, (float)cy * 2.0f }, 1.0f, WHITE);
-			}
-		}
-	}
+	
 
 }
 
@@ -910,7 +902,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 }
 
 
-bool draw_drop(exploration* exp, drop_object* current_drop, bool& is_open)
+bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 {
 	int window_w = GAME_WIDTH / 2;
 	int window_h = GAME_HEIGHT / 2;
@@ -925,9 +917,12 @@ bool draw_drop(exploration* exp, drop_object* current_drop, bool& is_open)
 		return false;
 	}
 
+	drop_object* drop = dynamic_cast<drop_object*>(current_drop);
+	if (drop == nullptr) return false;
+
 	std::vector<item*> raw_loot;
-	raw_loot.reserve(current_drop->drop_loot.size());
-	for (auto& up : current_drop->drop_loot) raw_loot.push_back(up.get());
+	raw_loot.reserve(drop->drop_loot.size());
+	for (auto& up : drop->drop_loot) raw_loot.push_back(up.get());
 
 	if (raw_loot.empty())
 	{
@@ -970,14 +965,14 @@ bool draw_drop(exploration* exp, drop_object* current_drop, bool& is_open)
 
 	if (is_take_all_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 	{
-		for (auto& up : current_drop->drop_loot)
+		for (auto& up : drop->drop_loot)
 		{
 			if (up)
 			{
 				exp->bohater.bag->add_item(up.release());
 			}
 		}
-		current_drop->drop_loot.clear();
+		drop->drop_loot.clear();
 		exp->bohater.sort_bag();
 		is_open = false;
 		return true;
@@ -1039,17 +1034,18 @@ bool draw_drop(exploration* exp, drop_object* current_drop, bool& is_open)
 	if (clicked_index != -1)
 	{
 		// transfer ownership of the clicked item into player's bag
-		if (clicked_index >= 0 && clicked_index < (int)current_drop->drop_loot.size())
+		if (clicked_index >= 0 && clicked_index < (int)drop->drop_loot.size())
 		{
-			auto& up = current_drop->drop_loot[clicked_index];
-			if (up)
+			auto it = drop->drop_loot.begin() + clicked_index;
+			if (it != drop->drop_loot.end() && *it)
 			{
-				exp->bohater.bag->add_item(up.release());
-				current_drop->drop_loot.erase(current_drop->drop_loot.begin() + clicked_index);
+				item* raw = it->release();
+				drop->drop_loot.erase(it);
+				exp->bohater.bag->add_item(raw);
 			}
 		}
 
-		if (current_drop->drop_loot.empty())
+		if (drop->drop_loot.empty())
 		{
 			is_open = false;
 			return true;

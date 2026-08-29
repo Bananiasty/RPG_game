@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <map>
+#include <memory>
 #include "raylib.h"
 #include "textureManager.h"
 #include <cstddef>
@@ -22,10 +23,7 @@ public:
 	std::vector<item*>items;
 	void add_item(item* new_item);
 	void del_item(item* rm_item);
-};
-
-
-
+};		
 
 
 
@@ -43,6 +41,14 @@ struct object
 	object(Vector3 pos, const Model* model = nullptr, const ModelAnimation* animation = nullptr, int frame_count = 0) : position(pos), model_ptr(model), animation_ptr(animation), animation_frame_count(frame_count) {}
 
 	virtual ~object() = default;
+
+	virtual void draw(const Camera3D& camera) const
+	{
+		if (model_ptr != nullptr)
+		{
+			DrawModel(*model_ptr, position, 1.0f, WHITE);
+		}
+	}
 };
 	struct drop_object : object
 	{
@@ -51,78 +57,102 @@ struct object
 
 		drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : object(pos, model), slots(slots_count), drop_loot(std::move(loot)) {}
 
-		virtual ~drop_object() = default;
-
 		int rand_drop_slots();
-		drop_object* rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f });
+
+		virtual ~drop_object() = default;
 	};
 		struct chest : public drop_object
 		{
 			bool is_open = false;
 
 			chest(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : drop_object(pos, model, slots_count, std::move(loot)) {}
+
+		void draw(const Camera3D& camera) const override
+		{
+			if (model_ptr != nullptr)
+			{
+				DrawModel(*model_ptr, position, 1.5f, WHITE);
+			}
+		}
 		};
 		struct dead_body : public drop_object
 		{
 			enemy* enemy_ptr;
 
 			dead_body(enemy* e, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot);
+
+			void draw(const Camera3D& camera) const override
+			{
+				DrawCube(position, 0.7f, 0.1f, 0.7f, RED);
+				DrawCubeWires(position, 0.7f, 0.1f, 0.7f, MAROON);
+			}
 		};
 
 	struct trapdoor : object
 	{
+		int target_floor_id = -1;
+		bool is_open = false;
+		int current_frame = 0;
 
-		trapdoor(Vector3 pos, const Model* model, const ModelAnimation* animation, int frame_count) : object(pos, &objects.trapdoor, objects.trapdoor_open_animation, frame_count) {}
+		trapdoor(Vector3 pos, const Model* model, const ModelAnimation* animation = nullptr, int frame_count = 0, int target_floor = -1) : object(pos, model, animation, frame_count), target_floor_id(target_floor) {}
+
+		void draw(const Camera3D& camera) const override
+		{
+			if (model_ptr != nullptr)
+			{
+				DrawModel(*model_ptr, position, 1.0f, WHITE);
+				DrawCubeWires(position, 1.0f, 0.2f, 1.0f, DARKGRAY);
+			}
+		}
+		
+	};
+
+	class Event;
+	struct Node
+	{
+		int left_id = -1;
+		int right_id = -1;
+		int previous_id = -1;
+
+		bool discovered = false;
+
+		int room_x = 0;
+		int room_y = 0;
+		int room_width = 5;
+		int room_length = 5;
+
+		int enemy_id = -1;
 	};
 
 
+	struct NodeConfig {
+		int floor_id;
+		int room_id;
+		int enemy_id = -1;
+		int left = -1;
+		int right = -1;
+		int previous = -1;
+		bool discovered = false;
+		Vector2 dungeon_pos = { 0, 0 };
+		Vector2 room_size = { 5, 5 };
 
+		bool has_chest = false;
+		Vector3 chest_pos = { 0.0f, 0.0f, 0.0f };
+	};
 
+	struct dungeon_floor
+	{
+		std::map<int, Node> world_map;
+		std::vector<std::vector<int>> dungeon;
+	std::vector<std::unique_ptr<object>> world_objects;
+	std::vector<enemy*> active_enemies;
+	dungeon_floor() = default;
+	dungeon_floor(const dungeon_floor&) = delete;
+	dungeon_floor& operator=(const dungeon_floor&) = delete;
+	dungeon_floor(dungeon_floor&&) = default;
+	dungeon_floor& operator=(dungeon_floor&&) = default;
+	};
 
-
-
-
-class Event;
-struct Node
-{
-	int left_id;
-	int right_id;
-	int previous_id;
-
-	bool discovered;
-
-	int positionX;
-	int positionY;
-
-	int room_x;
-	int room_y;
-
-	int room_width;
-	int room_length;
-
-	enemy* enemy;
-	drop_object* spawn_chest;
-};
-
-
-struct dungeon_floor
-{
-	std::map<int, Node> world_map;
-	std::vector<std::vector<int>> dungeon;
-	std::vector<drop_object*> world_loot;
-};
-struct NodeConfig {
-	int floor_id;
-	int room_id;
-	int enemy_id = -1;
-	int left = -1;
-	int right = -1;
-	int previous = -1;
-	bool discovered = false;
-	drop_object* s_chest = nullptr;
-	Vector2 dungeon_pos = { 0, 0 };
-	Vector2 room_size = { 5, 5 };
-};
 
 struct collisions
 {

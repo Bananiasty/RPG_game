@@ -13,6 +13,7 @@
 
 class gamestate;
 class exploration;
+struct drop_object;
 
 class character
 {
@@ -161,8 +162,8 @@ public:
 
 	void set_name(const std::string& new_name);
 
-	void take_all_loot(drop_object* c);
-	void take_item(drop_object* c, item* it);
+	void take_all_loot(object* c);
+	void take_item(object* c, item* it);
 
 	void grant_xp();
 

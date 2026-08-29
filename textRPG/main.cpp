@@ -82,15 +82,18 @@ int main()
             world.apply_collision(stara_pozycja);
             world.event_check();
 
+            // Keep player logical position in sync with camera for proximity checks
+            world.bohater.position.x = world.camera.position.x;
+            world.bohater.position.z = world.camera.position.z;
+
             if (!world.floors.empty() &&
                 world.current_floor_id >= 0 &&
                 world.current_floor_id < static_cast<int>(world.floors.size()))
             {
-                auto& current_map = world.floors[world.current_floor_id].world_map;
+                auto& current_floor = world.floors[world.current_floor_id];
 
-                for (auto& [id, node] : current_map)
+                for (enemy* current_enemy : current_floor.active_enemies)
                 {
-                    enemy* current_enemy = node.enemy;
                     if (current_enemy == nullptr || current_enemy->is_dead())
                     {
                         continue;
@@ -122,12 +125,12 @@ int main()
                     bohater.grant_xp();
                     bohater.check_level_up();
 
-                    drop_object* dropped_loot = world.rand_loot(your_opponent, your_opponent->get_position());
-                    if (dropped_loot != nullptr &&
+                    auto dropped_loot = world.rand_loot(your_opponent, your_opponent->get_position());
+                    if (dropped_loot &&
                         world.current_floor_id >= 0 &&
                         world.current_floor_id < static_cast<int>(world.floors.size()))
                     {
-                        world.floors[world.current_floor_id].world_loot.push_back(dropped_loot);
+                        world.floors[world.current_floor_id].world_objects.emplace_back(std::move(dropped_loot));
                     }
 
                     active_state = &world;

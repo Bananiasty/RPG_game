@@ -12,45 +12,41 @@
 
 void exploration::add_Node(const NodeConfig& config)
 {
-    if (config.floor_id < 0 || config.floor_id >= static_cast<int>(floors.size()))
+    Node node;
+    node.left_id = config.left;
+    node.right_id = config.right;
+    node.previous_id = config.previous;
+    node.discovered = config.discovered;
+
+    node.room_x = (int)config.dungeon_pos.x;
+    node.room_y = (int)config.dungeon_pos.y;
+    node.room_width = (int)config.room_size.x;
+    node.room_length = (int)config.room_size.y;
+
+    node.enemy_id = config.enemy_id;
+
+    floors[config.floor_id].world_map[config.room_id] = node;
+
+    if (config.has_chest)
     {
-        return;
+        auto loot = rand_loot(nullptr, config.chest_pos);
+        if (loot)
+        {
+            floors[config.floor_id].world_objects.emplace_back(std::move(loot));
+        }
     }
-
-    auto& current_map = floors[config.floor_id].world_map;
-
-    Node new_node;
-    new_node.left_id = config.left;
-    new_node.right_id = config.right;
-    new_node.previous_id = config.previous;
-    new_node.discovered = config.discovered;
-
-    new_node.room_x = static_cast<int>(config.dungeon_pos.x);
-    new_node.room_y = static_cast<int>(config.dungeon_pos.y);
-
-    new_node.room_width = static_cast<int>(config.room_size.x);
-    new_node.room_length = static_cast<int>(config.room_size.y);
-
-    new_node.spawn_chest = config.s_chest;
-    new_node.enemy = nullptr;
-
-    // 1. Zapis węzła do mapy piętra
-    current_map[config.room_id] = new_node;
-
-    // 2. Pozycjonowanie wroga bezpośrednio z parametrów config
     if (config.enemy_id != -1)
     {
-        enemy* e = get_enemy_by_id(config.enemy_id);
-        if (e != nullptr)
+        enemy* spawned_enemy = get_enemy_by_id(config.enemy_id);
+        if (spawned_enemy != nullptr)
         {
-            float centerX = config.dungeon_pos.x + (config.room_size.x / 2.0f);
-            float centerZ = config.dungeon_pos.y + (config.room_size.y / 2.0f);
-            float enemy_y = e->get_position().y;
+            float posX = (config.dungeon_pos.x + config.room_size.x / 2.0f) * 2.0f;
+            float posZ = (config.dungeon_pos.y + config.room_size.y / 2.0f) * 2.0f;
+            // Preserve enemy's configured Y (standing height) when placing in room
+            float enemy_y = spawned_enemy->get_position().y;
+            spawned_enemy->set_position({ posX, enemy_y, posZ });
 
-            Vector3 pos = { centerX * 2.0f, enemy_y, centerZ * 2.0f };
-            e->set_position(pos);
-
-            current_map[config.room_id].enemy = e;
+            floors[config.floor_id].active_enemies.push_back(spawned_enemy);
         }
     }
 }
@@ -204,15 +200,6 @@ void exploration::generate_floor(int floor_id)
             }
         }
     }
-
-    target_floor.world_loot.clear();
-    for (auto& [id, node] : target_floor.world_map)
-    {
-        if (node.spawn_chest != nullptr)
-        {
-            target_floor.world_loot.push_back(node.spawn_chest);
-        }
-    }
 }
 
 
@@ -228,19 +215,14 @@ void exploration::delete_enemy(enemy* target)
 
     for (auto& floor : floors)
     {
-        for (auto& [id, node] : floor.world_map)
-        {
-            if (node.enemy == target)
-            {
-                node.enemy = nullptr;
-            }
-        }
+        std::erase(floor.active_enemies, target);
     }
 
-    std::erase(enemy_pool, target);
+    if (bohater.current_enemy == target)
+    {
+        bohater.current_enemy = nullptr;
+    }
 
     delete target;
-
-    bohater.current_enemy = nullptr;
 }
 

@@ -4,6 +4,7 @@
 #include <map>
 #include <concepts>
 #include <string>
+#include <memory>
 #include "raylib.h"
 #include "struct.h"
 #include "character.h"
@@ -80,7 +81,7 @@ public:
 	void enemies_init();
 	void world_map_init();
 	void loot_init();
-	drop_object* rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f });
+	std::unique_ptr<object> rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f });
 
 	Node* get_node(int room_id);
 
@@ -102,7 +103,7 @@ public:
 
 
 	exploration(player& p);
-
+	~exploration();
 	
 	void save_game() override;
 	bool load_game() override;
@@ -216,10 +217,10 @@ class loot_event : public Event
 {
 public:
 	player& p_ref;
-	drop_object* target_container;
+	object* target_container = nullptr;
 	bool is_active = true;
 
-	loot_event(exploration* e, player& p, drop_object* container) : Event(e), p_ref(p), target_container(container) {}
+	loot_event(exploration* e, player& p, object* container) : Event(e), p_ref(p), target_container(container) {}
 
 	void collect_item(size_t index);
 	void collect_all();

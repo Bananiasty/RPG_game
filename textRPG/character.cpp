@@ -266,37 +266,45 @@ void player::player_attack()
 }
 
 
-void player::take_all_loot(drop_object* o)
+void player::take_all_loot(object* o)
 {
     if (o == nullptr) return;
+    drop_object* drop = dynamic_cast<drop_object*>(o);
+    if (drop == nullptr) return;
 
-    for (const auto& i : o->drop_loot)
+    for (auto& up : drop->drop_loot)
     {
-        bag->add_item(i.get());
+        if (up)
+        {
+            bag->add_item(up.release());
+        }
     }
-    o->drop_loot.clear();
+    drop->drop_loot.clear();
 }
 
-void player::take_item(drop_object* o, item* it)
+void player::take_item(object* o, item* it)
 {
     if (o == nullptr || it == nullptr)
     {
         return;
     }
 
-    this->bag->add_item(it);
+    drop_object* drop = dynamic_cast<drop_object*>(o);
+    if (drop == nullptr) return;
 
-    auto loot_container = std::find_if(o->drop_loot.begin(), o->drop_loot.end(), [it](const std::unique_ptr<item>& ptr) 
+    auto loot_container = std::find_if(drop->drop_loot.begin(), drop->drop_loot.end(), [it](const std::unique_ptr<item>& ptr)
         {
             return ptr.get() == it;
         }
     );
 
-    if (loot_container != o->drop_loot.end())
+    if (loot_container != drop->drop_loot.end())
     {
-        o->drop_loot.erase(loot_container);
+        item* raw = loot_container->release();
+        drop->drop_loot.erase(loot_container);
+        this->bag->add_item(raw);
     }
-    
+
     this->sort_bag();
 }
 

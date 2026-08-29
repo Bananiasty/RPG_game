@@ -10,16 +10,14 @@
 void exploration::update_enemies()
 {
 
-    dungeon_floor& current_floor = floors[current_floor_id];
-
     float dt = GetFrameTime();
     float detectionRange = 8.0f;
     float enemySpeed = 2.0f;
 
-    for (auto& [id, node] : current_floor.world_map)
-    {
-        enemy* e = node.enemy;
+    auto& current_floor = floors[current_floor_id];
 
+    for (enemy* e : current_floor.active_enemies)
+    {
         if (!e || e->is_dead())
         {
             continue;

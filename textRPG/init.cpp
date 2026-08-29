@@ -90,14 +90,14 @@ void exploration::world_map_init()
 	loot_init();
 	enemies_init();
 	
-	add_Node({ .floor_id = 0, .room_id = 1, .left = 2, .s_chest = rand_loot(nullptr, {21.0f, 0, 21.0f}), .dungeon_pos = {10, 10}, .room_size = {5, 5} });
+	add_Node({ .floor_id = 0, .room_id = 1, .left = 2, .dungeon_pos = { 10, 10 }, .room_size = { 5, 5 }, .has_chest = true, .chest_pos = { 21.0f, 0.0f, 21.0f } });
 	add_Node({ .floor_id = 0, .room_id = 2, .enemy_id = 1, .right = 3, .dungeon_pos = { 10, 25 }, .room_size = { 6, 6 } });
 	add_Node({ .floor_id = 0, .room_id = 3, .enemy_id = 1, .left = 4, .right = 5, .dungeon_pos = { 10, 40 }, .room_size = { 8, 8 } });
 	add_Node({ .floor_id = 0, .room_id = 4, .left = 5, .dungeon_pos = { 25, 40 }, .room_size = { 6, 6 } });
-	add_Node({ .floor_id = 0, .room_id = 5, .enemy_id = 1, .left = 6, .right = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 111.0f}), .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 } });
+	add_Node({ .floor_id = 0, .room_id = 5, .enemy_id = 1, .left = 6, .right = 8, .dungeon_pos = { 10, 55 }, .room_size = { 7, 7 }, .has_chest = true, .chest_pos = { 21.0f, 0.0f, 111.0f } });
 	add_Node({ .floor_id = 0, .room_id = 6, .left = 7, .dungeon_pos = { 25, 55 }, .room_size = { 6, 6 } });
 	add_Node({ .floor_id = 0, .room_id = 7, .enemy_id = 1, .left = 8, .dungeon_pos = { 25, 70 }, .room_size = { 6, 6 } });
-	add_Node({ .floor_id = 0, .room_id = 8, .s_chest = rand_loot(nullptr, {21.0f, 0, 141.0f}), .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 } });		
+	add_Node({ .floor_id = 0, .room_id = 8, .dungeon_pos = { 10, 70 }, .room_size = { 10, 10 }, .has_chest = true, .chest_pos = { 21.0f, 0.0f, 141.0f } });
 
 	//draw_dungeon_map();
 }

@@ -28,7 +28,12 @@ exploration::exploration(player& p): bohater(p)
     current_node_id = 1;
     current_floor_id = 0;       
     const int total_floors = 2;
-    floors.resize(total_floors);
+    floors.clear();
+    floors.reserve(total_floors);
+    for (int i = 0; i < total_floors; ++i)
+    {
+        floors.emplace_back();
+    }           
     dlugosc = 200;
     szerokosc = 200;
 
@@ -51,6 +56,26 @@ exploration::exploration(player& p): bohater(p)
     this->camera.projection = CAMERA_PERSPECTIVE;
 
 
+}
+exploration::~exploration()
+{
+    if (active_ui_event != nullptr)
+    {
+        delete active_ui_event;
+        active_ui_event = nullptr;
+    }
+
+    // unique_ptr in world_objects will clean up automatically
+    for (auto& floor : floors)
+    {
+        floor.world_objects.clear();
+
+        for (enemy* e : floor.active_enemies)
+        {
+            delete e;
+        }
+        floor.active_enemies.clear();
+    }
 }
 
 inventory_state::inventory_state(player& p, gamestate* back_to) : p_ref(p), previous_state(back_to){}
@@ -154,28 +179,38 @@ void exploration::event_check()
         return;
     }
 
-
     Vector3 player_pos = camera.position;
+    auto& current_loot_list = floors[current_floor_id].world_objects;
 
-    auto& current_loot_list = floors[current_floor_id].world_loot;
-
-    for (drop_object* loot_obj : current_loot_list)
+    for (const auto& obj_ptr : current_loot_list)
     {
-        if (loot_obj == nullptr)
+        if (!obj_ptr)
         {
             continue;
         }
 
-        if (Vector3Distance(player_pos, loot_obj->position) <= 2.5f && IsKeyPressed(KEY_E))
+        if (Vector3DistanceSqr(player_pos, obj_ptr->position) <= 6.25f && IsKeyPressed(KEY_E))
         {
-            if (!loot_obj->drop_loot.empty())
+            if (auto* drop = dynamic_cast<drop_object*>(obj_ptr.get()))
             {
-                active_ui_event = new loot_event(this, bohater, loot_obj);
+                if (!drop->drop_loot.empty())
+                {
+                    active_ui_event = new loot_event(this, bohater, drop);
+                    break;
+                }
             }
-            break;
+            // Miejsce na ewentualną interakcję z klapą / zejściem (trapdoor)
+            /*
+            else if (auto* td = dynamic_cast<trapdoor*>(obj_ptr.get()))
+            {
+                // zmiana piętra lub odtworzenie animacji otwarcia
+                break;
+            }       
+            */
         }
     }
-}
+}  
+
 
 
 

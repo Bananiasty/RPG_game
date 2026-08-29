@@ -19,7 +19,7 @@ static int rand_chest_slots()
     return distr(gen);
 }
 
-drop_object* exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
+std::unique_ptr<object> exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -30,7 +30,7 @@ drop_object* exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
     int slots_number = rand_chest_slots();
     std::vector<std::unique_ptr<item>> drawn_items;
 
-    for (int i = 0; i < slots_number; i++)
+    for (int i = 0; i < slots_number; i++)  
     {
         item* cloned = item_pool[distr(gen)]->clone();
         drawn_items.emplace_back(cloned);
@@ -38,28 +38,30 @@ drop_object* exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
 
     if (target_enemy != nullptr)
     {
-        dead_body* db = new dead_body(target_enemy, nullptr, slots_number, std::move(drawn_items));
+        auto db = std::make_unique<dead_body>(target_enemy, nullptr, slots_number, std::move(drawn_items));
         db->enemy_ptr = target_enemy;
         return db;
     }
     else
     {
-        chest* c = new chest(chest_pos, nullptr, slots_number, std::move(drawn_items));
+        auto c = std::make_unique<chest>(chest_pos, &objects.m_chest, slots_number, std::move(drawn_items));
         return c;
     }
 }
 
 
 void loot_event::collect_item(size_t index)
-{
+{       
     if (target_container == nullptr) return;
-    if (index >= target_container->drop_loot.size()) return;
+    drop_object* drop = dynamic_cast<drop_object*>(target_container);
+    if (drop == nullptr) return;
+    if (index >= drop->drop_loot.size()) return;
 
-    auto& up = target_container->drop_loot[index];
+    auto& up = drop->drop_loot[index];
     if (up)
     {
         p_ref.bag->add_item(up.release());
-        target_container->drop_loot.erase(target_container->drop_loot.begin() + index);
+        drop->drop_loot.erase(drop->drop_loot.begin() + index);
         p_ref.sort_bag();
     }
 }
@@ -67,15 +69,17 @@ void loot_event::collect_item(size_t index)
 void loot_event::collect_all()
 {
     if (target_container == nullptr) return;
+    drop_object* drop = dynamic_cast<drop_object*>(target_container);
+    if (drop == nullptr) return;
 
-    for (auto& up : target_container->drop_loot)
+    for (auto& up : drop->drop_loot)
     {
         if (up)
         {
             p_ref.bag->add_item(up.release());
         }
     }
-    target_container->drop_loot.clear();
+    drop->drop_loot.clear();
     p_ref.sort_bag();
     is_active = false;
 }

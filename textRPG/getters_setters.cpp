@@ -46,21 +46,39 @@ Node* exploration::get_node(int room_id)
 
 enemy* exploration::get_current_enemy()
 {
-    Node* current_node = get_node(current_node_id);
-    if (current_node != nullptr)
+    if (bohater.current_enemy != nullptr)
     {
-        return current_node->enemy;
+        return bohater.current_enemy;
     }
+
+    Node* current_node = get_node(current_node_id);
+    if (current_node != nullptr && current_node->enemy_id != -1)
+    {
+        return get_enemy_by_id(current_node->enemy_id);
+    }
+
     return nullptr;
 }
 
 int exploration::get_enemy_dif()
 {
-    Node* current_node = get_node(current_node_id);
-    if (current_node != nullptr && current_node->enemy != nullptr)
+    if (bohater.current_enemy != nullptr)
     {
-        return current_node->enemy->get_dif();
+        return bohater.current_enemy->get_dif();
     }
+
+    Node* current_node = get_node(current_node_id);
+    if (current_node != nullptr && current_node->enemy_id != -1)
+    {
+        enemy* e = get_enemy_by_id(current_node->enemy_id);
+        if (e != nullptr)
+        {
+            int dif = e->get_dif();
+            delete e;
+            return dif;
+        }
+    }
+
     return 0;
 }
 
