@@ -182,10 +182,10 @@ void DrawExploration(exploration* exp)
 	for (const auto& object : current_floor.world_objects)
 	{
 		if (!object) continue;
-		int chestGridX = (int)(object->position.x / 2.0f);
-		int chestGridY = (int)(object->position.z / 2.0f);
+		int GridX = (int)(object->position.x / 2.0f);
+		int GridY = (int)(object->position.z / 2.0f);
 
-		if (chestGridX >= startX && chestGridX < endX && chestGridY >= startY && chestGridY < endY)
+		if (GridX >= startX && GridX < endX && GridY >= startY && GridY < endY)
 		{
 			float dx = object->position.x - exp->camera.position.x;
 			float dy = object->position.y - exp->camera.position.y;

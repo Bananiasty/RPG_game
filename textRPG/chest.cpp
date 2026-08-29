@@ -7,16 +7,12 @@
 #include "gamestates.h"
 #include "character.h"
 
-static int rand_chest_slots()
+int drop_object::rand_drop_slots()
 {
-    int max = 5;
-    int min = 1;
-
     static std::random_device rd;
     static std::mt19937 gen(rd());
-    std::uniform_int_distribution<> distr(min, max);
-
-    return distr(gen);
+    std::uniform_int_distribution<int> dist(1, 4);
+    return dist(gen);
 }
 
 std::unique_ptr<object> exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
@@ -27,7 +23,7 @@ std::unique_ptr<object> exploration::rand_loot(enemy* target_enemy, Vector3 ches
 
     std::uniform_int_distribution<> distr(0, (int)item_pool.size() - 1);
 
-    int slots_number = rand_chest_slots();
+    int slots_number = drop_object::rand_drop_slots();
     std::vector<std::unique_ptr<item>> drawn_items;
 
     for (int i = 0; i < slots_number; i++)  

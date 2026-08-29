@@ -62,8 +62,11 @@ public:
 
 	bool showInventory = false;
 	bool showMap = false;
+
 	
 	void generate_floor(int floor_id);
+	void change_floor(int floor_id);
+	std::unique_ptr<object> create_world_object(const ObjectSpawnInfo& info);
 
 	void apply_collision(Vector3 stara_pos);
 	void apply_pathfinding(enemy* e);
@@ -86,6 +89,8 @@ public:
 	Node* get_node(int room_id);
 
 	Vector3 set_enemy_pos(int enemy_id, int room_id, int floor_id);
+	Vector3 set_player_pos( int room_id, int floor_id);
+
 	enemy* get_current_enemy();
 	enemy* get_enemy_by_id(int id);
 	Node* get_room_by_id(int room_id, int floor_id);

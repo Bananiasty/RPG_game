@@ -8,7 +8,32 @@
 #include "graphics.h"
 #include <random>
 
+std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& info)
+{
+    switch (info.type)
+    {
+    case ObjectType::Chest:
+        return rand_loot(nullptr, info.position);
 
+    case ObjectType::DeadBody:
+        return rand_loot(info.linked_enemy, info.position);
+
+    case ObjectType::Trapdoor:
+    {
+        const ModelAnimation* anim_ptr = (objects.trapdoor_open_animation != nullptr) ? &objects.trapdoor_open_animation[0] : nullptr;
+        int total_frames = (anim_ptr != nullptr) ? anim_ptr->keyframeCount : 0;
+
+        return std::make_unique<trapdoor>
+            (
+                info.position,
+                &objects.trapdoor,
+                info.target_floor_id
+            );
+    }
+    default:
+        return nullptr;
+    }
+}
 
 void exploration::add_Node(const NodeConfig& config)
 {
@@ -22,17 +47,16 @@ void exploration::add_Node(const NodeConfig& config)
     node.room_y = (int)config.dungeon_pos.y;
     node.room_width = (int)config.room_size.x;
     node.room_length = (int)config.room_size.y;
-
     node.enemy_id = config.enemy_id;
 
     floors[config.floor_id].world_map[config.room_id] = node;
 
-    if (config.has_chest)
+    for (const auto& prop_info : config.props)
     {
-        auto loot = rand_loot(nullptr, config.chest_pos);
-        if (loot)
+        auto obj = create_world_object(prop_info);
+        if (obj != nullptr)
         {
-            floors[config.floor_id].world_objects.emplace_back(std::move(loot));
+            floors[config.floor_id].world_objects.push_back(std::move(obj));
         }
     }
     if (config.enemy_id != -1)
@@ -40,16 +64,17 @@ void exploration::add_Node(const NodeConfig& config)
         enemy* spawned_enemy = get_enemy_by_id(config.enemy_id);
         if (spawned_enemy != nullptr)
         {
+            float currentY = spawned_enemy->get_position().y;
             float posX = (config.dungeon_pos.x + config.room_size.x / 2.0f) * 2.0f;
             float posZ = (config.dungeon_pos.y + config.room_size.y / 2.0f) * 2.0f;
-            // Preserve enemy's configured Y (standing height) when placing in room
-            float enemy_y = spawned_enemy->get_position().y;
-            spawned_enemy->set_position({ posX, enemy_y, posZ });
+            spawned_enemy->set_position({ posX, currentY, posZ });
 
             floors[config.floor_id].active_enemies.push_back(spawned_enemy);
         }
     }
 }
+
+
 
 
 
@@ -199,6 +224,23 @@ void exploration::generate_floor(int floor_id)
                 }
             }
         }
+    }
+}
+
+void exploration::change_floor(int new_floor_id)
+{
+    current_floor_id = new_floor_id;
+    generate_floor(current_floor_id);
+    Vector3 new_player_pos = set_player_pos(1, current_floor_id);
+
+    camera.position = new_player_pos;
+    camera.target = { new_player_pos.x + 1.0f, new_player_pos.y, new_player_pos.z };
+    bohater.position = new_player_pos;
+
+    if (active_ui_event != nullptr)
+    {
+        delete active_ui_event;
+        active_ui_event = nullptr;
     }
 }
 

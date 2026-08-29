@@ -65,7 +65,6 @@ exploration::~exploration()
         active_ui_event = nullptr;
     }
 
-    // unique_ptr in world_objects will clean up automatically
     for (auto& floor : floors)
     {
         floor.world_objects.clear();
@@ -86,6 +85,15 @@ map_state::map_state(gamestate* back_to) :previous_state(back_to){}
 
 int exploration::update_state()
  {
+    float dt = GetFrameTime();
+
+    for (auto& obj : floors[current_floor_id].world_objects)
+    {
+        if (obj != nullptr)
+        {
+            obj->update(dt);
+        }
+    }
     this->bohater.position.x = this->camera.position.x;
     this->bohater.position.z = this->camera.position.z;
     if (IsKeyPressed(KEY_I))
@@ -189,7 +197,7 @@ void exploration::event_check()
             continue;
         }
 
-        if (Vector3DistanceSqr(player_pos, obj_ptr->position) <= 6.25f && IsKeyPressed(KEY_E))
+        if (Vector3DistanceSqr(player_pos, obj_ptr->position) <= 7.25f && IsKeyPressed(KEY_E))
         {
             if (auto* drop = dynamic_cast<drop_object*>(obj_ptr.get()))
             {
@@ -199,19 +207,21 @@ void exploration::event_check()
                     break;
                 }
             }
-            // Miejsce na ewentualną interakcję z klapą / zejściem (trapdoor)
-            /*
             else if (auto* td = dynamic_cast<trapdoor*>(obj_ptr.get()))
             {
-                // zmiana piętra lub odtworzenie animacji otwarcia
+                if (!td->is_open)
+                {
+                    td->interact();
+                }
+                else if (td->open_angle>=75.0f &&td->target_floor_id != -1)
+                {
+                    change_floor(td->target_floor_id);
+                }
                 break;
-            }       
-            */
+            }
         }
     }
-}  
-
-
+}
 
 
 Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id)
@@ -238,6 +248,21 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id)
     float centerZ = room_ptr->room_y + (room_ptr->room_length / 2.0f);
 
     return Vector3{ centerX * 2.0f, enemy_y, centerZ * 2.0f };
+}
+
+Vector3 exploration::set_player_pos(int room_id, int floor_id)
+{
+    Node* room_ptr = this->get_room_by_id(room_id, floor_id);
+    if (room_ptr == nullptr)
+    {
+        return { 0.0f, 1.5f, 0.0f };
+    }
+
+    float player_y = 1.5f;
+    float centerX = room_ptr->room_x + (room_ptr->room_width / 2.0f);
+    float centerZ = room_ptr->room_y + (room_ptr->room_length / 2.0f);
+
+    return Vector3{ centerX * 2.0f, player_y, centerZ * 2.0f };
 }
 
 void gamestate::spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit)

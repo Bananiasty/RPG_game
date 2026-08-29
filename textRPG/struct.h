@@ -30,6 +30,21 @@ public:
 
 
 
+enum class ObjectType
+{
+	Chest,
+	Trapdoor,
+	DeadBody
+};
+
+struct ObjectSpawnInfo
+{
+	ObjectType type;
+	Vector3 position = { 0.0f, 0.0f, 0.0f };
+	int target_floor_id = -1;
+	int custom_slots = -1;
+	enemy* linked_enemy = nullptr;
+};
 
 struct object
 {
@@ -49,15 +64,20 @@ struct object
 			DrawModel(*model_ptr, position, 1.0f, WHITE);
 		}
 	}
+	virtual void update(float deltaTime) {};
+	virtual void interact() {};
+
 };
 	struct drop_object : object
 	{
 		int slots;
 		std::vector<std::unique_ptr<item>> drop_loot;
 
-		drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : object(pos, model), slots(slots_count), drop_loot(std::move(loot)) {}
+		drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot)
+			: object(pos, model), slots(slots_count), drop_loot(std::move(loot)) {
+		}
 
-		int rand_drop_slots();
+		static int rand_drop_slots();
 
 		virtual ~drop_object() = default;
 	};
@@ -88,24 +108,37 @@ struct object
 			}
 		};
 
-	struct trapdoor : object
-	{
-		int target_floor_id = -1;
-		bool is_open = false;
-		int current_frame = 0;
-
-		trapdoor(Vector3 pos, const Model* model, const ModelAnimation* animation = nullptr, int frame_count = 0, int target_floor = -1) : object(pos, model, animation, frame_count), target_floor_id(target_floor) {}
-
-		void draw(const Camera3D& camera) const override
+		struct trapdoor : object
 		{
-			if (model_ptr != nullptr)
+			int target_floor_id = -1;
+			bool is_open = false;
+			float open_angle = 0.0f;
+
+			trapdoor(Vector3 pos, const Model* model, int target_floor = -1) : object(pos, model, nullptr, 0), target_floor_id(target_floor) {}
+
+			void interact() override
 			{
-				DrawModel(*model_ptr, position, 1.0f, WHITE);
-				DrawCubeWires(position, 1.0f, 0.2f, 1.0f, DARKGRAY);
+				is_open = true;
 			}
-		}
-		
-	};
+
+			void update(float dt) override
+			{
+				if (is_open && open_angle < 75.0f)
+				{
+					open_angle += dt * 120.0f;
+					if (open_angle > 75.0f) open_angle = 75.0f;
+				}
+			}
+
+			void draw(const Camera3D& camera) const override
+			{
+				if (model_ptr != nullptr)
+				{
+					DrawPlane({ position.x - 1.0f, position.y, position.z + 1.0f }, { 2.0f, 2.0f }, BLACK);
+					DrawModelEx(*model_ptr, position, { 1.0f, 0.0f, 0.0f }, -open_angle, { 1.0f, 1.0f, 1.0f }, WHITE);
+				}
+			}
+		};
 
 	class Event;
 	struct Node
@@ -126,31 +159,32 @@ struct object
 
 
 	struct NodeConfig {
-		int floor_id;
-		int room_id;
-		int enemy_id = -1;
+		int floor_id = 0;
+		int room_id = 0;
 		int left = -1;
 		int right = -1;
 		int previous = -1;
 		bool discovered = false;
-		Vector2 dungeon_pos = { 0, 0 };
-		Vector2 room_size = { 5, 5 };
-
-		bool has_chest = false;
-		Vector3 chest_pos = { 0.0f, 0.0f, 0.0f };
+		Vector2 dungeon_pos = { 0.0f, 0.0f };
+		Vector2 room_size = { 0.0f, 0.0f };
+		int enemy_id = -1;
+		std::vector<ObjectSpawnInfo> props;
 	};
 
 	struct dungeon_floor
 	{
 		std::map<int, Node> world_map;
 		std::vector<std::vector<int>> dungeon;
-	std::vector<std::unique_ptr<object>> world_objects;
-	std::vector<enemy*> active_enemies;
-	dungeon_floor() = default;
-	dungeon_floor(const dungeon_floor&) = delete;
-	dungeon_floor& operator=(const dungeon_floor&) = delete;
-	dungeon_floor(dungeon_floor&&) = default;
-	dungeon_floor& operator=(dungeon_floor&&) = default;
+		std::vector<std::unique_ptr<object>> world_objects;
+		std::vector<enemy*> active_enemies;
+
+		dungeon_floor() = default;
+		dungeon_floor(const dungeon_floor&) = delete;
+		dungeon_floor& operator=(const dungeon_floor&) = delete;
+		dungeon_floor(dungeon_floor&&) noexcept = default;
+		dungeon_floor& operator=(dungeon_floor&&) noexcept = default;
+		
+
 	};
 
 
