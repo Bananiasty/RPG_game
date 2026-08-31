@@ -125,21 +125,16 @@ int main()
                     bohater.grant_xp();
                     bohater.check_level_up();
 
-                    auto dropped_loot = world.rand_loot(your_opponent, your_opponent->get_position());
-                    if (dropped_loot &&
-                        world.current_floor_id >= 0 &&
-                        world.current_floor_id < static_cast<int>(world.floors.size()))
-                    {
-                        world.floors[world.current_floor_id].world_objects.emplace_back(std::move(dropped_loot));
-                    }
+                    world.spawn_object(ObjectSpawnInfo::create_dead_body(your_opponent, your_opponent->get_position()));
 
-                    active_state = &world;
-                    current_state = 1;
+                    auto& active_enemies = world.floors[world.current_floor_id].active_enemies;
+                    active_enemies.erase(std::remove(active_enemies.begin(), active_enemies.end(), your_opponent), active_enemies.end());
 
                     delete current_fight;
                     current_fight = nullptr;
 
-                    world.delete_enemy(your_opponent);
+                    active_state = &world;
+                    current_state = 1;
                 }
             }
         }

@@ -18,7 +18,6 @@ void BodyStatusUI::init()
 
         shader = LoadShader(nullptr, "graphics/shaders/bodystatus.fs");
 
-        // Pobranie lokacji zmiennych z pliku .fs
         loc_mask = GetShaderLocation(shader, "maskTexture");
 
         loc_head = GetShaderLocation(shader, "head_status");
@@ -28,7 +27,6 @@ void BodyStatusUI::init()
         loc_left_leg = GetShaderLocation(shader, "left_leg_status");
         loc_right_leg = GetShaderLocation(shader, "right_leg_status");
 
-        // Przypisanie maski do slotu tekstury nr 1
         int mask_texture_slot = 1;
         SetShaderValue(shader, loc_mask, &mask_texture_slot, SHADER_UNIFORM_INT);
         
@@ -37,7 +35,6 @@ void BodyStatusUI::init()
     void BodyStatusUI::draw(const player& p, Vector2 position, float scale)
     {
 
-        // 1. Wyliczenie statusów na podstawie obiektu gracza
         int head_st = get_status_code(p.limbs.head);
         int torso_st = get_status_code(p.limbs.torso);
         int larm_st = get_status_code(p.limbs.left_arm);
@@ -45,7 +42,6 @@ void BodyStatusUI::init()
         int lleg_st = get_status_code(p.limbs.left_leg);
         int rleg_st = get_status_code(p.limbs.right_leg);
 
-        // 2. Przesłanie wartości do shadera
         SetShaderValue(shader, loc_head, &head_st, SHADER_UNIFORM_INT);
         SetShaderValue(shader, loc_torso, &torso_st, SHADER_UNIFORM_INT);
         SetShaderValue(shader, loc_left_arm, &larm_st, SHADER_UNIFORM_INT);
@@ -53,7 +49,6 @@ void BodyStatusUI::init()
         SetShaderValue(shader, loc_left_leg, &lleg_st, SHADER_UNIFORM_INT);
         SetShaderValue(shader, loc_right_leg, &rleg_st, SHADER_UNIFORM_INT);
 
-        // 3. Rysowanie sylwetki z aktywnym shaderem i drugą teksturą
         BeginShaderMode(shader);
 
         rlActiveTextureSlot(1);

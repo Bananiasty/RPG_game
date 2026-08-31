@@ -58,6 +58,12 @@ public:
 	bool is_guard = false;
 	bool is_attack = false;
 
+	bool is_bleeding = false;
+	int applied_bleed_damage = 0;
+	int bleed_status_timer = 0;
+	bool just_applied_bleed = false;
+
+
 	helm* equipped_helm = nullptr;
 	vest* equipped_vest = nullptr;
 	gauntlets* equipped_gauntlets = nullptr;
@@ -78,6 +84,7 @@ public:
 
 	virtual bool is_dead() = 0;
 
+	virtual void process_turn_start_effects(gamestate* gs);
 	int take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
 
 	std::pair<int, bool> calculate_dmg(int limb_damage);
@@ -129,7 +136,7 @@ private:
 
 	
 public:
-	player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D grafika, Vector3 pos, float rot);
+	player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot);
 
 	enemy* current_enemy = nullptr;
 	inventory* bag;
@@ -190,8 +197,10 @@ private:
 	BodyPart current_hovered_part = BodyPart::NONE; 
 
 	bool can_survive_without_head = false;
+	
 
 public:
+	BodyPart attack_part = BodyPart::NONE;
 	std::vector<item*> loot;
 
 	virtual ~enemy() = default;
@@ -247,6 +256,7 @@ public:
 
 class ghoul : public enemy
 {
+
 public:
 	ghoul(const enemy_config& config) : enemy(config) 
 	{
@@ -257,6 +267,9 @@ public:
 		limbs.right_arm.damage = 25;
 
 		limbs.head.can_attack = true;
+		limbs.head.applies_bleed = true;
+		limbs.head.bleed_timer = 2;
+		limbs.head.bleed_dmg = 5;
 		limbs.head.damage = 7;
 	}
 	

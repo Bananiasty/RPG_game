@@ -265,12 +265,13 @@ Vector3 exploration::set_player_pos(int room_id, int floor_id)
     return Vector3{ centerX * 2.0f, player_y, centerZ * 2.0f };
 }
 
-void gamestate::spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit)
+void gamestate::spawn_floating_text(Vector3 pos, const std::string& text, bool crit, bool bleed)
 {
     floating_text ft;
     ft.hit_limb = pos;
     ft.text = text;
-    ft.is_crit = is_crit;
+    ft.is_crit = crit;
+    ft.is_bleed = bleed;
     ft.max_lifetime = 1.0f;
     ft.offsetY = 0.0f;
 
@@ -291,11 +292,20 @@ void gamestate::update_and_draw_floating_texts(Camera3D current_camera)
 
         float alpha = std::clamp(dt.max_lifetime, 0.0f, 1.0f);
 
-        Color baseColor = dt.is_crit ? RED : WHITE;
+        Color baseColor = WHITE;
+        if (dt.is_bleed)
+        {
+            baseColor = RED;
+        }
+        else if (dt.is_crit)
+        {
+            baseColor = PURPLE;
+        }
+
         Color textColor = Fade(baseColor, alpha);
         Color shadowColor = Fade(BLACK, alpha);
 
-        int fontSize = dt.is_crit ? 60 : 50;
+        int fontSize = dt.is_crit ? 60 : (dt.is_bleed ? 45 : 50);
 
         int textWidth = MeasureText(dt.text.c_str(), fontSize);
         int drawX = static_cast<int>(screenPos.x - textWidth / 2.0f);
@@ -304,10 +314,6 @@ void gamestate::update_and_draw_floating_texts(Camera3D current_camera)
         DrawText(dt.text.c_str(), drawX + 2, drawY + 2, fontSize, shadowColor);
         DrawText(dt.text.c_str(), drawX, drawY, fontSize, textColor);
     }
-
-    std::erase_if(this->active_texts, [](const floating_text& dt) {
-        return dt.max_lifetime <= 0.0f;
-        });
 }
 
 
@@ -323,7 +329,6 @@ void loot_event::draw_event(exploration* exp)
 void exploration::draw() 
 {
     draw_game_scene(this);
-    draw_buttons(this);
     draw_menu();
 
     if (active_ui_event != nullptr)
@@ -337,7 +342,6 @@ void battle::draw()
 {
     draw_game_scene(this->exp);
     draw_battle_ui(this);
-    draw_buttons(this->exp);
     DrawGlobalAnimation();
     
 }
@@ -350,7 +354,6 @@ void inventory_state::draw()
         draw_battle_ui(fight);
     }
     draw_inventory_ui(p_ref, this);
-    draw_buttons(this->exp);
 }
 void map_state::draw()
 {
@@ -363,7 +366,6 @@ void map_state::draw()
         draw_battle_ui(fight);
     }
     draw_dungeon_map(this->exp, this->exp->bohater.position.x, this->exp->bohater.position.z);
-    draw_buttons(this->exp);
 }
 
 

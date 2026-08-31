@@ -385,13 +385,21 @@ void draw_battle_ui(battle* fight)
 }
 void DrawHUD(exploration* exp)
 {
+	const player& p = exp->bohater;
+	
+	if (p.is_bleeding)
+	{
+		Texture2D bleed = textures.bleeding_icon;
+		Vector2 pos = { GAME_WIDTH * 0.90f, GAME_HEIGHT * 0.55f };
+		DrawTextureEx(bleed, pos, 0.0f, 2.5f, WHITE);
+	}
+	DrawRectangle(GAME_WIDTH * 0.8, GAME_HEIGHT * 0.9, 50, 20, WHITE);
+	DrawText("I", GAME_WIDTH * 0.8 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 
+	DrawRectangle(GAME_WIDTH * 0.7, GAME_HEIGHT * 0.9, 50, 20, WHITE);
+	DrawText("M", GAME_WIDTH * 0.7 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 
-	/*DrawTextEx(arial_font, TextFormat("LvL %d", exp->bohater.get_level()), { 10, 530 }, 20, 2, WHITE);
-	DrawTextEx(arial_font, TextFormat("XP: %d/%d", exp->bohater.get_xp(), exp->bohater.get_xp_to_level_up()), { 10, 500 }, 20, 2, WHITE);
-	DrawRectangle(10, 600, 30, 100, DARKBLUE);
-	float xp_height = (float)exp->bohater.get_xp() / exp->bohater.get_xp_to_level_up() * 100;
-	DrawRectangle(10, 700 - xp_height, 30, xp_height, WHITE);*/
+	
 }
 
 
@@ -1128,15 +1136,6 @@ void draw_dungeon_map(exploration* exp, float player_x, float player_y)
 
 
 
-void draw_buttons(exploration* e) 
-{
-
-	DrawRectangle(GAME_WIDTH * 0.8 , GAME_HEIGHT * 0.9, 50, 20, WHITE);
-	DrawText("I", GAME_WIDTH * 0.8 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
-
-	DrawRectangle(GAME_WIDTH * 0.7, GAME_HEIGHT * 0.9, 50, 20, WHITE);
-	DrawText("M", GAME_WIDTH * 0.7 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
-}
 
 
 	

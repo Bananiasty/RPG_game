@@ -11,8 +11,6 @@ void graphics_init();
 
 void draw_game_scene(exploration* exp);
 
-void draw_buttons(exploration* e);
-
 void draw_battle_ui(battle* fight);
 
 void draw_inventory_ui(player& p, inventory_state* inv);

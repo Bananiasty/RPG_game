@@ -207,13 +207,23 @@ int battle::player_turn()
 }
 
 
+
 int battle::enemy_turn()
 {
     enemy_cooldown -= GetFrameTime();
     if (enemy_cooldown <= 0.0)
     {
         waiting_for_enemy = false;
-        return e_ref.execute_ai_turn(p_ref);
+
+        p_ref.process_turn_start_effects(this->exp);
+        if (p_ref.is_dead())
+        {
+            return 0;
+        }
+
+        int final_dmg = e_ref.execute_ai_turn(p_ref);
+
+        return final_dmg;
     }
 
     return 0;

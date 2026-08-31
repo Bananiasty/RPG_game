@@ -91,17 +91,16 @@ void exploration::world_map_init()
 	enemies_init();
 	
     //PIETRO 1
+    // PIĘTRO 1
     add_Node({
         .floor_id = 0,
         .room_id = 1,
         .left = 2,
         .dungeon_pos = { 10, 10 },
         .room_size = { 5, 5 },
-        .props = 
-            {
-                {.type = ObjectType::Chest, .position = { 21.0f, 0.0f, 21.0f } },
-                
-            }
+        .props = {
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 10 }, { 5, 5 })
+        }
         });
 
     add_Node({
@@ -121,9 +120,8 @@ void exploration::world_map_init()
         .dungeon_pos = { 10, 40 },
         .room_size = { 8, 8 },
         .enemy_id = 1,
-        .props =
-        {
-            {.type = ObjectType::Trapdoor, .position = { 32.0f, 0.05f, 94.0f }, .target_floor_id = 1 }
+        .props = {
+            ObjectSpawnInfo::create_trapdoor({ 10, 40 }, { 8, 8 }, 1)
         }
         });
 
@@ -144,7 +142,7 @@ void exploration::world_map_init()
         .room_size = { 7, 7 },
         .enemy_id = 1,
         .props = {
-            {.type = ObjectType::Chest, .position = { 21.0f, 0.0f, 111.0f } }
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 55 }, { 7, 7 })
         }
         });
 
@@ -171,31 +169,50 @@ void exploration::world_map_init()
         .dungeon_pos = { 10, 70 },
         .room_size = { 10, 10 },
         .props = {
-            {.type = ObjectType::Chest, .position = { 21.0f, 0.0f, 141.0f } }
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 70 }, { 10, 10 })
         }
         });
 
 
-
-    //PIETRO 2
+    // PIĘTRO 2
     add_Node({
         .floor_id = 1,
         .room_id = 1,
         .left = 2,
-        .dungeon_pos = { 10, 10 },
-        .room_size = { 5, 5 },
-        .props =
-            {
-                {.type = ObjectType::Chest, .position = { 21.0f, 0.0f, 21.0f } },
-            }
+        .right = 3,
+        .dungeon_pos = { 24, 10 },
+        .room_size = { 3, 3 },
+        .props = {
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 24, 10 }, { 3, 3 })
+        }
         });
 
     add_Node({
         .floor_id = 1,
         .room_id = 2,
+        .left = 4,
         .right = 3,
+        .dungeon_pos = { 14, 22 },
+        .room_size = { 8, 8 },
+        .enemy_id = 1
+        });
+
+    add_Node({
+        .floor_id = 1,
+        .room_id = 3,
+        .left = 2,
+        .dungeon_pos = { 3, 4 },
+        .room_size = { 5, 5 },
+        .props = {
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 3, 4 }, { 5, 5 })
+        }
+        });
+
+    add_Node({
+        .floor_id = 1,
+        .room_id = 4,
         .dungeon_pos = { 10, 25 },
-        .room_size = { 6, 6 },
+        .room_size = { 2, 2 },
         .enemy_id = 1
         });
 	//draw_dungeon_map();

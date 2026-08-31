@@ -45,12 +45,7 @@ struct textureManager {
 
 	Texture2D kopalnia;
 	Texture2D player;
-	Texture2D goblin;
-	Texture2D skeleton;
-	Texture2D troll;
-	Texture2D bandits;
-	Texture2D guard;
-	Texture2D dragon;
+
 	Texture2D ghoul;
 	Image ghoulImage;
 
@@ -63,6 +58,8 @@ struct textureManager {
 	Texture2D explosion;
 	Texture2D ignite;
 	Texture2D sun_strike;
+
+	Texture2D bleeding_icon;
 
 	Texture2D lightning_bolt_icon;
 	Texture2D fireball_icon;

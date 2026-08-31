@@ -21,7 +21,7 @@ character::character(std::string n, const limbs_struct& l, int bdef, int b_ch, i
 };
 
 player::player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, l, bdef, b_ch, c_ch, d_ch, rdh, g, pos, rot)
+    : character(n, l, bdef, b_ch, c_ch, d_ch, rdh, textures.player, pos, rot)
 {
     bag = new inventory();
     equipped_items = new inventory();
@@ -63,8 +63,6 @@ enemy::enemy(const enemy_config& config)
 {
     this->position = config.position;
 }
-
-dead_body::dead_body(enemy* e, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : drop_object(e ? e->get_position() : Vector3{ 0, 0, 0 }, model, slots_count, std::move(loot)), enemy_ptr(e){}
 
 
 void player::set_name(const std::string& new_name)
@@ -138,6 +136,47 @@ std::pair<int, bool> character::calculate_dmg(int limb_damage)
     return std::make_pair(damage_amount, is_crit);
 }
 
+void character::process_turn_start_effects(gamestate* gs)
+{
+    if (this->current_health <= 0) return;
+
+    bool gracz = (dynamic_cast<const player*>(this) != nullptr);
+
+    if (this->is_bleeding)
+    {
+        int bleed_damage = this->applied_bleed_damage;
+
+        if (bleed_damage > 0)
+        {
+            this->current_health = std::max(0, this->current_health - bleed_damage);
+
+            if (gracz)
+            {
+                gamestate::gameLogs.push_back(TextFormat("You're bleeding! Received %d damage", bleed_damage));
+            }
+            else
+            {
+                gamestate::gameLogs.push_back(TextFormat("Enemy bleeds! Dealt %d damage", bleed_damage));
+            }
+
+            if (gs)
+            {
+                Vector3 text_pos = this->get_visual_position();
+                text_pos.y += 1.5f;
+                gs->spawn_floating_text(text_pos, TextFormat("-%d Bleed", bleed_damage), false, true);
+            }
+        }
+
+        this->bleed_status_timer--;
+        if (this->bleed_status_timer <= 0)
+        {
+            this->is_bleeding = false;
+            this->applied_bleed_damage = 0;
+            this->bleed_status_timer = 0;
+        }
+    }
+}
+
 int character::take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos)
 {
     static std::random_device rd;
@@ -147,8 +186,8 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
 
     bool gracz_take_dmg = (dynamic_cast<const player*>(this) != nullptr);
 
+    //POZYCJA TEKSTU
     Vector3 text_pos;
-
     if (impact_pos.x != 0.0f || impact_pos.y != 0.0f || impact_pos.z != 0.0f)
     {
         text_pos = impact_pos;
@@ -156,25 +195,20 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
     else
     {
         text_pos = this->get_visual_position();
-
         switch (hit_part)
         {
         case BodyPart::HEAD:
             text_pos.y += 1.8f;
             break;
         case BodyPart::TORSO:
-            text_pos.y += 1.2f;
-            break;
         case BodyPart::LEFT_ARM:
         case BodyPart::RIGHT_ARM:
+        default:
             text_pos.y += 1.2f;
             break;
         case BodyPart::LEFT_LEG:
         case BodyPart::RIGHT_LEG:
             text_pos.y += 0.5f;
-            break;
-        default:
-            text_pos.y += 1.2f;
             break;
         }
     }
@@ -183,16 +217,18 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
     text_pos.x += jitter(gen);
     text_pos.z += jitter(gen);
 
+	//OBSLUGA UNIKU
     if (distr(gen) <= this->get_dodge_chance())
     {
         gamestate::gameLogs.push_back(TextFormat("Missed!"));
         if (gs)
         {
-            gs->spawn_floating_text(text_pos, "Missed!", false);
+            gs->spawn_floating_text(text_pos, "Missed!", false, false);
         }
         return 0;
     }
 
+    //OBLICZANIE OBRAZEN
     int final_dmg = dmg_amount;
     bool is_blocked = false;
 
@@ -204,6 +240,7 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
 
     int incoming_damage = std::max(0, final_dmg - this->get_defense());
 
+    //LOGI
     if (is_blocked)
     {
         if (gracz_take_dmg)
@@ -229,24 +266,30 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
     if (gs)
     {
         std::string floating_str = std::to_string(incoming_damage);
-        gs->spawn_floating_text(text_pos, floating_str, is_crit);
+        gs->spawn_floating_text(text_pos, floating_str, is_crit, false);
     }
 
-    auto& target_limb = this->limbs.get_limb(hit_part);
-    int actual_limb_damage = std::min(incoming_damage, target_limb.hp);
-
-    target_limb.take_damage(actual_limb_damage);
-    this->current_health = std::max(0, this->current_health - actual_limb_damage);
-
-    if (!target_limb.is_intact)
+    if (hit_part != BodyPart::NONE)
     {
-        this->recalculate_max_health();
-        this->current_health = std::min(this->current_health, this->max_health);
+        auto& target_limb = this->limbs.get_limb(hit_part);
+        int actual_limb_damage = std::min(incoming_damage, target_limb.hp);
+
+        target_limb.take_damage(actual_limb_damage);
+        this->current_health = std::max(0, this->current_health - actual_limb_damage);
+
+        if (!target_limb.is_intact)
+        {
+            this->recalculate_max_health();
+            this->current_health = std::min(this->current_health, this->max_health);
+        }
+    }
+    else
+    {
+        this->current_health = std::max(0, this->current_health - incoming_damage);
     }
 
     return incoming_damage;
 }
-
 void player::player_guard()
 {
     

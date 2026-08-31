@@ -185,6 +185,8 @@ int enemy::execute_ai_turn(character& target)
 
     return final_dmg;
 }
+
+
 int ghoul::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
@@ -193,27 +195,57 @@ int ghoul::execute_ai_turn(character& target)
         target.queued_damage = 0.0;
         target.queued_hit_part = BodyPart::NONE;
     }
+    if (this->is_dead()) return 0;
+
+    this->process_turn_start_effects(this->gs);
+    if (this->is_dead()) return 0;
 
     int ghoul_base_dmg = 0;
-    if (this->limbs.get_limb(BodyPart::RIGHT_ARM).is_intact && this->limbs.get_limb(BodyPart::RIGHT_ARM).can_attack)
+    this->attack_part = BodyPart::NONE;
+
+    const auto& right_arm = this->limbs.get_limb(BodyPart::RIGHT_ARM);
+    const auto& head = this->limbs.get_limb(BodyPart::HEAD);
+
+    if (right_arm.is_intact && right_arm.can_attack)
     {
-        ghoul_base_dmg = this->limbs.get_limb(BodyPart::RIGHT_ARM).damage;
+        this->attack_part = BodyPart::RIGHT_ARM;
+        ghoul_base_dmg = right_arm.damage;
     }
-    else if (this->limbs.get_limb(BodyPart::HEAD).is_intact && this->limbs.get_limb(BodyPart::HEAD).can_attack)
+    else if (head.is_intact && head.can_attack)
     {
-        ghoul_base_dmg = this->limbs.get_limb(BodyPart::HEAD).damage;
+        this->attack_part = BodyPart::HEAD;
+        ghoul_base_dmg = head.damage;
+    }
+
+    if (this->attack_part != BodyPart::NONE)
+    {
+        const auto& attacking_limb = this->limbs.get_limb(this->attack_part);
+        if (attacking_limb.applies_bleed)
+        {
+            if (!target.is_bleeding)
+            {
+                gamestate::gameLogs.push_back(TextFormat("You started bleeding!"));
+            }
+
+            target.is_bleeding = true;
+            target.applied_bleed_damage += attacking_limb.bleed_dmg;
+            target.bleed_status_timer = attacking_limb.bleed_timer;
+        }
     }
 
     BodyPart hit_part = this->select_random_target_part(target);
-
     auto [e_dmg, crit] = this->calculate_dmg(ghoul_base_dmg);
     audio.play_sound(SoundID::ENEMY_HIT);
-    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, hit_part, this->gs);
 
+    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, hit_part, this->gs);
     target.is_guard = false;
 
     return final_dmg;
 }
+
+
+
+
 
 int enemy::GetAdjustedSideLimit(int baseSideLimit, int frameIndex)
 {

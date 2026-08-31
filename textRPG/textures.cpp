@@ -12,29 +12,8 @@ void LoadGameTextures()
 
 	textures.inventory_UI = LoadTexture("graphics/UI/inventory_UI.png");
 
-	textures.player = LoadTexture("graphics/textures/enemies/bohater.png");
-	SetTextureFilter(textures.player, TEXTURE_FILTER_BILINEAR);
+	textures.chest_t = LoadTexture("graphics/textures/objects/treasure_chest_128.png");
 
-	textures.goblin = LoadTexture("graphics/textures/enemies/goblin.png");
-	SetTextureFilter(textures.goblin, TEXTURE_FILTER_BILINEAR);
-
-	textures.skeleton = LoadTexture("graphics/textures/enemies/szkielet.png");
-	SetTextureFilter(textures.skeleton, TEXTURE_FILTER_BILINEAR);
-
-	textures.troll = LoadTexture("graphics/textures/enemies/troll.png");
-	SetTextureFilter(textures.troll, TEXTURE_FILTER_BILINEAR);
-
-	textures.bandits = LoadTexture("graphics/textures/enemies/bandyci.png");
-	SetTextureFilter(textures.bandits, TEXTURE_FILTER_BILINEAR);
-
-	textures.guard = LoadTexture("graphics/textures/enemies/straznik.png");
-	SetTextureFilter(textures.guard, TEXTURE_FILTER_BILINEAR);
-
-	textures.dragon = LoadTexture("graphics/textures/enemies/smok.png");
-	SetTextureFilter(textures.dragon, TEXTURE_FILTER_BILINEAR);
-
-	textures.chest_t = LoadTexture("graphics/textures/enemies/chest.png");
-	SetTextureFilter(textures.dragon, TEXTURE_FILTER_BILINEAR);
 
 	textures.lightning = LoadTexture("graphics/GAME ASSETS/SPELLS/1 Lightning/Lightning.png");
 	textures.lightning_bolt = LoadTexture("graphics/GAME ASSETS/SPELLS/2 Lightning bolt/Lightning-bolt.png");
@@ -51,6 +30,8 @@ void LoadGameTextures()
 	textures.spikes_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/6-Spikes.png");
 	textures.fireball_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/10-Fire-ball.png");
 	textures.ignite_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/7-Fire-wall.png");
+
+	textures.bleeding_icon = LoadTexture("graphics/GAME ASSETS/Status Effects/bleed_v1.png");
 
 
 	textures.short_sword = LoadTexture("graphics/GAME ASSETS/WEAPONS/Icons/item4.png");
@@ -129,6 +110,8 @@ void LoadGameModels()
 	objects.enemy_character = LoadModel("graphics/models/postac_przeciwnika.glb");
 
 	objects.m_chest = LoadModel("graphics/models/objects/treasure_chest_128.glb");
+	objects.m_chest.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.chest_t;
+	objects.m_chest.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 	objects.m_chest.materials[1].shader = textures.fogShader;
 
 	objects.floor_tile = LoadModel("graphics/models/terrain/floor_tile1.glb");

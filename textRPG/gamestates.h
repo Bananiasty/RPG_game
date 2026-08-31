@@ -19,7 +19,7 @@ public:
 
 	static std::vector<std::string> gameLogs;
 	std::vector<floating_text> active_texts;
-	void spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit = false);
+	void spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit = false, bool is_bleed = false);
 	void update_and_draw_floating_texts(Camera3D current_camera);
 
 	bool showMenu = false;
@@ -66,7 +66,9 @@ public:
 	
 	void generate_floor(int floor_id);
 	void change_floor(int floor_id);
+
 	std::unique_ptr<object> create_world_object(const ObjectSpawnInfo& info);
+	void spawn_object(const ObjectSpawnInfo& info);
 
 	void apply_collision(Vector3 stara_pos);
 	void apply_pathfinding(enemy* e);
@@ -84,7 +86,7 @@ public:
 	void enemies_init();
 	void world_map_init();
 	void loot_init();
-	std::unique_ptr<object> rand_loot(enemy* target_enemy, Vector3 chest_pos = { 0.0f, 0.0f, 0.0f });
+	std::vector<std::unique_ptr<item>> rand_loot(enemy* target_enemy, int slots_number);
 
 	Node* get_node(int room_id);
 

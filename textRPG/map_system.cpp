@@ -8,32 +8,7 @@
 #include "graphics.h"
 #include <random>
 
-std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& info)
-{
-    switch (info.type)
-    {
-    case ObjectType::Chest:
-        return rand_loot(nullptr, info.position);
 
-    case ObjectType::DeadBody:
-        return rand_loot(info.linked_enemy, info.position);
-
-    case ObjectType::Trapdoor:
-    {
-        const ModelAnimation* anim_ptr = (objects.trapdoor_open_animation != nullptr) ? &objects.trapdoor_open_animation[0] : nullptr;
-        int total_frames = (anim_ptr != nullptr) ? anim_ptr->keyframeCount : 0;
-
-        return std::make_unique<trapdoor>
-            (
-                info.position,
-                &objects.trapdoor,
-                info.target_floor_id
-            );
-    }
-    default:
-        return nullptr;
-    }
-}
 
 void exploration::add_Node(const NodeConfig& config)
 {

@@ -15,34 +15,24 @@ int drop_object::rand_drop_slots()
     return dist(gen);
 }
 
-std::unique_ptr<object> exploration::rand_loot(enemy* target_enemy, Vector3 chest_pos)
+std::vector<std::unique_ptr<item>> exploration::rand_loot(enemy* target_enemy, int slots_number)
 {
+    if (item_pool.empty()) return {};
+
     static std::random_device rd;
     static std::mt19937 gen(rd());
-    if (item_pool.empty()) return nullptr;
-
     std::uniform_int_distribution<> distr(0, (int)item_pool.size() - 1);
 
-    int slots_number = drop_object::rand_drop_slots();
     std::vector<std::unique_ptr<item>> drawn_items;
+    drawn_items.reserve(slots_number);
 
-    for (int i = 0; i < slots_number; i++)  
+    for (int i = 0; i < slots_number; i++)
     {
         item* cloned = item_pool[distr(gen)]->clone();
         drawn_items.emplace_back(cloned);
     }
 
-    if (target_enemy != nullptr)
-    {
-        auto db = std::make_unique<dead_body>(target_enemy, nullptr, slots_number, std::move(drawn_items));
-        db->enemy_ptr = target_enemy;
-        return db;
-    }
-    else
-    {
-        auto c = std::make_unique<chest>(chest_pos, &objects.m_chest, slots_number, std::move(drawn_items));
-        return c;
-    }
+    return drawn_items;
 }
 
 

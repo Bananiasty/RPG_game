@@ -40,10 +40,15 @@ enum class ObjectType
 struct ObjectSpawnInfo
 {
 	ObjectType type;
-	Vector3 position = { 0.0f, 0.0f, 0.0f };
-	int target_floor_id = -1;
-	int custom_slots = -1;
+	Vector3 position;
+	float rotation_y = 0.0f;
 	enemy* linked_enemy = nullptr;
+	int target_floor_id = 0;
+
+	static Vector3 get_random_wall_position(Vector2 dungeon_pos, Vector2 room_size, float& out_rotation_y, float tile_size = 2.0f);
+	static ObjectSpawnInfo create_random_wall_prop(ObjectType type, Vector2 dungeon_pos, Vector2 room_size);
+	static ObjectSpawnInfo create_trapdoor(Vector2 dungeon_pos, Vector2 room_size, int target_floor_id, float tile_size = 2.0f);
+	static ObjectSpawnInfo create_dead_body(enemy* e, Vector3 pos);
 };
 
 struct object
@@ -52,8 +57,10 @@ struct object
 	const Model* model_ptr;
 	const ModelAnimation* animation_ptr;
 	int animation_frame_count = 0;
+	float rotation_y = 0.0f;
 
-	object(Vector3 pos, const Model* model = nullptr, const ModelAnimation* animation = nullptr, int frame_count = 0) : position(pos), model_ptr(model), animation_ptr(animation), animation_frame_count(frame_count) {}
+	object(Vector3 pos, const Model* model = nullptr, const ModelAnimation* animation = nullptr, int frame_count = 0, float rot_y = 0.0f)
+		: position(pos), model_ptr(model), animation_ptr(animation), animation_frame_count(frame_count), rotation_y(rot_y) {}
 
 	virtual ~object() = default;
 
@@ -61,7 +68,7 @@ struct object
 	{
 		if (model_ptr != nullptr)
 		{
-			DrawModel(*model_ptr, position, 1.0f, WHITE);
+			DrawModelEx(*model_ptr, position, { 0.0f, 1.0f, 0.0f }, rotation_y, { 1.0f, 1.0f, 1.0f }, WHITE);
 		}
 	}
 	virtual void update(float deltaTime) {};
@@ -73,9 +80,7 @@ struct object
 		int slots;
 		std::vector<std::unique_ptr<item>> drop_loot;
 
-		drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot)
-			: object(pos, model), slots(slots_count), drop_loot(std::move(loot)) {
-		}
+		drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f) : object(pos, model, nullptr , 0, rot_y), slots(slots_count), drop_loot(std::move(loot)) {}
 
 		static int rand_drop_slots();
 
@@ -85,26 +90,27 @@ struct object
 		{
 			bool is_open = false;
 
-			chest(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot) : drop_object(pos, model, slots_count, std::move(loot)) {}
-
-		void draw(const Camera3D& camera) const override
-		{
-			if (model_ptr != nullptr)
-			{
-				DrawModel(*model_ptr, position, 1.5f, WHITE);
-			}
-		}
-		};
-		struct dead_body : public drop_object
-		{
-			enemy* enemy_ptr;
-
-			dead_body(enemy* e, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot);
+			chest(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f) : drop_object(pos, model, slots_count, std::move(loot), rot_y) {}
 
 			void draw(const Camera3D& camera) const override
 			{
-				DrawCube(position, 0.7f, 0.1f, 0.7f, RED);
-				DrawCubeWires(position, 0.7f, 0.1f, 0.7f, MAROON);
+				if (model_ptr != nullptr)
+				{
+					DrawModelEx(*model_ptr, position, { 0.0f, 1.0f, 0.0f }, rotation_y, { 1.5f, 1.5f, 1.5f }, WHITE);
+				}
+			}
+		};
+
+		struct dead_body : public drop_object
+		{
+			enemy* enemy_ptr = nullptr;
+
+			dead_body(enemy* e, Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f) : drop_object(pos, model, slots_count, std::move(loot), rot_y), enemy_ptr(e) {}
+			
+			void draw(const Camera3D& camera) const override
+			{
+				DrawCube(position, 1.0f, 0.5f, 1.0f, RED);
+				DrawCubeWires(position, 1.0f, 0.5f, 1.0f, MAROON);
 			}
 		};
 
@@ -204,6 +210,12 @@ struct limb
 	bool is_intact = true;
 	bool can_attack = false;
 	int damage = 0;
+
+	bool applies_bleed = false;
+	int bleed_dmg = 0;
+	int bleed_timer = 0;
+
+	
 
 	limb(int max_val = 1, bool can_atk = false, int dmg = 0): hp(max_val), max_hp(max_val), is_intact(true), can_attack(can_atk), damage(dmg) {}
 
@@ -319,6 +331,7 @@ struct floating_text
 	Vector3 hit_limb;
 	std::string text;
 	bool is_crit;
+	bool is_bleed;
 	float max_lifetime = 1.0f;
 	float offsetY;
 	
