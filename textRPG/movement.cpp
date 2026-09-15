@@ -11,36 +11,25 @@ collisions check_collisions(Vector3 pos, exploration* exp)
 {
     collisions c;
 
-    const auto& current_dungeon = exp->floors[exp->current_floor_id].dungeon;
+    if (exp == nullptr)
+    {
+        return c;
+    }
+
     float p_hitbox = 0.25f;
 
-    int idx_plus_x = static_cast<int>((pos.x + p_hitbox) / 2.0f);
-    int idx_minus_x = static_cast<int>((pos.x - p_hitbox) / 2.0f);
-    int idx_z = static_cast<int>(pos.z / 2.0f);
+    int idx_plus_x = static_cast<int>((pos.x + p_hitbox) / 2.0f) + 1;
+    int idx_minus_x = static_cast<int>((pos.x - p_hitbox) / 2.0f) + 1;
+    int idx_x = static_cast<int>(pos.x / 2.0f) + 1;
 
-    int idx_x = static_cast<int>(pos.x / 2.0f);
+    int idx_z = static_cast<int>(pos.z / 2.0f);
     int idx_plus_z = static_cast<int>((pos.z + p_hitbox) / 2.0f);
     int idx_minus_z = static_cast<int>((pos.z - p_hitbox) / 2.0f);
 
-    if (idx_plus_x >= 0 && idx_plus_x < exp->szerokosc && idx_z >= 0 && idx_z < exp->dlugosc)
-    {
-        if (current_dungeon[idx_plus_x][idx_z] != 1) c.blokuj_ruch_plus_x = true;
-    }
-
-    if (idx_minus_x >= 0 && idx_minus_x < exp->szerokosc && idx_z >= 0 && idx_z < exp->dlugosc)
-    {
-        if (current_dungeon[idx_minus_x][idx_z] != 1) c.blokuj_ruch_minus_x = true;
-    }
-
-    if (idx_x >= 0 && idx_x < exp->szerokosc && idx_plus_z >= 0 && idx_plus_z < exp->dlugosc)
-    {
-        if (current_dungeon[idx_x][idx_plus_z] != 1) c.blokuj_ruch_plus_z = true;
-    }
-
-    if (idx_x >= 0 && idx_x < exp->szerokosc && idx_minus_z >= 0 && idx_minus_z < exp->dlugosc)
-    {
-        if (current_dungeon[idx_x][idx_minus_z] != 1) c.blokuj_ruch_minus_z = true;
-    }
+    if (!exp->is_walkable(idx_plus_x, idx_z))   c.blokuj_ruch_plus_x = true;
+    if (!exp->is_walkable(idx_minus_x, idx_z))  c.blokuj_ruch_minus_x = true;
+    if (!exp->is_walkable(idx_x, idx_plus_z))   c.blokuj_ruch_plus_z = true;
+    if (!exp->is_walkable(idx_x, idx_minus_z))  c.blokuj_ruch_minus_z = true;
 
     return c;
 }
@@ -52,33 +41,28 @@ void exploration::apply_collision(Vector3 stara_pos)
         return;
     }
 
-    const auto& current_dungeon = floors[current_floor_id].dungeon;
     float p_hitbox = 0.25f;
 
+    // Test wzd³u¿ osi X
     int check_x = static_cast<int>((camera.position.x + (camera.position.x > stara_pos.x ? p_hitbox : -p_hitbox)) / 2.0f) + 1;
     int current_z = static_cast<int>(camera.position.z / 2.0f);
 
-    if (check_x >= 0 && check_x < szerokosc && current_z >= 0 && current_z < dlugosc)
+    if (!is_walkable(check_x, current_z))
     {
-        if (current_dungeon[check_x][current_z] != 1)
-        {
-            float delta_x = camera.position.x - stara_pos.x;
-            camera.position.x = stara_pos.x;
-            camera.target.x -= delta_x;
-        }
+        float delta_x = camera.position.x - stara_pos.x;
+        camera.position.x = stara_pos.x;
+        camera.target.x -= delta_x;
     }
 
+    // Test wzd³u¿ osi Z
     int current_x = static_cast<int>(camera.position.x / 2.0f) + 1;
     int check_z = static_cast<int>((camera.position.z + (camera.position.z > stara_pos.z ? p_hitbox : -p_hitbox)) / 2.0f);
 
-    if (current_x >= 0 && current_x < szerokosc && check_z >= 0 && check_z < dlugosc)
+    if (!is_walkable(current_x, check_z))
     {
-        if (current_dungeon[current_x][check_z] != 1)
-        {
-            float delta_z = camera.position.z - stara_pos.z;
-            camera.position.z = stara_pos.z;
-            camera.target.z -= delta_z;
-        }
+        float delta_z = camera.position.z - stara_pos.z;
+        camera.position.z = stara_pos.z;
+        camera.target.z -= delta_z;
     }
 }
 
@@ -94,8 +78,21 @@ bool exploration::is_walkable(int x, int y)
         return false;
     }
 
-    return floors[current_floor_id].dungeon[x][y] == 1;
+    const auto& cur_floor = floors[current_floor_id];
+
+    if (cur_floor.dungeon[x][y] != 1)
+    {
+        return false;
+    }
+
+    if (cur_floor.is_tile_solid(x, y))
+    {
+        return false;
+    }
+
+    return true;
 }
+
 bool exploration::is_walkable_subgrid(int gridX, int gridZ)
 {
     int dungeonX = (gridX >= 0) ? (gridX / 4) : ((gridX - 3) / 4);

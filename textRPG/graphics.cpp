@@ -383,10 +383,11 @@ void draw_battle_ui(battle* fight)
 		}
 	}
 }
+
 void DrawHUD(exploration* exp)
 {
 	const player& p = exp->bohater;
-	
+
 	if (p.is_bleeding)
 	{
 		Texture2D bleed = textures.bleeding_icon;
@@ -399,7 +400,18 @@ void DrawHUD(exploration* exp)
 	DrawRectangle(GAME_WIDTH * 0.7, GAME_HEIGHT * 0.9, 50, 20, WHITE);
 	DrawText("M", GAME_WIDTH * 0.7 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
 
-	
+	if (exp->active_ui_event == nullptr && exp->is_hovering_interactive)
+	{
+		const char* prompt = "Press [E]";
+		int font_size = 44;
+		int text_width = MeasureText(prompt, font_size);
+
+		int text_x = (GAME_WIDTH / 2) - (text_width / 2);
+		int text_y = (GAME_HEIGHT / 2) - 50;
+
+		DrawTextEx(cabin_sketch_font, prompt, { (float)text_x + 1.0f, (float)text_y + 1.0f }, font_size, 1, BLACK);
+		DrawTextEx(cabin_sketch_font, prompt, { (float)text_x, (float)text_y }, font_size, 1, YELLOW);
+	}
 }
 
 

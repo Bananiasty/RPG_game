@@ -44,6 +44,9 @@ private:
 public:
 	Camera3D camera;
 
+	bool is_hovering_interactive = false;
+	Vector3 hovered_point = { 0.0f, 0.0f, 0.0f };
+
 	int dlugosc;
 	int szerokosc;
 
@@ -68,7 +71,7 @@ public:
 	void change_floor(int floor_id);
 
 	std::unique_ptr<object> create_world_object(const ObjectSpawnInfo& info);
-	void spawn_object(const ObjectSpawnInfo& info);
+	void spawn_object(ObjectSpawnInfo info);
 
 	void apply_collision(Vector3 stara_pos);
 	void apply_pathfinding(enemy* e);

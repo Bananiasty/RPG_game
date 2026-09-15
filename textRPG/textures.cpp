@@ -13,6 +13,7 @@ void LoadGameTextures()
 	textures.inventory_UI = LoadTexture("graphics/UI/inventory_UI.png");
 
 	textures.chest_t = LoadTexture("graphics/textures/objects/treasure_chest_128.png");
+	textures.barrel_t = LoadTexture("graphics/textures/objects/barrel_128.png");
 
 
 	textures.lightning = LoadTexture("graphics/GAME ASSETS/SPELLS/1 Lightning/Lightning.png");
@@ -60,8 +61,8 @@ void LoadGameTextures()
 
 	textures.man_silhouette = LoadTexture("graphics/UI/man_silhouette.png");
 
-	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul_limbs_3.png");
-	textures.ghoulImage = LoadImage("graphics/textures/enemies/ghoul_64/ghoul_limbs_3.png");
+	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
+	textures.ghoulImage = LoadImage("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
 
 			
 	// Kontury przeciwnikow
@@ -109,13 +110,17 @@ void LoadGameModels()
 	objects.player_character = LoadModel("graphics/models/characters/moja_postac.glb");
 	objects.enemy_character = LoadModel("graphics/models/postac_przeciwnika.glb");
 
-	objects.m_chest = LoadModel("graphics/models/objects/treasure_chest_128.glb");
-	objects.m_chest.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.chest_t;
-	objects.m_chest.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
-	objects.m_chest.materials[1].shader = textures.fogShader;
+	objects.chest = LoadModel("graphics/models/objects/treasure_chest_128.glb");
+	objects.chest.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.chest_t;
+	objects.chest.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+	objects.chest.materials[1].shader = textures.fogShader;
+
+	objects.barrel = LoadModel("graphics/models/objects/barrel.glb");
+	objects.barrel.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.barrel_t;
+	objects.barrel.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
+	objects.barrel.materials[1].shader = textures.fogShader;
 
 	objects.floor_tile = LoadModel("graphics/models/terrain/floor_tile1.glb");
-
 	objects.floor_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].texture = textures.floor_tile_tex;
 	objects.floor_tile.materials[1].maps[MATERIAL_MAP_DIFFUSE].color = WHITE;
 	objects.floor_tile.materials[1].shader = textures.fogShader;

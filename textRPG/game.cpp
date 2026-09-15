@@ -184,11 +184,26 @@ void exploration::event_check()
             delete active_ui_event;
             active_ui_event = nullptr;
         }
-        return;
+        else
+        {
+            is_hovering_interactive = false;
+            return;
+        }
     }
+
+    is_hovering_interactive = false;
 
     Vector3 player_pos = camera.position;
     auto& current_loot_list = floors[current_floor_id].world_objects;
+
+    Vector2 ray_origin_pos = IsCursorHidden()
+        ? Vector2{ (float)GetScreenWidth() * 0.5f, (float)GetScreenHeight() * 0.5f }
+    : GetMousePosition();
+
+    Ray ray = GetScreenToWorldRay(ray_origin_pos, camera);
+
+    object* targeted_obj = nullptr;
+    float closest_hit_distance = 999999.0f;
 
     for (const auto& obj_ptr : current_loot_list)
     {
@@ -197,27 +212,69 @@ void exploration::event_check()
             continue;
         }
 
-        if (Vector3DistanceSqr(player_pos, obj_ptr->position) <= 7.25f && IsKeyPressed(KEY_E))
+        trapdoor* td_ptr = dynamic_cast<trapdoor*>(obj_ptr.get());
+        drop_object* drop_ptr = dynamic_cast<drop_object*>(obj_ptr.get());
+
+        if (drop_ptr != nullptr)
         {
-            if (auto* drop = dynamic_cast<drop_object*>(obj_ptr.get()))
+            if (drop_ptr->drop_loot.empty())
             {
-                if (!drop->drop_loot.empty())
-                {
-                    active_ui_event = new loot_event(this, bohater, drop);
-                    break;
-                }
+                continue;
             }
-            else if (auto* td = dynamic_cast<trapdoor*>(obj_ptr.get()))
+        }
+        else if (td_ptr == nullptr)
+        {
+            continue;
+        }
+
+        float max_dist_sqr = (td_ptr != nullptr) ? 14.0f : 7.25f;
+        if (Vector3DistanceSqr(player_pos, obj_ptr->position) > max_dist_sqr)
+        {
+            continue;
+        }
+
+        Vector3 box_half_size = { 0.75f, 1.0f, 0.75f };
+        Vector3 box_center = obj_ptr->position;
+
+        if (td_ptr != nullptr)
+        {
+            box_half_size = { 1.25f, 0.4f, 1.25f };
+            box_center.y += 0.2f;
+            box_center.x -= 0.5f;
+            box_center.z += 1.2f;
+        }
+
+        BoundingBox box = {
+            Vector3Subtract(box_center, box_half_size),
+            Vector3Add(box_center, box_half_size)
+        };
+
+        RayCollision collision = GetRayCollisionBox(ray, box);
+
+        if (collision.hit && collision.distance < closest_hit_distance)
+        {
+            closest_hit_distance = collision.distance;
+            targeted_obj = obj_ptr.get();
+            hovered_point = collision.point;
+            is_hovering_interactive = true;
+        }
+    }
+
+    if (targeted_obj != nullptr && IsKeyPressed(KEY_E))
+    {
+        if (auto* drop = dynamic_cast<drop_object*>(targeted_obj))
+        {
+            active_ui_event = new loot_event(this, bohater, drop);
+        }
+        else if (auto* td = dynamic_cast<trapdoor*>(targeted_obj))
+        {
+            if (!td->is_open)
             {
-                if (!td->is_open)
-                {
-                    td->interact();
-                }
-                else if (td->open_angle>=75.0f &&td->target_floor_id != -1)
-                {
-                    change_floor(td->target_floor_id);
-                }
-                break;
+                td->interact();
+            }
+            else if (td->open_angle >= 75.0f && td->target_floor_id != -1)
+            {
+                change_floor(td->target_floor_id);
             }
         }
     }

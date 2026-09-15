@@ -26,14 +26,15 @@ void exploration::add_Node(const NodeConfig& config)
 
     floors[config.floor_id].world_map[config.room_id] = node;
 
+    int prev_floor = current_floor_id;
+    current_floor_id = config.floor_id;
+
     for (const auto& prop_info : config.props)
     {
-        auto obj = create_world_object(prop_info);
-        if (obj != nullptr)
-        {
-            floors[config.floor_id].world_objects.push_back(std::move(obj));
-        }
+        spawn_object(prop_info);
     }
+
+    current_floor_id = prev_floor;
     if (config.enemy_id != -1)
     {
         enemy* spawned_enemy = get_enemy_by_id(config.enemy_id);

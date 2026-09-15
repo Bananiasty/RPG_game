@@ -50,6 +50,7 @@ struct textureManager {
 	Image ghoulImage;
 
 	Texture2D chest_t;
+	Texture2D barrel_t;
 
 	Texture2D lightning_bolt;
 	Texture2D fireball;
@@ -113,9 +114,12 @@ struct ModelManager {
 	Model floor_tile;
 	Model wall_tile;
 	Model ceiling_tile;
-	Model m_chest;
 
+
+	Model chest;
+	Model barrel;
 	Model trapdoor;
+
 	ModelAnimation* trapdoor_open_animation;
 
 };
