@@ -1,3 +1,4 @@
+#include "iostream"
 #include  "struct.h"
 #include "gamestates.h"
 #include "raymath.h"
@@ -84,6 +85,12 @@ void exploration::spawn_object(ObjectSpawnInfo info)
             info.rotation_y,
             cur_floor
         );
+
+        // Odrzucenie nieudanego losowania zamiast stawiania w niepoprawnym miejscu
+        if (info.position.x < 0.0f)
+        {
+            return;
+        }
     }
     else if (info.type == ObjectType::Trapdoor)
     {
@@ -118,6 +125,9 @@ Vector3 ObjectSpawnInfo::get_random_wall_position(
     int chosen_gz = -1;
     int chosen_tile_x = 0;
     int chosen_tile_z = 0;
+    float chosen_rot = 0.0f;
+
+    bool tile_valid = false;
 
     do
     {
@@ -128,34 +138,46 @@ Vector3 ObjectSpawnInfo::get_random_wall_position(
         case 0: // Północ
             chosen_tile_x = GetRandomValue(0, max_tile_x);
             chosen_tile_z = 0;
-            out_rotation_y = 0.0f;
+            chosen_rot = 0.0f;
             break;
         case 1: // Południe
             chosen_tile_x = GetRandomValue(0, max_tile_x);
             chosen_tile_z = max_tile_z;
-            out_rotation_y = 180.0f;
+            chosen_rot = 180.0f;
             break;
         case 2: // Zachód
             chosen_tile_x = 0;
             chosen_tile_z = GetRandomValue(0, max_tile_z);
-            out_rotation_y = 90.0f;
+            chosen_rot = 90.0f;
             break;
         case 3: // Wschód
             chosen_tile_x = max_tile_x;
             chosen_tile_z = GetRandomValue(0, max_tile_z);
-            out_rotation_y = 270.0f;
+            chosen_rot = 270.0f;
             break;
         }
 
+        // Czysty indeks siatki (zgodny z node.room_x i node.room_y zapisanymi w generate_floor)
         chosen_gx = (int)dungeon_pos.x + chosen_tile_x;
         chosen_gz = (int)dungeon_pos.y + chosen_tile_z;
 
         attempts++;
 
-    } while (!current_floor.is_tile_free(chosen_gx, chosen_gz) && attempts < 50);
+        // Wloty korytarzy zostały już zablokowane w generate_floor,
+        // więc wystarczy sprawdzić czy pole jest wolne
+        tile_valid = current_floor.is_tile_free(chosen_gx, chosen_gz);
 
-    // Rezerwacja kafelka w secie piętra
-    current_floor.occupy_tile(chosen_gx, chosen_gz);
+    } while (!tile_valid && attempts < 50);
+
+    // Jeśli po 50 próbach nie znaleziono wolnej ściany, zwracamy wartownika błędu
+    if (!tile_valid)
+    {
+        return { -1.0f, -1.0f, -1.0f };
+    }
+
+    // Rezerwacja kafelka dla obiektu (blokuje poruszanie się)
+    current_floor.occupy_tile(chosen_gx, chosen_gz, true);
+    out_rotation_y = chosen_rot;
 
     Vector3 prop_pos = {
         min_x + ((float)chosen_tile_x + 0.5f) * tile_size,
@@ -165,7 +187,6 @@ Vector3 ObjectSpawnInfo::get_random_wall_position(
 
     return prop_pos;
 }
-
 ObjectSpawnInfo ObjectSpawnInfo::create_random_wall_prop(ObjectType type, Vector2 dungeon_pos, Vector2 room_size)
 {
     ObjectSpawnInfo info;
@@ -199,4 +220,49 @@ ObjectSpawnInfo ObjectSpawnInfo::create_dead_body(enemy* e, Vector3 pos)
     info.position = pos;
     info.rotation_y = 0.0f;
     return info;
+}
+
+bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const dungeon_floor& floor)
+{
+    if (floor.dungeon.empty())
+    {
+        return false;
+    }
+
+    int grid_w = static_cast<int>(floor.dungeon.size());
+    int grid_h = static_cast<int>(floor.dungeon[0].size());
+
+    int check_x = gx;
+    int check_z = gz;
+
+    // Sprawdzamy kafelek bezpośrednio za ścianą, przy której stawiamy obiekt
+    switch (wall)
+    {
+    case 0: // Północ (ściana w stronę Z-1)
+        check_z -= 1;
+        break;
+    case 1: // Południe (ściana w stronę Z+1)
+        check_z += 1;
+        break;
+    case 2: // Zachód (ściana w stronę X-1)
+        check_x -= 1;
+        break;
+    case 3: // Wschód (ściana w stronę X+1)
+        check_x += 1;
+        break;
+    default:
+        break;
+    }
+
+    // Sprawdzenie, czy pole docelowe mieści się w granicach mapy
+    if (check_x >= 0 && check_x < grid_w && check_z >= 0 && check_z < grid_h)
+    {
+        // Jeśli za ścianą jest podłoga (1), oznacza to wlot korytarza – pole jest zablokowane
+        if (floor.dungeon[check_x][check_z] == 1)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }

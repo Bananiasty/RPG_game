@@ -102,6 +102,16 @@ void exploration::world_map_init()
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 })
+
 
             }
         });
@@ -194,7 +204,6 @@ void exploration::world_map_init()
         .dungeon_pos = { 24, 10 },
         .room_size = { 3, 3 },
         .props = {
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 24, 10 }, { 3, 3 })
 
         }
         });

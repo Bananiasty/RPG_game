@@ -24,17 +24,10 @@ void exploration::add_Node(const NodeConfig& config)
     node.room_length = (int)config.room_size.y;
     node.enemy_id = config.enemy_id;
 
+    node.pending_props = config.props;
+
     floors[config.floor_id].world_map[config.room_id] = node;
 
-    int prev_floor = current_floor_id;
-    current_floor_id = config.floor_id;
-
-    for (const auto& prop_info : config.props)
-    {
-        spawn_object(prop_info);
-    }
-
-    current_floor_id = prev_floor;
     if (config.enemy_id != -1)
     {
         enemy* spawned_enemy = get_enemy_by_id(config.enemy_id);
@@ -58,10 +51,6 @@ void exploration::add_Node(const NodeConfig& config)
 
 void exploration::generate_floor(int floor_id)
 {
-    /*if (floor_id < 0 || floor_id >= static_cast<int>(floors.size()))
-    {
-        return;
-    }*/
 
     dungeon_floor& target_floor = floors[floor_id];
 
@@ -200,8 +189,55 @@ void exploration::generate_floor(int floor_id)
                 }
             }
         }
+        
     }
+    for (const auto& [id, node] : target_floor.world_map)
+    {
+        int rx = node.room_x;
+        int rz = node.room_y;
+        int rw = node.room_width;
+        int rh = node.room_length;
+
+        for (int x = rx; x < rx + rw; x++)
+        {
+            if (rz - 1 >= 0 && target_floor.dungeon[x][rz - 1] == 1)
+            {
+                target_floor.occupy_tile(x, rz, false);
+            }
+            if (rz + rh < dlugosc && target_floor.dungeon[x][rz + rh] == 1)
+            {
+                target_floor.occupy_tile(x, rz + rh - 1, false);
+            }
+        }
+
+        for (int z = rz; z < rz + rh; z++)
+        {
+            if (rx - 1 >= 0 && target_floor.dungeon[rx - 1][z] == 1)
+            {
+                target_floor.occupy_tile(rx, z, false);
+            }
+            if (rx + rw < szerokosc && target_floor.dungeon[rx + rw][z] == 1)
+            {
+                target_floor.occupy_tile(rx + rw - 1, z, false);
+            }
+        }
+    }
+
+    int prev_floor = current_floor_id;
+    current_floor_id = floor_id;
+
+    for (auto& [id, node] : target_floor.world_map)
+    {
+        for (const auto& prop_info : node.pending_props)
+        {
+            spawn_object(prop_info);
+        }
+        node.pending_props.clear();
+    }
+
+    current_floor_id = prev_floor;
 }
+
 
 void exploration::change_floor(int new_floor_id)
 {
@@ -218,6 +254,7 @@ void exploration::change_floor(int new_floor_id)
         delete active_ui_event;
         active_ui_event = nullptr;
     }
+
 }
 
 

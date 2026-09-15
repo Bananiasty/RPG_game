@@ -122,7 +122,7 @@ struct Node
 	int room_length = 5;
 
 	int enemy_id = -1;
-	std::vector<ObjectSpawnInfo> props;
+	std::vector<ObjectSpawnInfo> pending_props;
 };
 
 // --- Dungeon Floor ---
@@ -182,13 +182,8 @@ struct ObjectSpawnInfo
 	Vector2 room_pos = { 0.0f, 0.0f };
 	Vector2 room_size = { 0.0f, 0.0f };
 
-	static Vector3 get_random_wall_position(
-		Vector2 dungeon_pos,
-		Vector2 room_size,
-		float& out_rotation_y,
-		dungeon_floor& current_floor,
-		float tile_size = 2.0f
-	);
+	static bool is_tile_blocking_corridor(int gx, int gz, int wall, const dungeon_floor& floor);
+	static Vector3 get_random_wall_position(Vector2 dungeon_pos, Vector2 room_size, float& out_rotation_y, dungeon_floor& current_floor, float tile_size = 2.0f);
 
 	static ObjectSpawnInfo create_random_wall_prop(
 		ObjectType type,
