@@ -9,12 +9,14 @@
 #include <cstddef>
 #include <string>
 #include "raylib.h"
+#include "raymath.h"
 #include "textureManager.h"
 
 // --- Forward Declarations ---
 class exploration;
 class item;
 class enemy;
+class player;
 struct object;
 struct ObjectSpawnInfo;
 class Event;
@@ -225,9 +227,9 @@ struct object
 	int animation_frame_count = 0;
 	float rotation_y = 0.0f;
 
-	object(Vector3 pos, const Model* model = nullptr, const ModelAnimation* animation = nullptr, int frame_count = 0, float rot_y = 0.0f)
-		: position(pos), model_ptr(model), animation_ptr(animation), animation_frame_count(frame_count), rotation_y(rot_y) {
-	}
+	bool is_destroyed = false;
+
+	object(Vector3 pos, const Model* model = nullptr, const ModelAnimation* animation = nullptr, int frame_count = 0, float rot_y = 0.0f) : position(pos), model_ptr(model), animation_ptr(animation), animation_frame_count(frame_count), rotation_y(rot_y) {}
 
 	virtual ~object() = default;
 
@@ -239,27 +241,36 @@ struct object
 		}
 	}
 	virtual void update(float deltaTime) {}
-	virtual void interact() {}
+	virtual void interact(exploration& game, player& player_character) {}
+
+	virtual BoundingBox get_interaction_box() const
+	{
+		Vector3 half_size = { 0.75f, 1.0f, 0.75f };
+		return BoundingBox{
+			Vector3Subtract(position, half_size),
+			Vector3Add(position, half_size)
+		};
+	}
 };
 
-struct drop_object : object
+struct loot_object : object
 {
 	int slots;
 	std::vector<std::unique_ptr<item>> drop_loot;
 
-	drop_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f)
-		: object(pos, model, nullptr, 0, rot_y), slots(slots_count), drop_loot(std::move(loot)) {
-	}
+	loot_object(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f): object(pos, model, nullptr, 0, rot_y), slots(slots_count), drop_loot(std::move(loot)) {}
 
 	static int rand_drop_slots();
 
-	virtual ~drop_object() = default;
+	virtual ~loot_object() = default;
+
+	void interact(exploration& game, player& player_character) override;
 };
 
-struct chest : public drop_object
+struct chest : public loot_object
 {
 	chest(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f)
-		: drop_object(pos, model, slots_count, std::move(loot), rot_y) {
+		: loot_object(pos, model, slots_count, std::move(loot), rot_y) {
 	}
 
 	void draw(const Camera3D& camera) const override
@@ -271,13 +282,12 @@ struct chest : public drop_object
 	}
 };
 
-struct dead_body : public drop_object
+struct dead_body : public loot_object
 {
 	enemy* enemy_ptr = nullptr;
 
-	dead_body(enemy* e, Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f)
-		: drop_object(pos, model, slots_count, std::move(loot), rot_y), enemy_ptr(e) {
-	}
+	dead_body(enemy* e, Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f) : loot_object(pos, model, slots_count, std::move(loot), rot_y), enemy_ptr(e) {
+}
 
 	void draw(const Camera3D& camera) const override
 	{
@@ -286,10 +296,10 @@ struct dead_body : public drop_object
 	}
 };
 
-struct barrel : public drop_object
+struct barrel : public loot_object
 {
 	barrel(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f)
-		: drop_object(pos, model, slots_count, std::move(loot), rot_y) {
+		: loot_object(pos, model, slots_count, std::move(loot), rot_y) {
 	}
 
 	void draw(const Camera3D& camera) const override
@@ -307,14 +317,9 @@ struct trapdoor : object
 	bool is_open = false;
 	float open_angle = 0.0f;
 
-	trapdoor(Vector3 pos, const Model* model, int target_floor = -1)
-		: object(pos, model, nullptr, 0), target_floor_id(target_floor) {
-	}
+	trapdoor(Vector3 pos, const Model* model, int target_floor = -1) : object(pos, model, nullptr, 0), target_floor_id(target_floor) {}
 
-	void interact() override
-	{
-		is_open = true;
-	}
+	void interact(exploration& game, player& player_character) override;
 
 	void update(float dt) override
 	{
@@ -333,6 +338,51 @@ struct trapdoor : object
 			DrawModelEx(*model_ptr, position, { 1.0f, 0.0f, 0.0f }, -open_angle, { 1.0f, 1.0f, 1.0f }, WHITE);
 		}
 	}
+
+	BoundingBox get_interaction_box() const override
+	{
+		Vector3 box_half_size = { 1.25f, 0.4f, 1.25f };
+		Vector3 box_center = position;
+		box_center.y += 0.2f;
+		box_center.x -= 0.5f;
+		box_center.z += 1.2f;
+
+		return BoundingBox{
+			Vector3Subtract(box_center, box_half_size),
+			Vector3Add(box_center, box_half_size)
+		};
+	}
+};
+struct world_item : object
+{
+
+	std::unique_ptr<item> stored_item;
+	float size_scale = 1.0f;
+
+
+
+	world_item(Vector3 pos, const Model* model, std::unique_ptr<item> it, float scale = 1.0f, float rot_y = 0.0f): object(pos, model, nullptr, 0, rot_y), stored_item(std::move(it)	), size_scale(scale) {}
+
+	void draw(const Camera3D& camera) const override
+	{
+		if (model_ptr != nullptr)
+		{
+			DrawCube(position, 0.5f * size_scale, 0.5f * size_scale, 0.5f * size_scale, BLUE);
+			//DrawModelEx(*model_ptr, position, { 0.0f, 1.0f, 0.0f }, rotation_y, { size_scale, size_scale, size_scale }, WHITE);
+		}
+	}
+
+	void interact(exploration& game, player& player_character) override;
+
+	BoundingBox get_interaction_box() const override
+	{
+		Vector3 box_half_size = { 0.35f * size_scale, 0.35f * size_scale, 0.35f * size_scale };
+		return BoundingBox{
+			Vector3Subtract(position, box_half_size),
+			Vector3Add(position, box_half_size)
+		};
+	}
+	
 };
 
 // --- Fizyka, Walka i Koñczyny ---

@@ -7,7 +7,7 @@
 #include "gamestates.h"
 #include "character.h"
 
-int drop_object::rand_drop_slots()
+int loot_object::rand_drop_slots()
 {
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -39,7 +39,7 @@ std::vector<std::unique_ptr<item>> exploration::rand_loot(enemy* target_enemy, i
 void loot_event::collect_item(size_t index)
 {       
     if (target_container == nullptr) return;
-    drop_object* drop = dynamic_cast<drop_object*>(target_container);
+    loot_object* drop = dynamic_cast<loot_object*>(target_container);
     if (drop == nullptr) return;
     if (index >= drop->drop_loot.size()) return;
 
@@ -55,7 +55,7 @@ void loot_event::collect_item(size_t index)
 void loot_event::collect_all()
 {
     if (target_container == nullptr) return;
-    drop_object* drop = dynamic_cast<drop_object*>(target_container);
+    loot_object* drop = dynamic_cast<loot_object*>(target_container);
     if (drop == nullptr) return;
 
     for (auto& up : drop->drop_loot)

@@ -176,6 +176,7 @@ int map_state::update_state()
 
 void exploration::event_check()
 {
+    // 1. Sprawdzenie aktywnego UI eventu (np. otwarte okno łupu)
     if (active_ui_event != nullptr)
     {
         loot_event* current_loot = dynamic_cast<loot_event*>(active_ui_event);
@@ -194,7 +195,7 @@ void exploration::event_check()
     is_hovering_interactive = false;
 
     Vector3 player_pos = camera.position;
-    auto& current_loot_list = floors[current_floor_id].world_objects;
+    auto& current_objects_list = floors[current_floor_id].world_objects;
 
     Vector2 ray_origin_pos = IsCursorHidden()
         ? Vector2{ (float)GetScreenWidth() * 0.5f, (float)GetScreenHeight() * 0.5f }
@@ -205,49 +206,28 @@ void exploration::event_check()
     object* targeted_obj = nullptr;
     float closest_hit_distance = 999999.0f;
 
-    for (const auto& obj_ptr : current_loot_list)
+    for (const auto& obj_ptr : current_objects_list)
     {
-        if (!obj_ptr)
+        if (!obj_ptr || obj_ptr->is_destroyed)
         {
             continue;
         }
 
-        trapdoor* td_ptr = dynamic_cast<trapdoor*>(obj_ptr.get());
-        drop_object* drop_ptr = dynamic_cast<drop_object*>(obj_ptr.get());
-
-        if (drop_ptr != nullptr)
+        if (auto* drop_ptr = dynamic_cast<loot_object*>(obj_ptr.get()))
         {
             if (drop_ptr->drop_loot.empty())
             {
                 continue;
             }
         }
-        else if (td_ptr == nullptr)
-        {
-            continue;
-        }
 
-        float max_dist_sqr = (td_ptr != nullptr) ? 14.0f : 7.25f;
+        float max_dist_sqr = (dynamic_cast<trapdoor*>(obj_ptr.get()) != nullptr) ? 14.0f : 7.25f;
         if (Vector3DistanceSqr(player_pos, obj_ptr->position) > max_dist_sqr)
         {
             continue;
         }
 
-        Vector3 box_half_size = { 0.75f, 1.0f, 0.75f };
-        Vector3 box_center = obj_ptr->position;
-
-        if (td_ptr != nullptr)
-        {
-            box_half_size = { 1.25f, 0.4f, 1.25f };
-            box_center.y += 0.2f;
-            box_center.x -= 0.5f;
-            box_center.z += 1.2f;
-        }
-
-        BoundingBox box = {
-            Vector3Subtract(box_center, box_half_size),
-            Vector3Add(box_center, box_half_size)
-        };
+        BoundingBox box = obj_ptr->get_interaction_box();
 
         RayCollision collision = GetRayCollisionBox(ray, box);
 
@@ -262,22 +242,13 @@ void exploration::event_check()
 
     if (targeted_obj != nullptr && IsKeyPressed(KEY_E))
     {
-        if (auto* drop = dynamic_cast<drop_object*>(targeted_obj))
-        {
-            active_ui_event = new loot_event(this, bohater, drop);
-        }
-        else if (auto* td = dynamic_cast<trapdoor*>(targeted_obj))
-        {
-            if (!td->is_open)
-            {
-                td->interact();
-            }
-            else if (td->open_angle >= 75.0f && td->target_floor_id != -1)
-            {
-                change_floor(td->target_floor_id);
-            }
-        }
+        targeted_obj->interact(*this, bohater);
     }
+
+    std::erase_if(current_objects_list, [](const auto& ptr) 
+        {
+            return ptr && ptr->is_destroyed;
+        });
 }
 
 

@@ -312,7 +312,7 @@ void player::player_attack()
 void player::take_all_loot(object* o)
 {
     if (o == nullptr) return;
-    drop_object* drop = dynamic_cast<drop_object*>(o);
+    loot_object* drop = dynamic_cast<loot_object*>(o);
     if (drop == nullptr) return;
 
     for (auto& up : drop->drop_loot)
@@ -332,7 +332,7 @@ void player::take_item(object* o, item* it)
         return;
     }
 
-    drop_object* drop = dynamic_cast<drop_object*>(o);
+    loot_object* drop = dynamic_cast<loot_object*>(o);
     if (drop == nullptr) return;
 
     auto loot_container = std::find_if(drop->drop_loot.begin(), drop->drop_loot.end(), [it](const std::unique_ptr<item>& ptr)

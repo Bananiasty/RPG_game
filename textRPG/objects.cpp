@@ -10,7 +10,7 @@ std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& 
     {
     case ObjectType::Chest:
     {
-        int slots = drop_object::rand_drop_slots();
+        int slots = loot_object::rand_drop_slots();
         auto loot = rand_loot(nullptr, slots);
 
         return std::make_unique<chest>(
@@ -22,9 +22,9 @@ std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& 
         );
     }
 
-	case ObjectType::Barrel:
-	{
-		int slots = drop_object::rand_drop_slots();
+    case ObjectType::Barrel:
+    {
+        int slots = loot_object::rand_drop_slots();
 		auto loot = rand_loot(nullptr, slots);
 		return std::make_unique<barrel>(
 			info.position,
@@ -37,7 +37,7 @@ std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& 
 
     case ObjectType::DeadBody:
     {
-        int slots = drop_object::rand_drop_slots();
+        int slots = loot_object::rand_drop_slots();
         auto loot = rand_loot(info.linked_enemy, slots);
 
         auto db = std::make_unique<dead_body>(
@@ -157,25 +157,20 @@ Vector3 ObjectSpawnInfo::get_random_wall_position(
             break;
         }
 
-        // Czysty indeks siatki (zgodny z node.room_x i node.room_y zapisanymi w generate_floor)
         chosen_gx = (int)dungeon_pos.x + chosen_tile_x;
         chosen_gz = (int)dungeon_pos.y + chosen_tile_z;
 
         attempts++;
 
-        // Wloty korytarzy zostały już zablokowane w generate_floor,
-        // więc wystarczy sprawdzić czy pole jest wolne
         tile_valid = current_floor.is_tile_free(chosen_gx, chosen_gz);
 
     } while (!tile_valid && attempts < 50);
 
-    // Jeśli po 50 próbach nie znaleziono wolnej ściany, zwracamy wartownika błędu
     if (!tile_valid)
     {
         return { -1.0f, -1.0f, -1.0f };
     }
 
-    // Rezerwacja kafelka dla obiektu (blokuje poruszanie się)
     current_floor.occupy_tile(chosen_gx, chosen_gz, true);
     out_rotation_y = chosen_rot;
 
@@ -238,16 +233,16 @@ bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const 
     // Sprawdzamy kafelek bezpośrednio za ścianą, przy której stawiamy obiekt
     switch (wall)
     {
-    case 0: // Północ (ściana w stronę Z-1)
+    case 0: // Północ
         check_z -= 1;
         break;
-    case 1: // Południe (ściana w stronę Z+1)
+    case 1: // Południe
         check_z += 1;
         break;
-    case 2: // Zachód (ściana w stronę X-1)
+    case 2: // Zachód
         check_x -= 1;
         break;
-    case 3: // Wschód (ściana w stronę X+1)
+    case 3: // Wschód
         check_x += 1;
         break;
     default:
@@ -257,7 +252,6 @@ bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const 
     // Sprawdzenie, czy pole docelowe mieści się w granicach mapy
     if (check_x >= 0 && check_x < grid_w && check_z >= 0 && check_z < grid_h)
     {
-        // Jeśli za ścianą jest podłoga (1), oznacza to wlot korytarza – pole jest zablokowane
         if (floor.dungeon[check_x][check_z] == 1)
         {
             return true;
@@ -265,4 +259,30 @@ bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const 
     }
 
     return false;
+}
+
+void loot_object::interact(exploration& game, player& player_character)
+{
+    if (!drop_loot.empty())
+    {
+        game.active_ui_event = new loot_event(&game, player_character, this);
+    }
+}
+
+void trapdoor::interact(exploration& game, player& player_character)
+{
+    if (!is_open)
+    {
+        is_open = true;
+    }
+    else if (open_angle >= 75.0f && target_floor_id != -1)
+    {
+        game.change_floor(target_floor_id);
+    }
+}
+
+void world_item::interact(exploration& game, player& player_character)
+{
+    player_character.bag->add_item(this->stored_item.get());
+    this->is_destroyed = true;
 }

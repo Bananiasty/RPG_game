@@ -937,7 +937,7 @@ bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 		return false;
 	}
 
-	drop_object* drop = dynamic_cast<drop_object*>(current_drop);
+	loot_object* drop = dynamic_cast<loot_object*>(current_drop);
 	if (drop == nullptr) return false;
 
 	std::vector<item*> raw_loot;

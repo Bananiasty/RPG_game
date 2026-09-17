@@ -13,7 +13,7 @@
 
 class gamestate;
 class exploration;
-struct drop_object;
+struct loot_object;
 
 class character
 {
