@@ -107,7 +107,8 @@ public:
 
 	void event_check();
 
-	
+	void spawn_world_item(item* it, Vector3 pos);
+	void spawn_loot_bag(Vector3 pos, const std::vector<item*>& items);
 
 	void game_over() {};
 
@@ -172,7 +173,9 @@ class inventory_state : public gamestate
 {
 private: 
 	player& p_ref;
+	exploration& world;
 	gamestate* previous_state;
+	
 
 public:
 	exploration* exp;
@@ -182,7 +185,12 @@ public:
 	bool books_tab = false;
 	bool items_tab = false;
 
-	inventory_state(player& p, gamestate* back_to);
+	std::vector<item*> pending_drops;
+
+	
+	inventory_state(player& p, exploration& w, gamestate* back_to);
+
+
 
 	void draw() override;
 	int update_state() override;

@@ -40,7 +40,7 @@ std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& 
         int slots = loot_object::rand_drop_slots();
         auto loot = rand_loot(info.linked_enemy, slots);
 
-        auto db = std::make_unique<dead_body>(
+        return std::make_unique<dead_body>(
             info.linked_enemy,
             info.position,
             nullptr,
@@ -48,7 +48,20 @@ std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& 
             std::move(loot),
             info.rotation_y
         );
-        return db;
+        
+    }
+
+    case ObjectType::p_drop:
+    {
+        int slots = 1;
+        std::vector<std::unique_ptr<item>> empty_loot;
+        return std::make_unique<p_drop>(
+            info.position,
+            nullptr,
+            slots,
+            std::move(empty_loot),
+            info.rotation_y
+        );
     }
 
     case ObjectType::Trapdoor:
@@ -217,6 +230,7 @@ ObjectSpawnInfo ObjectSpawnInfo::create_dead_body(enemy* e, Vector3 pos)
     return info;
 }
 
+
 bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const dungeon_floor& floor)
 {
     if (floor.dungeon.empty())
@@ -283,6 +297,12 @@ void trapdoor::interact(exploration& game, player& player_character)
 
 void world_item::interact(exploration& game, player& player_character)
 {
-    player_character.bag->add_item(this->stored_item.get());
+    item* raw_item = this->stored_item.release();
+
+    if (raw_item != nullptr)
+    {
+        player_character.bag->add_item(raw_item);
+    }
+
     this->is_destroyed = true;
 }

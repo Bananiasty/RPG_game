@@ -148,7 +148,7 @@ int main()
 
         if (nextID == 3 && current_state != 3)
         {
-            inventory_state* inv = new inventory_state(bohater, active_state);
+            inventory_state* inv = new inventory_state(bohater, world, active_state);
             inv->exp = &world;
             inv->fight = current_fight;
             active_state = inv;

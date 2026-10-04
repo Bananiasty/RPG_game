@@ -325,33 +325,6 @@ void player::take_all_loot(object* o)
     drop->drop_loot.clear();
 }
 
-void player::take_item(object* o, item* it)
-{
-    if (o == nullptr || it == nullptr)
-    {
-        return;
-    }
-
-    loot_object* drop = dynamic_cast<loot_object*>(o);
-    if (drop == nullptr) return;
-
-    auto loot_container = std::find_if(drop->drop_loot.begin(), drop->drop_loot.end(), [it](const std::unique_ptr<item>& ptr)
-        {
-            return ptr.get() == it;
-        }
-    );
-
-    if (loot_container != drop->drop_loot.end())
-    {
-        item* raw = loot_container->release();
-        drop->drop_loot.erase(loot_container);
-        this->bag->add_item(raw);
-    }
-
-    this->sort_bag();
-}
-
-
 void player::grant_xp()
 {
     int xp_grant = this->xp_from_enemy_dif;
@@ -413,6 +386,16 @@ void player::sort_bag()
         }
     }
 }
+
+void player::drop_item(item* item_to_drop) 
+{
+    if (this->bag == nullptr || item_to_drop == nullptr)
+    {
+        return;
+    }
+	std::erase(this->bag->items, item_to_drop);
+}
+
 
 void character::recalculate_max_health()
 {

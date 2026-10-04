@@ -515,6 +515,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			{
 				p.equipped_weapon->use(&p);
 			}
+			
 		}
 	}
 
@@ -756,13 +757,22 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					DrawRectangleRec(boots_slot, Fade(GRAY, 0.35f));
 					DrawRectangleLinesEx(boots_slot, 2.5f, WHITE);
 				}
+
 				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 				{
 					equipment[i]->use(&p);
 					p.sort_bag();
 					break;
 				}
+				if (IsKeyPressed(KEY_D))
+				{
+					inv->pending_drops.push_back(equipment[i]);
+					p.drop_item(equipment[i]);
+					p.sort_bag();
+					break;
+				}
 			}
+
 			if (!equipment[i]->is_equipped())
 			{
 				if (item_icon.id > 0)
@@ -777,21 +787,18 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					int item_armor = equipment[i]->get_defense_stat();
 					int item_damage = equipment[i]->get_attack_stat();
 					DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
-					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y+10 }, 34, 1, WHITE);
+					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
 					int y_offset = 0;
 					if (item_armor != 0)
-					{	
+					{
 						y_offset += 40;
 						DrawTextEx(cabin_sketch_font_bold, TextFormat("Armor: %d", item_armor), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
 					}
 					if (item_damage != 0)
-					{	
+					{
 						y_offset += 40;
 						DrawTextEx(cabin_sketch_font_bold, TextFormat("Damage: %d", item_damage), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
 					}
-					
-					
-
 				}
 			}
 			renderIndex++;
@@ -814,11 +821,21 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			if (is_item_hovered)
 			{
-				other_items[i]->use(&p);
-				p.sort_bag();
-				break;
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					other_items[i]->use(&p);
+					p.sort_bag();
+					break;
+				}
+				if (IsKeyPressed(KEY_D))
+				{
+					inv->pending_drops.push_back(other_items[i]);
+					p.drop_item(other_items[i]);
+					p.sort_bag();
+					break;
+				}
 			}
 
 			if (item_icon.id > 0)
@@ -852,11 +869,21 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			if (is_item_hovered)
 			{
-				food[i]->use(&p);
-				p.sort_bag();
-				break;
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					food[i]->use(&p);
+					p.sort_bag();
+					break;
+				}
+				if (IsKeyPressed(KEY_D))
+				{
+					inv->pending_drops.push_back(food[i]);
+					p.drop_item(food[i]);
+					p.sort_bag();
+					break;
+				}
 			}
 
 			if (item_icon.id > 0)
@@ -864,11 +891,11 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				float scale = (float)(btnHeight - 10) / item_icon.height;
 				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
 			}
-			std::string label = food[i]->get_name();
-			int item_restore_health = food[i]->get_restore_health();
-	
+
 			if (is_item_hovered)
 			{
+				std::string label = food[i]->get_name();
+				int item_restore_health = food[i]->get_restore_health();
 				DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
 				int y_offset = 0;
@@ -877,7 +904,6 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					y_offset += 40;
 					DrawTextEx(cabin_sketch_font_bold, TextFormat("Health Restore: %d", item_restore_health), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
 				}
-
 			}
 		}
 	}
@@ -898,11 +924,21 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
 
-			if (is_item_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			if (is_item_hovered)
 			{
-				books[i]->use(&p);
-				p.sort_bag();
-				break;
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					books[i]->use(&p);
+					p.sort_bag();
+					break;
+				}
+				if (IsKeyPressed(KEY_D))
+				{
+					inv->pending_drops.push_back(books[i]);
+					p.drop_item(books[i]);
+					p.sort_bag();
+					break;
+				}
 			}
 
 			if (item_icon.id > 0)

@@ -124,6 +124,7 @@ public:
 	void set_has_right_leg(bool state) { limbs.right_leg.is_intact = state; }
 
 	void recalculate_max_health();
+
 };
 
 class player :public character
@@ -170,13 +171,14 @@ public:
 	void set_name(const std::string& new_name);
 
 	void take_all_loot(object* c);
-	void take_item(object* c, item* it);
 
 	void grant_xp();
 
 	void sort_bag();
 
 	void check_level_up();
+
+	void drop_item(item* item_to_drop);
 };
 
 class enemy : public character
@@ -251,7 +253,8 @@ public:
 
 	int get_dif() { return difficulty; }
 	int get_id() { return id_number; }
-	int get_room_id() { return room_id_number; }
+	int get_room_id() { return room_id_number; };
+
 };
 
 class ghoul : public enemy

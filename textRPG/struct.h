@@ -37,11 +37,13 @@ enum class ObjectType
 {
 	Chest,
 	Barrel,
-	Trapdoor,
-	DeadBody
+	DeadBody,
+	p_drop,
+	Trapdoor
+	
 };
 
-// --- Ekwipunek i Siatka Piêtra ---
+
 struct inventory
 {
 private:
@@ -52,6 +54,7 @@ public:
 	void del_item(item* rm_item);
 };
 
+// SIATKA PIETRA
 struct floor_data
 {
 	int floor_id;
@@ -311,6 +314,27 @@ struct barrel : public loot_object
 	}
 };
 
+struct p_drop : public loot_object
+{
+	p_drop(Vector3 pos, const Model* model, int slots_count, std::vector<std::unique_ptr<item>> loot, float rot_y = 0.0f)
+		: loot_object(pos, model, slots_count, std::move(loot), rot_y)
+	{
+	}
+
+	void draw(const Camera3D& camera) const override
+	{
+		if (model_ptr != nullptr)
+		{
+			DrawModelEx(*model_ptr, position, { 0.0f, 1.0f, 0.0f }, rotation_y, { 1.0f, 1.0f, 1.0f }, WHITE);
+		}
+		else
+		{
+			DrawCube(position, 0.4f, 0.3f, 0.4f, BROWN);
+			DrawCubeWires(position, 0.4f, 0.3f, 0.4f, DARKBROWN);
+		}
+	}
+};
+
 struct trapdoor : object
 {
 	int target_floor_id = -1;
@@ -361,14 +385,18 @@ struct world_item : object
 
 
 
-	world_item(Vector3 pos, const Model* model, std::unique_ptr<item> it, float scale = 1.0f, float rot_y = 0.0f): object(pos, model, nullptr, 0, rot_y), stored_item(std::move(it)	), size_scale(scale) {}
+	world_item(Vector3 pos, const Model* model, std::unique_ptr<item> it, float scale, float rot_y): object(pos, model, nullptr, 0, rot_y), stored_item(std::move(it)), size_scale(scale) {}
 
 	void draw(const Camera3D& camera) const override
 	{
 		if (model_ptr != nullptr)
 		{
+			DrawModelEx(*model_ptr, position, { 0.0f, 1.0f, 0.0f }, rotation_y, { size_scale, size_scale, size_scale }, WHITE);
+		}
+		else
+		{
 			DrawCube(position, 0.5f * size_scale, 0.5f * size_scale, 0.5f * size_scale, BLUE);
-			//DrawModelEx(*model_ptr, position, { 0.0f, 1.0f, 0.0f }, rotation_y, { size_scale, size_scale, size_scale }, WHITE);
+			DrawCubeWires(position, 0.5f * size_scale, 0.5f * size_scale, 0.5f * size_scale, DARKBLUE);
 		}
 	}
 
