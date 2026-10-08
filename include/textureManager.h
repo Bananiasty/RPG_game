@@ -43,11 +43,14 @@ struct fx_animation
 
 struct textureManager {
 
-	Texture2D kopalnia;
 	Texture2D player;
 
 	Texture2D ghoul;
 	Image ghoulImage;
+
+	Texture2D pimpek;
+	Image pimpekImage;
+
 
 	Texture2D chest_t;
 	Texture2D barrel_t;

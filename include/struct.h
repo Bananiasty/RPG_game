@@ -508,7 +508,6 @@ struct enemy_config
 	int max_health = 0;
 	limbs_struct limbs;
 	int armor = 0;
-	int damage = 0;
 	int block_chance = 0;
 	int crit_chance = 0;
 	int dodge_chance = 0;

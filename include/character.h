@@ -21,7 +21,7 @@ class character
 friend class item;
 protected:
 	std::string name;
-	int base_defense, base_damage;
+	int base_defense;
 	int	block_chance, crit_chance, dodge_chance;
 	int reduced_head_damage;
 	int current_health, max_health;
@@ -94,7 +94,6 @@ public:
 	int get_health() { return current_health; }
 	int get_max_health() { return max_health; }
 	//int get_max_mana() { return max_mana; }
-	int get_damage() { return base_damage; }
 	int get_defense() { return base_defense; }
 	int get_block_chance() { return block_chance; }
 	int get_crit_chance() { return crit_chance; }
@@ -202,7 +201,8 @@ private:
 	
 
 public:
-	BodyPart attack_part = BodyPart::NONE;
+	BodyPart attack_part_1 = BodyPart::NONE;
+	BodyPart attack_part_2 = BodyPart::NONE;
 	std::vector<item*> loot;
 
 	virtual ~enemy() = default;
@@ -216,7 +216,7 @@ public:
 	void set_hovered_body_part(BodyPart part) { current_hovered_part = part; }
 
 	virtual SpriteRenderParams get_render_params(Texture2D texture) const = 0;
-	virtual int execute_ai_turn(character& target);
+	virtual int execute_ai_turn(character& target) = 0;
 
 
 	virtual enemy* clone() const = 0;
@@ -298,4 +298,40 @@ public:
 
 	int execute_ai_turn(character& target) override;
 };
+
+class pimpek : public enemy
+{
+
+public:
+	pimpek(const enemy_config& config) : enemy(config)
+	{
+		limbs.left_leg.can_attack = true;
+		limbs.left_leg.damage = 6;
+		limbs.right_leg.can_attack = true;
+		limbs.right_leg.damage = 6;
+	}
+
+	SpriteRenderParams get_render_params(Texture2D texture) const override
+	{
+		constexpr float PIMPEK_Y_OFFSET = -0.40f;
+
+		float frameWidth = (float)texture.width / 8.0f;
+		float frameHeight = (float)texture.height / 4.0f;
+		float targetHeight = 2.0f;
+		float targetWidth = targetHeight * (frameWidth / frameHeight);
+
+		Vector3 pos = get_position();
+		Vector3 drawPos = { pos.x, pos.y + PIMPEK_Y_OFFSET, pos.z };
+
+		return { drawPos, targetWidth, targetHeight, frameWidth, frameHeight };
+	}
+
+	pimpek* clone() const override
+	{
+		return new pimpek(*this);
+	}
+
+	int execute_ai_turn(character& target) override;
+};
+
 

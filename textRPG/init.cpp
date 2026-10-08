@@ -81,7 +81,8 @@ void exploration::loot_init()
 }
 void exploration::enemies_init()
 {
-	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .max_health = 50, .limbs = {5, 50, 20, 20, 20, 20}, .armor = 0, .damage = 5, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .reduced_head_damage = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
+	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .max_health = 50, .limbs = {5, 50, 20, 20, 20, 20}, .armor = 0, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .reduced_head_damage = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
+	enemy_pool.push_back(new pimpek({ .id = 2, .name = "Pimpek", .max_health = 30, .limbs = {3, 30, 10, 10, 10, 10}, .armor = 0, .block_chance = 5, .crit_chance = 2, .dodge_chance = 5, .reduced_head_damage = 0, .texture = textures.pimpek, .rotation = 0.0f, .level = 1, .description = "rawr" }));
 
 }
 void exploration::world_map_init()
@@ -122,7 +123,7 @@ void exploration::world_map_init()
         .right = 3,
         .dungeon_pos = { 10, 25 },
         .room_size = { 6, 6 },
-        .enemy_id = 1,
+        .enemy_id = 2,
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),

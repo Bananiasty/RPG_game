@@ -168,7 +168,7 @@ BodyPart enemy::select_random_target_part(const character& target)
     return valid_parts[randomIndex];
 }
 
-int enemy::execute_ai_turn(character& target)
+/*int enemy::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
     {
@@ -184,7 +184,7 @@ int enemy::execute_ai_turn(character& target)
     target.is_guard = false;
 
     return final_dmg;
-}
+}*/
 
 
 int ghoul::execute_ai_turn(character& target)
@@ -200,26 +200,26 @@ int ghoul::execute_ai_turn(character& target)
     this->process_turn_start_effects(this->gs);
     if (this->is_dead()) return 0;
 
-    int ghoul_base_dmg = 0;
-    this->attack_part = BodyPart::NONE;
+    int ghoul_output_dmg = 0;
+    this->attack_part_1 = BodyPart::NONE;
 
     const auto& right_arm = this->limbs.get_limb(BodyPart::RIGHT_ARM);
     const auto& head = this->limbs.get_limb(BodyPart::HEAD);
 
     if (right_arm.is_intact && right_arm.can_attack)
     {
-        this->attack_part = BodyPart::RIGHT_ARM;
-        ghoul_base_dmg = right_arm.damage;
+        this->attack_part_1 = BodyPart::RIGHT_ARM;
+        ghoul_output_dmg = right_arm.damage;
     }
     else if (head.is_intact && head.can_attack)
     {
-        this->attack_part = BodyPart::HEAD;
-        ghoul_base_dmg = head.damage;
+        this->attack_part_1 = BodyPart::HEAD;
+        ghoul_output_dmg = head.damage;
     }
 
-    if (this->attack_part != BodyPart::NONE)
+    if (this->attack_part_1 != BodyPart::NONE)
     {
-        const auto& attacking_limb = this->limbs.get_limb(this->attack_part);
+        const auto& attacking_limb = this->limbs.get_limb(this->attack_part_1);
         if (attacking_limb.applies_bleed)
         {
             if (!target.is_bleeding)
@@ -234,7 +234,7 @@ int ghoul::execute_ai_turn(character& target)
     }
 
     BodyPart hit_part = this->select_random_target_part(target);
-    auto [e_dmg, crit] = this->calculate_dmg(ghoul_base_dmg);
+    auto [e_dmg, crit] = this->calculate_dmg(ghoul_output_dmg);
     audio.play_sound(SoundID::ENEMY_HIT);
 
     int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, hit_part, this->gs);
@@ -242,7 +242,75 @@ int ghoul::execute_ai_turn(character& target)
 
     return final_dmg;
 }
+int pimpek::execute_ai_turn(character& target)
+{
+    if (!global_fx.is_playing && target.queued_damage > 0)
+    {
+        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
+        target.queued_damage = 0.0;
+        target.queued_hit_part = BodyPart::NONE;
+    }
+    if (this->is_dead()) return 0;
 
+    this->process_turn_start_effects(this->gs);
+    if (this->is_dead()) return 0;
+
+    this->attack_part_1 = BodyPart::NONE;
+    this->attack_part_2 = BodyPart::NONE;
+
+    const auto& right_leg = this->limbs.get_limb(BodyPart::RIGHT_LEG);
+    const auto& left_leg = this->limbs.get_limb(BodyPart::LEFT_LEG);
+
+    if (right_leg.is_intact && right_leg.can_attack)
+    {
+        this->attack_part_1 = BodyPart::RIGHT_LEG;
+    }
+    if (left_leg.is_intact && left_leg.can_attack)
+    {
+        this->attack_part_2 = BodyPart::LEFT_LEG;
+    }
+
+    int total_dmg = 0;
+    bool was_guarding = target.is_guard;
+
+    auto perform_strike = [&](BodyPart attacking_part) {
+        if (target.is_dead()) return;
+
+        const auto& attacking_limb = this->limbs.get_limb(attacking_part);
+        if (attacking_limb.applies_bleed)
+        {
+            if (!target.is_bleeding)
+            {
+                gamestate::gameLogs.push_back(TextFormat("You started bleeding!"));
+            }
+
+            target.is_bleeding = true;
+            target.applied_bleed_damage += attacking_limb.bleed_dmg;
+            target.bleed_status_timer = attacking_limb.bleed_timer;
+        }
+
+        BodyPart hit_part = this->select_random_target_part(target);
+        auto [e_dmg, crit] = this->calculate_dmg(attacking_limb.damage);
+        audio.play_sound(SoundID::ENEMY_HIT);
+
+        int dmg = target.take_damage(e_dmg, this, crit, was_guarding, hit_part, this->gs);
+        total_dmg += dmg;
+    };
+
+    if (this->attack_part_1 != BodyPart::NONE)
+    {
+        perform_strike(this->attack_part_1);
+    }
+
+    if (this->attack_part_2 != BodyPart::NONE)
+    {
+        perform_strike(this->attack_part_2);
+    }
+
+    target.is_guard = false;
+
+    return total_dmg;
+}
 
 
 

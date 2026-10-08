@@ -89,6 +89,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -103,6 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -117,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>G:\pulpit\raylib-6.0_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -135,7 +137,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>G:\pulpit\raylib-6.0_win64_msvc16\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -169,15 +171,19 @@
     <ClCompile Include="textures.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AudioManager.h" />
-    <ClInclude Include="battle_UI.h" />
-    <ClInclude Include="gamestates.h" />
-    <ClInclude Include="inventory_class.h" />
-    <ClInclude Include="character.h" />
-    <ClInclude Include="graphics.h" />
-    <ClInclude Include="raygui.h" />
-    <ClInclude Include="struct.h" />
-    <ClInclude Include="textureManager.h" />
+    <ClInclude Include="..\include\AudioManager.h" />
+    <ClInclude Include="..\include\battle_UI.h" />
+    <ClInclude Include="..\include\character.h" />
+    <ClInclude Include="..\include\gamestates.h" />
+    <ClInclude Include="..\include\graphics.h" />
+    <ClInclude Include="..\include\inventory_class.h" />
+    <ClInclude Include="..\include\items.h" />
+    <ClInclude Include="..\include\raygui.h" />
+    <ClInclude Include="..\include\raylib.h" />
+    <ClInclude Include="..\include\raymath.h" />
+    <ClInclude Include="..\include\rlgl.h" />
+    <ClInclude Include="..\include\struct.h" />
+    <ClInclude Include="..\include\textureManager.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

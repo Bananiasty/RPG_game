@@ -64,6 +64,9 @@ void LoadGameTextures()
 	textures.ghoul = LoadTexture("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
 	textures.ghoulImage = LoadImage("graphics/textures/enemies/ghoul_64/ghoul_limbs.png");
 
+	textures.pimpek = LoadTexture("graphics/textures/enemies/pimpek_360/pimpek_sprite_sheet.png");
+	textures.pimpekImage = LoadImage("graphics/textures/enemies/pimpek_360/pimpek_sprite_sheet.png");
+
 			
 	// Kontury przeciwnikow
 	textures.outlineShader = LoadShader("graphics/shaders/outline.vs", "graphics/shaders/outline.fs");

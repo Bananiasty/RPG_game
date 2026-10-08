@@ -74,31 +74,43 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="inventory_class.h">
+    <ClInclude Include="..\include\AudioManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="character.h">
+    <ClInclude Include="..\include\battle_UI.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="gamestates.h">
+    <ClInclude Include="..\include\character.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="struct.h">
+    <ClInclude Include="..\include\gamestates.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="graphics.h">
+    <ClInclude Include="..\include\graphics.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="raygui.h">
+    <ClInclude Include="..\include\inventory_class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="textureManager.h">
+    <ClInclude Include="..\include\items.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="AudioManager.h">
+    <ClInclude Include="..\include\raygui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="battle_UI.h">
+    <ClInclude Include="..\include\raylib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\raymath.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\rlgl.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\struct.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\textureManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

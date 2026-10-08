@@ -1,4 +1,4 @@
-#include <vector>
+Ôªø#include <vector>
 #include <algorithm>
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
@@ -136,13 +136,13 @@ void DrawExploration(exploration* exp)
 				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
 				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
 
-				// åCIANA PO£UDNIOWA
+				// ≈öCIANA PO≈ÅUDNIOWA
 				if (cy > 0 && current_floor.dungeon[cx][cy - 1] == 1)
 				{
 					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
-				// åCIANA P”£NOCNA
+				// ≈öCIANA P√ì≈ÅNOCNA
 				if (cy < exp->dlugosc - 1 && current_floor.dungeon[cx][cy + 1] == 1)
 				{
 					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
@@ -150,7 +150,7 @@ void DrawExploration(exploration* exp)
 					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
-				// åCIANA WSCHODNIA
+				// ≈öCIANA WSCHODNIA
 				if (cx > 0 && current_floor.dungeon[cx - 1][cy] == 1)
 				{
 					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
@@ -158,7 +158,7 @@ void DrawExploration(exploration* exp)
 					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
-				// åCIANA ZACHODNIA
+				// ≈öCIANA ZACHODNIA
 				if (cx < exp->szerokosc - 1 && current_floor.dungeon[cx + 1][cy] == 1)
 				{
 					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
@@ -240,9 +240,78 @@ void DrawExploration(exploration* exp)
 
 			switch (current_id)
 			{
-			case 1:
+				case 1:
+				{
+					auto params = enemy->get_render_params(textures.ghoul);
+
+					int lastFrame = enemy->get_last_frame();
+					int frameIndex = GetSpriteFrameIndex(pos, enemy->get_forward(), exp->camera.position, lastFrame);
+					enemy->set_last_frame(frameIndex);
+
+					BodyPart hoveredPart = enemy->get_hovered_body_part();
+					const auto& limbs = enemy->limbs;
+
+					SetShaderValue(textures.fogShader, GetShaderLocation(textures.fogShader, "viewPos"), &exp->camera.position, SHADER_UNIFORM_VEC3);
+
+					int sideLimitLoc = GetShaderLocation(textures.fogShader, "sideLimit");
+					int noLimit = 0;
+
+					BeginShaderMode(textures.fogShader);
+
+					if (limbs.left_arm.is_intact || limbs.right_arm.is_intact)
+					{
+						SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+						Rectangle rowSourceRec = { frameIndex * params.frameWidth, 2 * params.frameHeight, params.frameWidth, params.frameHeight };
+						DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+						rlDrawRenderBatchActive();
+					}
+
+					if (limbs.torso.is_intact)
+					{
+						SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+						Rectangle rowSourceRec = { frameIndex * params.frameWidth, 0 * params.frameHeight, params.frameWidth, params.frameHeight };
+						DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+						rlDrawRenderBatchActive();
+					}
+
+					if (limbs.head.is_intact)
+					{
+						SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+						Rectangle rowSourceRec = { frameIndex * params.frameWidth, 1 * params.frameHeight, params.frameWidth, params.frameHeight };
+						DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+						rlDrawRenderBatchActive();
+					}
+
+					if (limbs.left_leg.is_intact || limbs.right_leg.is_intact)
+					{
+						int legSideLimit = 0;
+						if (!limbs.left_leg.is_intact)       legSideLimit = 1;
+						else if (!limbs.right_leg.is_intact) legSideLimit = 2;
+
+						int adjustedLimit = enemy->GetAdjustedSideLimit(legSideLimit, frameIndex);
+						SetShaderValue(textures.fogShader, sideLimitLoc, &adjustedLimit, SHADER_UNIFORM_INT);
+
+						Rectangle rowSourceRec = { frameIndex * params.frameWidth, 3 * params.frameHeight, params.frameWidth, params.frameHeight };
+						DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+						rlDrawRenderBatchActive();
+
+						SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+					}
+
+					EndShaderMode();
+
+					if (hoveredPart != BodyPart::NONE)
+					{
+						auto [rowY, sideLimit] = GetOutlineParams(hoveredPart, params.frameHeight);
+						Rectangle outlineRec = { frameIndex * params.frameWidth, rowY, params.frameWidth, params.frameHeight };
+
+						DrawOutlineBillboard(exp->camera, textures.ghoul, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
+					}
+					break;
+				}
+			case 2:
 			{
-				auto params = enemy->get_render_params(textures.ghoul);
+				auto params = enemy->get_render_params(textures.pimpek);
 
 				int lastFrame = enemy->get_last_frame();
 				int frameIndex = GetSpriteFrameIndex(pos, enemy->get_forward(), exp->camera.position, lastFrame);
@@ -258,27 +327,25 @@ void DrawExploration(exploration* exp)
 
 				BeginShaderMode(textures.fogShader);
 
-				if (limbs.left_arm.is_intact || limbs.right_arm.is_intact)
-				{
-					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
-					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 2 * params.frameHeight, params.frameWidth, params.frameHeight };
-					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
-					rlDrawRenderBatchActive();
-				}
-
 				if (limbs.torso.is_intact)
 				{
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
 					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 0 * params.frameHeight, params.frameWidth, params.frameHeight };
-					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					DrawBillboardRec(exp->camera, textures.pimpek, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
 					rlDrawRenderBatchActive();
 				}
-
+				if (limbs.left_arm.is_intact || limbs.right_arm.is_intact)
+				{
+					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
+					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 2 * params.frameHeight, params.frameWidth, params.frameHeight };
+					DrawBillboardRec(exp->camera, textures.pimpek, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					rlDrawRenderBatchActive();
+				}
 				if (limbs.head.is_intact)
 				{
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
 					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 1 * params.frameHeight, params.frameWidth, params.frameHeight };
-					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					DrawBillboardRec(exp->camera, textures.pimpek, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
 					rlDrawRenderBatchActive();
 				}
 
@@ -292,7 +359,7 @@ void DrawExploration(exploration* exp)
 					SetShaderValue(textures.fogShader, sideLimitLoc, &adjustedLimit, SHADER_UNIFORM_INT);
 
 					Rectangle rowSourceRec = { frameIndex * params.frameWidth, 3 * params.frameHeight, params.frameWidth, params.frameHeight };
-					DrawBillboardRec(exp->camera, textures.ghoul, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
+					DrawBillboardRec(exp->camera, textures.pimpek, rowSourceRec, params.drawPos, { params.targetWidth, params.targetHeight }, WHITE);
 					rlDrawRenderBatchActive();
 
 					SetShaderValue(textures.fogShader, sideLimitLoc, &noLimit, SHADER_UNIFORM_INT);
@@ -305,7 +372,7 @@ void DrawExploration(exploration* exp)
 					auto [rowY, sideLimit] = GetOutlineParams(hoveredPart, params.frameHeight);
 					Rectangle outlineRec = { frameIndex * params.frameWidth, rowY, params.frameWidth, params.frameHeight };
 
-					DrawOutlineBillboard(exp->camera, textures.ghoul, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
+					DrawOutlineBillboard(exp->camera, textures.pimpek, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
 				}
 				break;
 			}
@@ -425,7 +492,6 @@ void draw_player_stats(player& p)
 	//DrawTextEx(cabin_sketch_font, TextFormat("Level: %d", p.get_level()), { 10, 10 }, 20, 2, WHITE);
 	//DrawTextEx(cabin_sketch_font, TextFormat("XP: %d/%d", p.get_xp(), p.get_xp_to_level_up()), { 10, 40 }, 20, 2, WHITE);
 	//DrawTextEx(cabin_sketch_font, TextFormat("HP: %d/%d", p.get_health(), p.get_max_health()), { (GAME_WIDTH*0.7f), (GAME_HEIGHT * 0.8f)}, 30, 2, WHITE);
-	DrawTextEx(cabin_sketch_font, TextFormat("Damage: %d", p.get_damage()), { x, y }, 30, 2, WHITE);
 	DrawTextEx(cabin_sketch_font, TextFormat("Armor: %d", p.get_defense()), { x, y + offset_y }, 30, 2, WHITE);
 	DrawTextEx(cabin_sketch_font, TextFormat("Block Chance: %d%%", p.get_block_chance()), { x + offset_x, y }, 30, 2, WHITE);
 	DrawTextEx(cabin_sketch_font, TextFormat("Crit Chance: %d%%", p.get_crit_chance()), { x + offset_x, y + offset_y }, 30, 2, WHITE);
