@@ -37,7 +37,7 @@ int main()
 
     audio.play_music(MusicID::EXPLORATION);
 
-    RenderTexture2D target = LoadRenderTexture(GAME_WIDTH, GAME_HEIGHT);
+    RenderTexture2D target = LoadRenderTexture((int)GAME_WIDTH, (int)GAME_HEIGHT);
     SetTextureFilter(target.texture, TEXTURE_FILTER_BILINEAR);
 
     cabin_sketch_font = LoadFontEx("Fonts/Cabin sketch/CabinSketch-Regular.ttf", 36, NULL, 0);

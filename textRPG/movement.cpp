@@ -1,4 +1,4 @@
-#include "struct.h"
+Ôªø#include "struct.h"
 #include "gamestates.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -43,7 +43,7 @@ void exploration::apply_collision(Vector3 stara_pos)
 
     float p_hitbox = 0.25f;
 
-    // Test wzd≥uø osi X
+    // Test wzd≈Çu≈º osi X
     int check_x = static_cast<int>((camera.position.x + (camera.position.x > stara_pos.x ? p_hitbox : -p_hitbox)) / 2.0f) + 1;
     int current_z = static_cast<int>(camera.position.z / 2.0f);
 
@@ -54,7 +54,7 @@ void exploration::apply_collision(Vector3 stara_pos)
         camera.target.x -= delta_x;
     }
 
-    // Test wzd≥uø osi Z
+    // Test wzd≈Çu≈º osi Z
     int current_x = static_cast<int>(camera.position.x / 2.0f) + 1;
     int check_z = static_cast<int>((camera.position.z + (camera.position.z > stara_pos.z ? p_hitbox : -p_hitbox)) / 2.0f);
 
@@ -166,13 +166,13 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
     openList.push_back(startNode);
 
     const GridPosition directions[8] = {
-        { 0, -1}, { 0,  1}, {-1,  0}, { 1,  0}, // GÛra, DÛ≥, Lewo, Prawo
+        { 0, -1}, { 0,  1}, {-1,  0}, { 1,  0}, // G√≥ra, D√≥≈Ç, Lewo, Prawo
         {-1, -1}, { 1, -1}, {-1,  1}, { 1,  1}  // Skosy
     };
 
     while (!openList.empty())
     {
-        int bestIndex = 0;
+        size_t bestIndex = 0;
         for (size_t i = 1; i < openList.size(); i++)
         {
             if (openList[i].fCost() < openList[bestIndex].fCost())

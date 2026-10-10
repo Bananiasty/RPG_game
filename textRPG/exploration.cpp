@@ -1,5 +1,11 @@
 #include "gamestates.h"
 #include "character.h"
+#include <vector>
+#include <queue>
+#include <map>
+#include <cmath>
+#include <random>
+#include <algorithm>
 
 
 
@@ -56,6 +62,18 @@ exploration::~exploration()
         }
         floor.active_enemies.clear();
     }
+
+    for (enemy* e : enemy_pool)
+    {
+        delete e;
+    }
+    enemy_pool.clear();
+
+    for (item* it : item_pool)
+    {
+        delete it;
+    }
+    item_pool.clear();
 }
 void exploration::event_check()
 {
@@ -134,7 +152,7 @@ void exploration::event_check()
 }
 
 
-Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id)
+Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, float wall_margin, float corridor_depth)
 {
     if (enemy_id == -1)
     {
@@ -147,17 +165,223 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id)
         return { 0.0f, 0.0f, 0.0f };
     }
 
+    float enemy_y = enemy_ptr->get_position().y;
+    delete enemy_ptr;
+
+    if (floor_id < 0 || floor_id >= static_cast<int>(floors.size()))
+    {
+        return { 0.0f, enemy_y, 0.0f };
+    }
+
+    dungeon_floor& target_floor = floors[floor_id];
     Node* room_ptr = this->get_room_by_id(room_id, floor_id);
     if (room_ptr == nullptr)
     {
-        return { 0.0f, 0.0f, 0.0f };
+        return { 0.0f, enemy_y, 0.0f };
     }
 
-    float enemy_y = enemy_ptr->get_position().y;
-    float centerX = room_ptr->room_x + (room_ptr->room_width / 2.0f);
-    float centerZ = room_ptr->room_y + (room_ptr->room_length / 2.0f);
+    const float tile_size = 2.0f;
+    int rx = room_ptr->room_x;
+    int rz = room_ptr->room_y;
+    int rw = room_ptr->room_width;
+    int rh = room_ptr->room_length;
 
-    return Vector3{ centerX * 2.0f, enemy_y, centerZ * 2.0f };
+    float fallback_x = (rx + rw / 2.0f) * tile_size;
+    float fallback_z = (rz + rh / 2.0f) * tile_size;
+    Vector3 fallback_pos = { fallback_x, enemy_y, fallback_z };
+
+    struct CandidateTile
+    {
+        int gx;
+        int gz;
+        bool is_corridor;
+    };
+    std::vector<CandidateTile> candidates;
+
+    auto is_inside_any_room = [&](int gx, int gz) -> bool {
+        for (const auto& [id, node] : target_floor.world_map)
+        {
+            if (gx >= node.room_x && gx < node.room_x + node.room_width &&
+                gz >= node.room_y && gz < node.room_y + node.room_length)
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+
+    //Pole pokoju z marginesem od scian
+    int margin_tiles = static_cast<int>(std::round(wall_margin / tile_size));
+    if (rw > 2 * margin_tiles && rh > 2 * margin_tiles)
+    {
+        for (int x = rx + margin_tiles; x <= rx + rw - 1 - margin_tiles; ++x)
+        {
+            for (int z = rz + margin_tiles; z <= rz + rh - 1 - margin_tiles; ++z)
+            {
+                if (x >= 0 && x < szerokosc && z >= 0 && z < dlugosc)
+                {
+                    bool walkable = target_floor.dungeon.empty() ||
+                                    target_floor.dungeon[x][z] == 1 ||
+                                    target_floor.dungeon[x][z] == 2;
+                    if (walkable && !target_floor.is_tile_solid(x, z) && target_floor.is_tile_free(x, z))
+                    {
+                        candidates.push_back({ x, z, false });
+                    }
+                }
+            }
+        }
+    }
+
+    //Sasiednie korytarze do glebokosci corridor_depth bez marginesu od scian
+    int max_corridor_tiles = static_cast<int>(std::round(corridor_depth / tile_size));
+    if (max_corridor_tiles > 0 && !target_floor.dungeon.empty())
+    {
+        std::map<std::pair<int, int>, int> corridor_visited;
+        std::queue<std::pair<int, int>> q;
+
+        // Polnoc
+        int nz = rz - 1;
+        if (nz >= 0)
+        {
+            for (int x = rx; x < rx + rw; ++x)
+            {
+                if (x >= 0 && x < szerokosc && target_floor.dungeon[x][nz] == 1 && !is_inside_any_room(x, nz))
+                {
+                    if (corridor_visited.find({ x, nz }) == corridor_visited.end())
+                    {
+                        corridor_visited[{ x, nz }] = 1;
+                        q.push({ x, nz });
+                    }
+                }
+            }
+        }
+
+        // Poludnie
+        int sz = rz + rh;
+        if (sz < dlugosc)
+        {
+            for (int x = rx; x < rx + rw; ++x)
+            {
+                if (x >= 0 && x < szerokosc && target_floor.dungeon[x][sz] == 1 && !is_inside_any_room(x, sz))
+                {
+                    if (corridor_visited.find({ x, sz }) == corridor_visited.end())
+                    {
+                        corridor_visited[{ x, sz }] = 1;
+                        q.push({ x, sz });
+                    }
+                }
+            }
+        }
+
+        // Zachod
+        int wx = rx - 1;
+        if (wx >= 0)
+        {
+            for (int z = rz; z < rz + rh; ++z)
+            {
+                if (z >= 0 && z < dlugosc && target_floor.dungeon[wx][z] == 1 && !is_inside_any_room(wx, z))
+                {
+                    if (corridor_visited.find({ wx, z }) == corridor_visited.end())
+                    {
+                        corridor_visited[{ wx, z }] = 1;
+                        q.push({ wx, z });
+                    }
+                }
+            }
+        }
+
+        // Wschod
+        int ex = rx + rw;
+        if (ex < szerokosc)
+        {
+            for (int z = rz; z < rz + rh; ++z)
+            {
+                if (z >= 0 && z < dlugosc && target_floor.dungeon[ex][z] == 1 && !is_inside_any_room(ex, z))
+                {
+                    if (corridor_visited.find({ ex, z }) == corridor_visited.end())
+                    {
+                        corridor_visited[{ ex, z }] = 1;
+                        q.push({ ex, z });
+                    }
+                }
+            }
+        }
+
+        // BFS wzdluz korytarzy
+        const int dx[4] = { 1, -1, 0, 0 };
+        const int dz[4] = { 0, 0, 1, -1 };
+
+        while (!q.empty())
+        {
+            auto [cx, cz] = q.front();
+            q.pop();
+
+            int d = corridor_visited[{ cx, cz }];
+            if (d < max_corridor_tiles)
+            {
+                for (int i = 0; i < 4; ++i)
+                {
+                    int nx = cx + dx[i];
+                    int nz = cz + dz[i];
+
+                    if (nx >= 0 && nx < szerokosc && nz >= 0 && nz < dlugosc)
+                    {
+                        if (target_floor.dungeon[nx][nz] == 1 && !is_inside_any_room(nx, nz))
+                        {
+                            if (corridor_visited.find({ nx, nz }) == corridor_visited.end())
+                            {
+                                corridor_visited[{ nx, nz }] = d + 1;
+                                q.push({ nx, nz });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (const auto& [coord, d] : corridor_visited)
+        {
+            int cx = coord.first;
+            int cz = coord.second;
+            if (!target_floor.is_tile_solid(cx, cz) && target_floor.is_tile_free(cx, cz))
+            {
+                candidates.push_back({ cx, cz, true });
+            }
+        }
+    }
+
+    // Fallback gdy brak pol z marginesem i korytarzy (np. maly pokoj 2x2)
+    if (candidates.empty())
+    {
+        for (int x = rx; x < rx + rw; ++x)
+        {
+            for (int z = rz; z < rz + rh; ++z)
+            {
+                if (x >= 0 && x < szerokosc && z >= 0 && z < dlugosc)
+                {
+                    if (!target_floor.is_tile_solid(x, z) && target_floor.is_tile_free(x, z))
+                    {
+                        candidates.push_back({ x, z, false });
+                    }
+                }
+            }
+        }
+    }
+
+    if (candidates.empty())
+    {
+        return fallback_pos;
+    }
+
+    static std::random_device rd;
+    static std::mt19937 gen(rd());
+    std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
+    const auto& chosen = candidates[dist(gen)];
+
+    // Dokladny srodek kafelka
+    float posX = (chosen.gx + 0.5f) * tile_size;
+    float posZ = (chosen.gz + 0.5f) * tile_size;
+    return Vector3{ posX, enemy_y, posZ };
 }
 
 Vector3 exploration::set_player_pos(int room_id, int floor_id)

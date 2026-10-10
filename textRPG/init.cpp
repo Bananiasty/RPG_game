@@ -30,6 +30,10 @@ void exploration::player_stats_init(player* c)
 
 void exploration::loot_init()
 {
+	for (item* it : item_pool)
+	{
+		delete it;
+	}
 	item_pool.clear();
 
 	item_pool.push_back(new helm("Leather helm", "Normal", 10, &textures.leather_helm, 1, 15));
@@ -53,13 +57,13 @@ void exploration::loot_init()
 
 	item_pool.push_back(new health_potion("HP potion", "Normal", 20, &textures.apple, 50));
 
-	item_pool.push_back(new combat_scroll("Thunder bolt", "Rare", 120, &textures.lightning_bolt_icon, 40, &textures.lightning_bolt, 10, 0.10));
-	item_pool.push_back(new combat_scroll("Sun Strike", "Rare", 120, &textures.sun_strike_icon, 40, &textures.sun_strike, 10, 0.10));
-	item_pool.push_back(new combat_scroll("Explosion", "Rare", 120, &textures.explosion_icon, 40, &textures.explosion, 10, 0.10));
-	item_pool.push_back(new combat_scroll("Spikes", "Rare", 120, &textures.spikes_icon, 40, &textures.spikes, 10, 0.10));
-	item_pool.push_back(new combat_scroll("Fire ball", "Rare", 120, &textures.fireball_icon, 40, &textures.fireball, 8, 0.10));
-	item_pool.push_back(new combat_scroll("Ignite", "Rare", 120, &textures.ignite_icon, 40, &textures.ignite, 10, 0.10));
-	item_pool.push_back(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon,  40, &textures.lightning, 10, 0.10));
+	item_pool.push_back(new combat_scroll("Thunder bolt", "Rare", 120, &textures.lightning_bolt_icon, 40, &textures.lightning_bolt, 10, 0.10f));
+	item_pool.push_back(new combat_scroll("Sun Strike", "Rare", 120, &textures.sun_strike_icon, 40, &textures.sun_strike, 10, 0.10f));
+	item_pool.push_back(new combat_scroll("Explosion", "Rare", 120, &textures.explosion_icon, 40, &textures.explosion, 10, 0.10f));
+	item_pool.push_back(new combat_scroll("Spikes", "Rare", 120, &textures.spikes_icon, 40, &textures.spikes, 10, 0.10f));
+	item_pool.push_back(new combat_scroll("Fire ball", "Rare", 120, &textures.fireball_icon, 40, &textures.fireball, 8, 0.10f));
+	item_pool.push_back(new combat_scroll("Ignite", "Rare", 120, &textures.ignite_icon, 40, &textures.ignite, 10, 0.10f));
+	item_pool.push_back(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon,  40, &textures.lightning, 10, 0.10f));
 
 
 	bohater.bag->add_item(new shield("Wooden shield", "Normal", 5, &textures.wooden_shield, 1, 5));
@@ -72,7 +76,7 @@ void exploration::loot_init()
 	bohater.bag->add_item(new boots("Leather boots", "Normal", 7, &textures.leather_boots, 1, 0));
 	bohater.bag->add_item(new health_potion("Apple", "Normal", 20, &textures.apple, 50));
 	bohater.bag->add_item(new weapon("Long sword", "Normal", 30, &textures.long_sword, 0, 4));
-	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon, 40, &textures.lightning, 10, 0.10));
+	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon, 40, &textures.lightning, 10, 0.10f));
 
 	
 	
@@ -81,8 +85,14 @@ void exploration::loot_init()
 }
 void exploration::enemies_init()
 {
+	for (enemy* e : enemy_pool)
+	{
+		delete e;
+	}
+	enemy_pool.clear();
+
 	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .max_health = 50, .limbs = {5, 50, 20, 20, 20, 20}, .armor = 0, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .reduced_head_damage = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
-	enemy_pool.push_back(new pimpek({ .id = 2, .name = "Pimpek", .max_health = 30, .limbs = {3, 30, 10, 10, 10, 10}, .armor = 0, .block_chance = 5, .crit_chance = 2, .dodge_chance = 5, .reduced_head_damage = 0, .texture = textures.pimpek, .rotation = 0.0f, .level = 1, .description = "rawr" }));
+	enemy_pool.push_back(new pimpek({ .id = 2, .name = "Pimpek", .max_health = 30, .limbs = {3, 30, 10, 10, 10, 10}, .armor = 0, .block_chance = 5, .crit_chance = 2, .dodge_chance = 15, .reduced_head_damage = 0, .texture = textures.pimpek, .rotation = 0.0f, .level = 1, .description = "rawr" }));
 
 }
 void exploration::world_map_init()
@@ -99,20 +109,8 @@ void exploration::world_map_init()
         .dungeon_pos = { 10, 10 },
         .room_size = { 5, 5 },
         .props = {
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 10 }, { 5, 5 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 })
-
 
             }
         });

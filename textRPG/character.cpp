@@ -44,6 +44,29 @@ player::player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_c
     queued_frame_time = 0.0;
 };
 
+player::~player()
+{
+    if (bag != nullptr)
+    {
+        for (item* it : bag->items)
+        {
+            delete it;
+        }
+        delete bag;
+        bag = nullptr;
+    }
+    delete equipped_items;
+    equipped_items = nullptr;
+    delete equipment;
+    equipment = nullptr;
+    delete inv_items;
+    inv_items = nullptr;
+    delete food;
+    food = nullptr;
+    delete books;
+    books = nullptr;
+}
+
 enemy::enemy(const enemy_config& config)
     : character(
         config.name,

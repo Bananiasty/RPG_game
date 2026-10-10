@@ -93,7 +93,7 @@ public:
 
 	Node* get_node(int room_id);
 
-	Vector3 set_enemy_pos(int enemy_id, int room_id, int floor_id);
+	Vector3 set_enemy_pos(int enemy_id, int room_id, int floor_id, float wall_margin = 2.0f, float corridor_depth = 6.0f);
 	Vector3 set_player_pos( int room_id, int floor_id);
 
 	enemy* get_current_enemy();

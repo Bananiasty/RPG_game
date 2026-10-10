@@ -28,15 +28,13 @@ void exploration::add_Node(const NodeConfig& config)
 
     floors[config.floor_id].world_map[config.room_id] = node;
 
-    if (config.enemy_id != -1)
+    if (floors[config.floor_id].is_generated && config.enemy_id != -1)
     {
         enemy* spawned_enemy = get_enemy_by_id(config.enemy_id);
         if (spawned_enemy != nullptr)
         {
-            float currentY = spawned_enemy->get_position().y;
-            float posX = (config.dungeon_pos.x + config.room_size.x / 2.0f) * 2.0f;
-            float posZ = (config.dungeon_pos.y + config.room_size.y / 2.0f) * 2.0f;
-            spawned_enemy->set_position({ posX, currentY, posZ });
+            Vector3 pos = set_enemy_pos(config.enemy_id, config.room_id, config.floor_id);
+            spawned_enemy->set_position(pos);
 
             floors[config.floor_id].active_enemies.push_back(spawned_enemy);
         }
@@ -51,8 +49,16 @@ void exploration::add_Node(const NodeConfig& config)
 
 void exploration::generate_floor(int floor_id)
 {
+    if (floor_id < 0 || floor_id >= static_cast<int>(floors.size()))
+    {
+        return;
+    }
 
     dungeon_floor& target_floor = floors[floor_id];
+    if (target_floor.is_generated)
+    {
+        return;
+    }
 
     static std::random_device rd;
     static std::mt19937 gen(rd());
@@ -236,6 +242,22 @@ void exploration::generate_floor(int floor_id)
     }
 
     current_floor_id = prev_floor;
+
+    for (auto& [id, node] : target_floor.world_map)
+    {
+        if (node.enemy_id != -1)
+        {
+            enemy* spawned_enemy = get_enemy_by_id(node.enemy_id);
+            if (spawned_enemy != nullptr)
+            {
+                Vector3 pos = set_enemy_pos(node.enemy_id, id, floor_id);
+                spawned_enemy->set_position(pos);
+                target_floor.active_enemies.push_back(spawned_enemy);
+            }
+        }
+    }
+
+    target_floor.is_generated = true;
 }
 
 

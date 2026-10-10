@@ -81,11 +81,12 @@ public:
 
 
 	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
+	virtual ~character() = default;
 
 	virtual bool is_dead() = 0;
 
 	virtual void process_turn_start_effects(gamestate* gs);
-	int take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
+	virtual int take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f });
 
 	std::pair<int, bool> calculate_dmg(int limb_damage);
 
@@ -156,6 +157,8 @@ public:
 
 	int xp_from_enemy_dif;
 
+	virtual ~player();
+
 	bool is_dead() override;
 
 	void player_guard();
@@ -210,7 +213,7 @@ public:
 	bool is_dead() override;
 	
 
-	virtual BodyPart calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera);
+	virtual BodyPart calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera) = 0;
 
 	BodyPart get_hovered_body_part() const { return current_hovered_part; }
 	void set_hovered_body_part(BodyPart part) { current_hovered_part = part; }
@@ -275,7 +278,8 @@ public:
 		limbs.head.bleed_dmg = 5;
 		limbs.head.damage = 7;
 	}
-	
+	BodyPart calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera) override;
+
 	SpriteRenderParams get_render_params(Texture2D texture) const override
 	{
 		constexpr float GHOUL_Y_OFFSET = 0.15f;
@@ -310,6 +314,9 @@ public:
 		limbs.right_leg.can_attack = true;
 		limbs.right_leg.damage = 6;
 	}
+
+	BodyPart calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera) override;
+	int take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos = { 0.0f, 0.0f, 0.0f }) override;
 
 	SpriteRenderParams get_render_params(Texture2D texture) const override
 	{

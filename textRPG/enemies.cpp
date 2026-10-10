@@ -12,7 +12,7 @@ void exploration::update_enemies()
 
     float dt = GetFrameTime();
     float detectionRange = 8.0f;
-    float enemySpeed = 2.0f;
+    float enemySpeed = 0.0f;
 
     auto& current_floor = floors[current_floor_id];
 
@@ -45,6 +45,14 @@ void exploration::update_enemies()
             if (e->is_moving())
             {
                 Vector3 target = e->get_target_tile();
+				if (e->get_name() == "Ghoul")
+				{
+                    enemySpeed = 1.5f;        
+				}
+                if (e->get_name() == "Pimpek")
+                {
+                    enemySpeed = 3.0f;
+                }
                 Vector3 nextPos = Vector3MoveTowards(enemyPos, target, enemySpeed * dt);
 
                 Vector3 stary_cam_pos = camera.position;
@@ -74,7 +82,7 @@ void exploration::update_enemies()
     }
 }
 
-BodyPart enemy::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera)
+BodyPart ghoul::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera)
 {
     Ray ray = GetScreenToWorldRay(GetMousePosition(), camera);
 
@@ -148,6 +156,98 @@ BodyPart enemy::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, 
     return BodyPart::NONE;
 }
 
+BodyPart pimpek::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, float targetHeight, Camera3D camera)
+{
+    Ray ray = GetScreenToWorldRay(GetMousePosition(), camera);
+
+    Vector3 forward = Vector3Normalize(Vector3Subtract(camera.target, camera.position));
+    Vector3 right = Vector3Normalize(Vector3CrossProduct(forward, camera.up));
+    Vector3 up = Vector3Normalize(camera.up);
+
+    float halfW = targetWidth * 0.5f;
+    float halfH = targetHeight * 0.5f;
+
+    Vector3 topLeft = Vector3Add(Vector3Subtract(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+    Vector3 topRight = Vector3Add(Vector3Add(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+    Vector3 bottomRight = Vector3Subtract(Vector3Add(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+    Vector3 bottomLeft = Vector3Subtract(Vector3Subtract(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+
+    RayCollision collision = GetRayCollisionQuad(ray, topLeft, topRight, bottomRight, bottomLeft);
+
+    if (collision.hit)
+    {
+        Vector3 bottomLeft = Vector3Subtract(Vector3Subtract(drawPos, Vector3Scale(right, halfW)), Vector3Scale(up, halfH));
+        Vector3 rel = Vector3Subtract(collision.point, bottomLeft);
+
+        float xOnQuad = Vector3DotProduct(rel, right);
+        float yOnQuad = Vector3DotProduct(rel, up);
+
+        float localX = xOnQuad / targetWidth;
+        float localY = 1.0f - (yOnQuad / targetHeight);
+
+        localX = 1.0f - localX;
+
+        localX = Clamp(localX, 0.0f, 1.0f);
+        localY = Clamp(localY, 0.0f, 1.0f);
+
+        if (localX < 0.28f || localX > 0.72f || localY < 0.22f || localY > 0.74f)
+        {
+            return BodyPart::NONE;
+        }
+
+        if (this->limbs.torso.is_intact)
+        {
+            // 1. NOGI (dół postaci: Y od 0.53 do 0.74)
+            if (localY >= 0.53f)
+            {
+                if (localX > 0.50f)
+                {
+                    if (this->limbs.right_leg.is_intact) return BodyPart::RIGHT_LEG;
+                    if (this->limbs.left_leg.is_intact)  return BodyPart::LEFT_LEG;
+                }
+                else
+                {
+                    if (this->limbs.left_leg.is_intact)  return BodyPart::LEFT_LEG;
+                    if (this->limbs.right_leg.is_intact) return BodyPart::RIGHT_LEG;
+                }
+                return BodyPart::TORSO;
+            }
+
+            bool arms_intact = (this->limbs.left_arm.is_intact || this->limbs.right_arm.is_intact);
+            if (arms_intact && localY >= 0.46f && localY < 0.53f && localX >= 0.38f && localX <= 0.62f)
+            {
+                return BodyPart::LEFT_ARM; // Reprezentuje obie połączone łapki
+            }
+            if (this->limbs.head.is_intact && localY < 0.46f)
+            {
+                return BodyPart::HEAD;
+            }
+
+            if (!this->limbs.head.is_intact && localY < 0.38f)
+            {
+                return BodyPart::NONE;
+            }
+
+            return BodyPart::TORSO;
+        }
+    }
+
+    return BodyPart::NONE;
+}
+
+int pimpek::take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos)
+{
+    if (hit_part == BodyPart::LEFT_ARM || hit_part == BodyPart::RIGHT_ARM)
+    {
+        int dmg = character::take_damage(dmg_amount, attacker, is_crit, is_guard, BodyPart::LEFT_ARM, gs, impact_pos);
+        this->limbs.right_arm.hp = this->limbs.left_arm.hp;
+        this->limbs.right_arm.is_intact = this->limbs.left_arm.is_intact;
+        return dmg;
+    }
+
+    return character::take_damage(dmg_amount, attacker, is_crit, is_guard, hit_part, gs, impact_pos);
+}
+
 BodyPart enemy::select_random_target_part(const character& target)
 {
     std::vector<BodyPart> valid_parts;
@@ -191,8 +291,8 @@ int ghoul::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
     {
-        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
-        target.queued_damage = 0.0;
+        this->take_damage((int)target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
+        target.queued_damage = 0.0f;
         target.queued_hit_part = BodyPart::NONE;
     }
     if (this->is_dead()) return 0;
@@ -246,8 +346,8 @@ int pimpek::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
     {
-        this->take_damage(target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
-        target.queued_damage = 0.0;
+        this->take_damage((int)target.queued_damage, &target, false, false, target.queued_hit_part, this->gs);
+        target.queued_damage = 0.0f;
         target.queued_hit_part = BodyPart::NONE;
     }
     if (this->is_dead()) return 0;

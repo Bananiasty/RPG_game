@@ -19,8 +19,8 @@ void main()
 
     vec4 texel = texture(texture0, fragTexCoord);
 
-    // Odrzucamy samą postać, aby pod spodem było widać ostrego ghoula z wywołania (B)
-    if (texel.a > 0.4) 
+    // Odrzucamy samą postać (próg 0.25 chroni antyaliasowane futerko Pimpka i zachowuje ostrość Ghoula)
+    if (texel.a > 0.25) 
     {
         discard;
     }
@@ -42,10 +42,10 @@ void main()
 
     float avgAlpha = alphaSum / 6.0;
 
-    // MAGIA ANTI-ALIASINGU:
-    // fwidth wyznacza natężenie zmian na ekranie i wygładza dokładnie brzegi pikseli
+    //ANTI-ALIASING
+    //wygładza dokładnie brzegi pikseli
     float delta = fwidth(avgAlpha);
-    float glowAlpha = smoothstep(0.05 - delta, 0.45 + delta, avgAlpha);
+    float glowAlpha = smoothstep(0.02 - delta, 0.40 + delta, avgAlpha);
 
     if (glowAlpha > 0.01)
     {

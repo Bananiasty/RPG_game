@@ -1,4 +1,4 @@
-﻿#include <vector>
+#include <vector>
 #include <algorithm>
 #include "raylib.h"
 #define RAYGUI_IMPLEMENTATION
@@ -136,13 +136,13 @@ void DrawExploration(exploration* exp)
 				Vector3 pozycja_dolna = Vector3{ (float)cx * 2.0f, 0.0f, (float)cy * 2.0f };
 				Vector3 pozycja_gorna = Vector3{ (float)cx * 2.0f, 2.0f, (float)cy * 2.0f };
 
-				// ŚCIANA POŁUDNIOWA
+				// ĹšCIANA POĹUDNIOWA
 				if (cy > 0 && current_floor.dungeon[cx][cy - 1] == 1)
 				{
 					DrawModelEx(objects.wall_tile, pozycja_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 					DrawModelEx(objects.wall_tile, pozycja_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 0.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
-				// ŚCIANA PÓŁNOCNA
+				// ĹšCIANA PĂ“ĹNOCNA
 				if (cy < exp->dlugosc - 1 && current_floor.dungeon[cx][cy + 1] == 1)
 				{
 					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z + 2.0f };
@@ -150,7 +150,7 @@ void DrawExploration(exploration* exp)
 					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 180.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
-				// ŚCIANA WSCHODNIA
+				// ĹšCIANA WSCHODNIA
 				if (cx > 0 && current_floor.dungeon[cx - 1][cy] == 1)
 				{
 					Vector3 p_dolna = Vector3{ pozycja_dolna.x - 2.0f, 0.0f, pozycja_dolna.z };
@@ -158,7 +158,7 @@ void DrawExploration(exploration* exp)
 					DrawModelEx(objects.wall_tile, p_dolna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 					DrawModelEx(objects.wall_tile, p_gorna, Vector3{ 0.0f, 1.0f, 0.0f }, 90.0f, Vector3{ 1.0f, 1.0f, 1.0f }, WHITE);
 				}
-				// ŚCIANA ZACHODNIA
+				// ĹšCIANA ZACHODNIA
 				if (cx < exp->szerokosc - 1 && current_floor.dungeon[cx + 1][cy] == 1)
 				{
 					Vector3 p_dolna = Vector3{ pozycja_dolna.x, 0.0f, pozycja_dolna.z + 2.0f };
@@ -370,6 +370,10 @@ void DrawExploration(exploration* exp)
 				if (hoveredPart != BodyPart::NONE)
 				{
 					auto [rowY, sideLimit] = GetOutlineParams(hoveredPart, params.frameHeight);
+					if (hoveredPart == BodyPart::LEFT_ARM || hoveredPart == BodyPart::RIGHT_ARM)
+					{
+						sideLimit = 0; // PodĹ›wietl obie Ĺ‚apki Pimpka jednoczeĹ›nie
+					}
 					Rectangle outlineRec = { frameIndex * params.frameWidth, rowY, params.frameWidth, params.frameHeight };
 
 					DrawOutlineBillboard(exp->camera, textures.pimpek, textures.outlineShader, outlineRec, params.drawPos, { params.targetWidth, params.targetHeight }, sideLimit);
@@ -461,11 +465,11 @@ void DrawHUD(exploration* exp)
 		Vector2 pos = { GAME_WIDTH * 0.90f, GAME_HEIGHT * 0.55f };
 		DrawTextureEx(bleed, pos, 0.0f, 2.5f, WHITE);
 	}
-	DrawRectangle(GAME_WIDTH * 0.8, GAME_HEIGHT * 0.9, 50, 20, WHITE);
-	DrawText("I", GAME_WIDTH * 0.8 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
+	DrawRectangle((int)(GAME_WIDTH * 0.8f), (int)(GAME_HEIGHT * 0.9f), 50, 20, WHITE);
+	DrawText("I", (int)(GAME_WIDTH * 0.8f + 20.0f), (int)(GAME_HEIGHT * 0.9f), 20, DARKBROWN);
 
-	DrawRectangle(GAME_WIDTH * 0.7, GAME_HEIGHT * 0.9, 50, 20, WHITE);
-	DrawText("M", GAME_WIDTH * 0.7 + 20, GAME_HEIGHT * 0.9, 20, DARKBROWN);
+	DrawRectangle((int)(GAME_WIDTH * 0.7f), (int)(GAME_HEIGHT * 0.9f), 50, 20, WHITE);
+	DrawText("M", (int)(GAME_WIDTH * 0.7f + 20.0f), (int)(GAME_HEIGHT * 0.9f), 20, DARKBROWN);
 
 	if (exp->active_ui_event == nullptr && exp->is_hovering_interactive)
 	{
@@ -473,11 +477,11 @@ void DrawHUD(exploration* exp)
 		int font_size = 44;
 		int text_width = MeasureText(prompt, font_size);
 
-		int text_x = (GAME_WIDTH / 2) - (text_width / 2);
-		int text_y = (GAME_HEIGHT / 2) - 50;
+		int text_x = (int)(GAME_WIDTH / 2.0f) - (text_width / 2);
+		int text_y = (int)(GAME_HEIGHT / 2.0f) - 50;
 
-		DrawTextEx(cabin_sketch_font, prompt, { (float)text_x + 1.0f, (float)text_y + 1.0f }, font_size, 1, BLACK);
-		DrawTextEx(cabin_sketch_font, prompt, { (float)text_x, (float)text_y }, font_size, 1, YELLOW);
+		DrawTextEx(cabin_sketch_font, prompt, { (float)text_x + 1.0f, (float)text_y + 1.0f }, (float)font_size, 1.0f, BLACK);
+		DrawTextEx(cabin_sketch_font, prompt, { (float)text_x, (float)text_y }, (float)font_size, 1.0f, YELLOW);
 	}
 }
 
@@ -505,7 +509,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	Texture2D item_icon;
 
 	Vector2 mouse_pos = GetVirtualMousePosition();
-	Vector2 window_center = { GAME_WIDTH * 0.5 - inventory.width * 0.5, GAME_HEIGHT * 0.5 - inventory.height * 0.5 };
+	Vector2 window_center = { (float)(GAME_WIDTH * 0.5f - inventory.width * 0.5f), (float)(GAME_HEIGHT * 0.5f - inventory.height * 0.5f) };
 
 	Rectangle equipment_button = { window_center.x + inventory.width * 0.057f, window_center.y + inventory.height * 0.081f, 120, 120 };
 	Rectangle item_button = { window_center.x + inventory.width * 0.181f, window_center.y + inventory.height * 0.081f, 120, 120 };
@@ -852,7 +856,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					std::string label = equipment[i]->get_name();
 					int item_armor = equipment[i]->get_defense_stat();
 					int item_damage = equipment[i]->get_attack_stat();
-					DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
+					DrawRectangle((int)(itemRect.x + btnWidth), (int)itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
 					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
 					int y_offset = 0;
 					if (item_armor != 0)
@@ -913,7 +917,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			if (is_item_hovered)
 			{
 				std::string label = other_items[i]->get_name();
-				DrawRectangle(itemRect.x + 50, itemRect.y, 120, 30, DARKBLUE);
+				DrawRectangle((int)(itemRect.x + 50.0f), (int)itemRect.y, 120, 30, DARKBLUE);
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
 		}
@@ -962,7 +966,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			{
 				std::string label = food[i]->get_name();
 				int item_restore_health = food[i]->get_restore_health();
-				DrawRectangle(itemRect.x + btnWidth, itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
+				DrawRectangle((int)(itemRect.x + btnWidth), (int)itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
 				int y_offset = 0;
 				if (item_restore_health != 0)
@@ -1016,7 +1020,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 			if (is_item_hovered)
 			{
 				std::string label = books[i]->get_name();
-				DrawRectangle(itemRect.x + 50, itemRect.y, 180, 30, DARKBLUE);
+				DrawRectangle((int)(itemRect.x + 50.0f), (int)itemRect.y, 180, 30, DARKBLUE);
 				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
 			}
 		}
@@ -1026,10 +1030,10 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 {
-	int window_w = GAME_WIDTH / 2;
-	int window_h = GAME_HEIGHT / 2;
-	int window_x_start = GAME_WIDTH / 2 - window_w / 2; 
-	int windows_y_start = GAME_HEIGHT / 2 - window_h / 2;
+	int window_w = (int)(GAME_WIDTH / 2.0f);
+	int window_h = (int)(GAME_HEIGHT / 2.0f);
+	int window_x_start = (int)(GAME_WIDTH / 2.0f - window_w / 2.0f); 
+	int windows_y_start = (int)(GAME_HEIGHT / 2.0f - window_h / 2.0f);
 
 	Texture2D item_icon;
 	Vector2 mouse_pos = GetVirtualMousePosition();
@@ -1147,8 +1151,8 @@ bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 		if (is_item_hovered)
 		{
 			std::string label = raw_loot[i]->get_name();
-			DrawRectangle(itemRect.x, itemRect.y - 45, 140, 35, DARKBLUE);
-			DrawRectangleLines(itemRect.x, itemRect.y - 45, 140, 35, WHITE);
+			DrawRectangle((int)itemRect.x, (int)(itemRect.y - 45.0f), 140, 35, DARKBLUE);
+			DrawRectangleLines((int)itemRect.x, (int)(itemRect.y - 45.0f), 140, 35, WHITE);
 			DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 5, itemRect.y - 40 }, 20, 1, WHITE);
 		}
 	}
@@ -1267,17 +1271,17 @@ void gamestate::draw_menu()
 
 	if (!showMenu) return;
 
-	int windowWidth = GAME_WIDTH / 3.5f; 
-	int windowHeight = GAME_HEIGHT / 2.0f;
-	int windowX = (GAME_WIDTH - windowWidth) / 2;
-	int windowY = (GAME_HEIGHT - windowHeight) / 2;
+	int windowWidth = (int)(GAME_WIDTH / 3.5f); 
+	int windowHeight = (int)(GAME_HEIGHT / 2.0f);
+	int windowX = (int)((GAME_WIDTH - (float)windowWidth) / 2.0f);
+	int windowY = (int)((GAME_HEIGHT - (float)windowHeight) / 2.0f);
 
 	DrawRectangle(windowX, windowY, windowWidth, windowHeight, Fade(BLACK, 0.85f));
 	DrawRectangleLines(windowX, windowY, windowWidth, windowHeight, RAYWHITE);
 
 	Vector2 mouse_pos = GetVirtualMousePosition();
 
-	int btnWidth = windowWidth * 0.75f;
+	int btnWidth = (int)((float)windowWidth * 0.75f);
 	int btnHeight = 60;
 	int btnX = windowX + (windowWidth - btnWidth) / 2;
 

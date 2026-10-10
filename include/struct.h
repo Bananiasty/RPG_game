@@ -112,7 +112,7 @@ struct floor_data
 	}
 };
 
-// --- Wêz³y Mapy ---
+// --- WÄ™zÅ‚y Mapy ---
 struct Node
 {
 	int left_id = -1;
@@ -137,6 +137,7 @@ struct dungeon_floor
 	std::vector<std::vector<int>> dungeon;
 	std::vector<std::unique_ptr<object>> world_objects;
 	std::vector<enemy*> active_enemies;
+	bool is_generated = false;
 
 	dungeon_floor() = default;
 	dungeon_floor(const dungeon_floor&) = delete;
@@ -221,7 +222,7 @@ struct NodeConfig
 	std::vector<ObjectSpawnInfo> props;
 };
 
-// --- Obiekty Œwiata ---
+// --- Obiekty Åšwiata ---
 struct object
 {
 	Vector3 position;
@@ -413,7 +414,7 @@ struct world_item : object
 	
 };
 
-// --- Fizyka, Walka i Koñczyny ---
+// --- Fizyka, Walka i KoÅ„czyny ---
 struct collisions
 {
 	bool blokuj_ruch_plus_x = false;
