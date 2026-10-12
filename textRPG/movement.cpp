@@ -1,4 +1,4 @@
-﻿#include "struct.h"
+#include "struct.h"
 #include "gamestates.h"
 #include "raylib.h"
 #include "raymath.h"
@@ -144,13 +144,49 @@ static bool is_in_list(const std::vector<tile_path>& list, int x, int z)
 	return find_in_list(list, x, z) != -1;
 }
 
-std::vector<GridPosition> exploration::find_path(int startX, int startZ, int targetX, int targetZ)
+std::vector<GridPosition> exploration::find_path(int startX, int startZ, int targetX, int targetZ, enemy* current_enemy)
 {
     std::vector<GridPosition> path;
 
     if (!is_walkable_subgrid(targetX, targetZ) || (startX == targetX && startZ == targetZ))
     {
         return path;
+    }
+
+    struct OccupiedEnemy
+    {
+        int gx;
+        int gz;
+        int tx;
+        int tz;
+        bool has_target;
+    };
+    std::vector<OccupiedEnemy> other_enemies;
+
+    float nodeSize = 0.5f;
+    if (current_floor_id >= 0 && current_floor_id < static_cast<int>(floors.size()))
+    {
+        for (enemy* other : floors[current_floor_id].active_enemies)
+        {
+            if (other != nullptr && !other->is_dead() && other != current_enemy)
+            {
+                Vector3 opos = other->get_position();
+                int ogx = static_cast<int>(std::floor(opos.x / nodeSize)) + 4;
+                int ogz = static_cast<int>(std::floor(opos.z / nodeSize));
+
+                int otx = ogx;
+                int otz = ogz;
+                bool has_tgt = false;
+                if (other->is_moving())
+                {
+                    Vector3 otgt = other->get_target_tile();
+                    otx = static_cast<int>(std::floor(otgt.x / nodeSize)) + 4;
+                    otz = static_cast<int>(std::floor(otgt.z / nodeSize));
+                    has_tgt = true;
+                }
+                other_enemies.push_back({ ogx, ogz, otx, otz, has_tgt });
+            }
+        }
     }
 
     std::vector<tile_path> openList;
@@ -237,11 +273,51 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
                 continue;
             }
 
+            bool is_blocked_by_enemy = false;
+            int enemy_proximity_cost = 0;
+
+            for (const auto& oe : other_enemies)
+            {
+                // Nigdy nie blokujemy docelowej pozycji gracza
+                if (nX == targetX && nZ == targetZ)
+                {
+                    break;
+                }
+
+                // Bezposredni kafelek, na ktorym stoi inny wrog
+                if ((nX == oe.gx && nZ == oe.gz) || (oe.has_target && nX == oe.tx && nZ == oe.tz))
+                {
+                    is_blocked_by_enemy = true;
+                    break;
+                }
+
+                // Strefa wokol innego wroga - duzy koszt, by omijac go z dystansu
+                int dist_cur = std::max(std::abs(nX - oe.gx), std::abs(nZ - oe.gz));
+                if (dist_cur <= 1)
+                {
+                    enemy_proximity_cost = std::max(enemy_proximity_cost, 80);
+                }
+                if (oe.has_target)
+                {
+                    int dist_tgt = std::max(std::abs(nX - oe.tx), std::abs(nZ - oe.tz));
+                    if (dist_tgt <= 1)
+                    {
+                        enemy_proximity_cost = std::max(enemy_proximity_cost, 80);
+                    }
+                }
+            }
+
+            if (is_blocked_by_enemy)
+            {
+                continue;
+            }
+
             int moveCost = (i < 4) ? 10 : 14;
             if (is_near_wall(nX, nZ))
             {
                 moveCost += 50; 
             }
+            moveCost += enemy_proximity_cost;
             int newGCost = current.gCost + moveCost;
 
             int openIndex = find_in_list(openList, nX, nZ);
@@ -295,7 +371,7 @@ void exploration::apply_pathfinding(enemy* e)
     int player_grid_x = static_cast<int>(std::floor(playerPos.x / nodeSize)) + 4;
     int player_grid_z = static_cast<int>(std::floor(playerPos.z / nodeSize));
 
-    std::vector<GridPosition> path = find_path(e_grid_x, e_grid_z, player_grid_x, player_grid_z);
+    std::vector<GridPosition> path = find_path(e_grid_x, e_grid_z, player_grid_x, player_grid_z, e);
 
     if (!path.empty())
     {

@@ -495,11 +495,231 @@ void draw_player_stats(player& p)
 	int offset_y = 40;
 	//DrawTextEx(cabin_sketch_font, TextFormat("Level: %d", p.get_level()), { 10, 10 }, 20, 2, WHITE);
 	//DrawTextEx(cabin_sketch_font, TextFormat("XP: %d/%d", p.get_xp(), p.get_xp_to_level_up()), { 10, 40 }, 20, 2, WHITE);
-	//DrawTextEx(cabin_sketch_font, TextFormat("HP: %d/%d", p.get_health(), p.get_max_health()), { (GAME_WIDTH*0.7f), (GAME_HEIGHT * 0.8f)}, 30, 2, WHITE);
-	DrawTextEx(cabin_sketch_font, TextFormat("Armor: %d", p.get_defense()), { x, y + offset_y }, 30, 2, WHITE);
-	DrawTextEx(cabin_sketch_font, TextFormat("Block Chance: %d%%", p.get_block_chance()), { x + offset_x, y }, 30, 2, WHITE);
-	DrawTextEx(cabin_sketch_font, TextFormat("Crit Chance: %d%%", p.get_crit_chance()), { x + offset_x, y + offset_y }, 30, 2, WHITE);
-	DrawTextEx(cabin_sketch_font, TextFormat("Dodge Chance: %d%%", p.get_dodge_chance()), { x + offset_x, y + offset_y * 2 }, 30, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("HP: %d/%d", p.get_health(), p.get_max_health()), { x, y + offset_y }, 38, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Armor: %d", p.get_defense()), { x, y + offset_y*2 }, 38, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Block Chance: %d%%", p.get_block_chance()), { x + offset_x, y }, 38, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Crit Chance: %d%%", p.get_crit_chance()), { x + offset_x, y + offset_y }, 38, 2, WHITE);
+	DrawTextEx(cabin_sketch_font, TextFormat("Dodge Chance: %d%%", p.get_dodge_chance()), { x + offset_x, y + offset_y * 2 }, 38, 2, WHITE);
+}
+
+void draw_item_tooltip(item* it, Vector2 mouse_pos)
+{
+	if (it == nullptr) return;
+
+	std::string name = it->get_name();
+	std::string rarity = it->get_rarity();
+
+	// Determine item type subtitle
+	std::string item_type_str = "";
+	weapon* w = dynamic_cast<weapon*>(it);
+	shield* s = dynamic_cast<shield*>(it);
+	helm* h = dynamic_cast<helm*>(it);
+	vest* v = dynamic_cast<vest*>(it);
+	gauntlets* g = dynamic_cast<gauntlets*>(it);
+	boots* b = dynamic_cast<boots*>(it);
+	combat_scroll* cs = dynamic_cast<combat_scroll*>(it);
+	health_potion* hp = dynamic_cast<health_potion*>(it);
+
+	if (w != nullptr) item_type_str = "Weapon";
+	else if (s != nullptr) item_type_str = "Shield";
+	else if (h != nullptr) item_type_str = "Helmet";
+	else if (v != nullptr) item_type_str = "Chest Armor";
+	else if (g != nullptr) item_type_str = "Gauntlets";
+	else if (b != nullptr) item_type_str = "Boots";
+	else if (cs != nullptr) item_type_str = "Combat Scroll";
+	else if (hp != nullptr) item_type_str = "Potion";
+	else if (it->get_type() == item_type::ARMOR) item_type_str = "Armor";
+	else if (it->get_type() == item_type::FOOD) item_type_str = "Food";
+	else if (it->get_type() == item_type::BOOK) item_type_str = "Scroll";
+	else if (it->get_type() == item_type::ITEM) item_type_str = "Item";
+
+	std::string subtitle = "";
+	if (!rarity.empty() && !item_type_str.empty())
+	{
+		subtitle = rarity + " " + item_type_str;
+	}
+	else if (!rarity.empty())
+	{
+		subtitle = rarity;
+	}
+	else if (!item_type_str.empty())
+	{
+		subtitle = item_type_str;
+	}
+
+	// Title color based on rarity
+	Color title_color = Color{ 245, 245, 250, 255 }; // Default Raywhite
+	Color sub_color = Color{ 160, 160, 175, 255 };
+	if (rarity == "Rare" || rarity == "rare")
+	{
+		title_color = Color{ 255, 215, 0, 255 }; // Gold
+		sub_color = Color{ 230, 200, 80, 255 };
+	}
+	else if (rarity == "Epic" || rarity == "epic")
+	{
+		title_color = Color{ 190, 120, 255, 255 }; // Purple
+		sub_color = Color{ 180, 140, 230, 255 };
+	}
+	else if (rarity == "Legendary" || rarity == "legendary")
+	{
+		title_color = Color{ 255, 145, 40, 255 }; // Orange
+		sub_color = Color{ 240, 160, 70, 255 };
+	}
+
+	struct StatEntry {
+		std::string text;
+		Color color;
+	};
+	std::vector<StatEntry> stats;
+
+	// 1. Damage
+	int atk = it->get_attack_stat();
+	if (atk > 0)
+	{
+		stats.push_back({ TextFormat("Damage: +%d", atk), Color{ 255, 120, 110, 255 } });
+	}
+
+	// 2. Armor
+	int def = it->get_defense_stat();
+	if (def > 0)
+	{
+		stats.push_back({ TextFormat("Armor: +%d", def), Color{ 120, 195, 255, 255 } });
+	}
+
+	// 3. Specific equipment stats
+	if (s != nullptr && s->get_block_chance() > 0)
+	{
+		stats.push_back({ TextFormat("Block Chance: +%d%%", s->get_block_chance()), Color{ 130, 230, 190, 255 } });
+	}
+	if (h != nullptr && h->get_head_damage_reduced() > 0)
+	{
+		stats.push_back({ TextFormat("Head Protection: +%d%%", h->get_head_damage_reduced()), Color{ 140, 210, 255, 255 } });
+	}
+	if (v != nullptr && v->get_add_health() > 0)
+	{
+		stats.push_back({ TextFormat("Max HP: +%d", v->get_add_health()), Color{ 120, 240, 130, 255 } });
+	}
+	if (g != nullptr && g->get_crit_chance_mod() > 0)
+	{
+		stats.push_back({ TextFormat("Crit Chance: +%d%%", g->get_crit_chance_mod()), Color{ 255, 185, 90, 255 } });
+	}
+	if (b != nullptr && b->get_dodge_chance_mod() > 0)
+	{
+		stats.push_back({ TextFormat("Dodge Chance: +%d%%", b->get_dodge_chance_mod()), Color{ 215, 175, 255, 255 } });
+	}
+
+	// 4. Combat scroll damage
+	if (cs != nullptr && cs->get_damage() > 0.0f)
+	{
+		stats.push_back({ TextFormat("Spell Damage: %.0f", cs->get_damage()), Color{ 255, 140, 90, 255 } });
+	}
+
+	// 5. Health restore
+	int restore_hp = it->get_restore_health();
+	if (restore_hp > 0)
+	{
+		stats.push_back({ TextFormat("Restores HP: +%d", restore_hp), Color{ 120, 240, 130, 255 } });
+	}
+
+	// 6. Value
+	int cost = it->get_cost();
+	if (cost > 0)
+	{
+		stats.push_back({ TextFormat("Value: %d Gold", cost), Color{ 245, 215, 110, 255 } });
+	}
+
+	// Dynamic measurements
+	const float TITLE_FONT_SIZE = 38.0f;
+	const float SUB_FONT_SIZE = 25.0f;
+	const float STAT_FONT_SIZE = 30.0f;
+	const float SPACING = 1.5f;
+
+	Vector2 title_dim = MeasureTextEx(cabin_sketch_font_bold, name.c_str(), TITLE_FONT_SIZE, SPACING);
+	Vector2 sub_dim = !subtitle.empty() ? MeasureTextEx(cabin_sketch_font, subtitle.c_str(), SUB_FONT_SIZE, SPACING) : Vector2{ 0.0f, 0.0f };
+
+	float max_text_width = title_dim.x;
+	if (sub_dim.x > max_text_width) max_text_width = sub_dim.x;
+
+	for (const auto& entry : stats)
+	{
+		Vector2 stat_dim = MeasureTextEx(cabin_sketch_font, entry.text.c_str(), STAT_FONT_SIZE, SPACING);
+		if (stat_dim.x > max_text_width) max_text_width = stat_dim.x;
+	}
+
+	const float PAD_X = 16.0f;
+	const float PAD_Y = 12.0f;
+	const float TITLE_LINE_H = 26.0f;
+	const float SUB_LINE_H = 19.0f;
+	const float STAT_LINE_H = 22.0f;
+	const float SEP_H = 10.0f;
+
+	float box_width = max_text_width + PAD_X * 2.0f;
+	if (box_width < 170.0f) box_width = 170.0f;
+
+	float box_height = PAD_Y + TITLE_LINE_H;
+	if (!subtitle.empty())
+	{
+		box_height += SUB_LINE_H;
+	}
+	if (!stats.empty())
+	{
+		box_height += SEP_H + (float)stats.size() * STAT_LINE_H;
+	}
+	box_height += PAD_Y;
+
+	// Positioning: offset from cursor, clamp within virtual screen
+	float box_x = mouse_pos.x + 18.0f;
+	float box_y = mouse_pos.y + 18.0f;
+
+	if (box_x + box_width > GAME_WIDTH - 15.0f)
+	{
+		box_x = mouse_pos.x - box_width - 12.0f;
+	}
+	if (box_x < 15.0f)
+	{
+		box_x = 15.0f;
+	}
+
+	if (box_y + box_height > GAME_HEIGHT - 15.0f)
+	{
+		box_y = mouse_pos.y - box_height - 12.0f;
+	}
+	if (box_y < 15.0f)
+	{
+		box_y = 15.0f;
+	}
+
+	// 1. Draw tooltip background
+	Rectangle box_rec = { box_x, box_y, box_width, box_height };
+	DrawRectangleRec(box_rec, Color{ 14, 14, 18, 235 });
+	DrawRectangleLinesEx(box_rec, 1.5f, Color{ 140, 140, 155, 255 });
+
+	// 2. Draw Title
+	float cur_y = box_y + PAD_Y;
+	float text_x = box_x + PAD_X;
+	DrawTextEx(cabin_sketch_font_bold, name.c_str(), { text_x, cur_y }, TITLE_FONT_SIZE, SPACING, title_color);
+	cur_y += TITLE_LINE_H;
+
+	// 3. Draw Subtitle
+	if (!subtitle.empty())
+	{
+		DrawTextEx(cabin_sketch_font, subtitle.c_str(), { text_x, cur_y }, SUB_FONT_SIZE, SPACING, sub_color);
+		cur_y += SUB_LINE_H;
+	}
+
+	// 4. Draw separator and stats
+	if (!stats.empty())
+	{
+		cur_y += 3.0f;
+		DrawLineEx({ box_x + 10.0f, cur_y }, { box_x + box_width - 10.0f, cur_y }, 1.0f, Color{ 75, 75, 90, 200 });
+		cur_y += 7.0f;
+
+		for (const auto& entry : stats)
+		{
+			DrawTextEx(cabin_sketch_font, entry.text.c_str(), { text_x, cur_y }, STAT_FONT_SIZE, SPACING, entry.color);
+			cur_y += STAT_LINE_H;
+		}
+	}
 }
 
 void draw_inventory_ui(player& p, inventory_state* inv)
@@ -510,6 +730,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 	Vector2 mouse_pos = GetVirtualMousePosition();
 	Vector2 window_center = { (float)(GAME_WIDTH * 0.5f - inventory.width * 0.5f), (float)(GAME_HEIGHT * 0.5f - inventory.height * 0.5f) };
+
+	item* hovered_item = nullptr;
 
 	Rectangle equipment_button = { window_center.x + inventory.width * 0.057f, window_center.y + inventory.height * 0.081f, 120, 120 };
 	Rectangle item_button = { window_center.x + inventory.width * 0.181f, window_center.y + inventory.height * 0.081f, 120, 120 };
@@ -564,10 +786,12 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, helm_slot))
 		{
+			hovered_item = p.equipped_helm;
 			DrawRectangleLinesEx(helm_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_helm->use(&p);
+				hovered_item = nullptr;
 			}
 		}
 	}
@@ -580,10 +804,12 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, weapon_slot))
 		{
+			hovered_item = p.equipped_weapon;
 			DrawRectangleLinesEx(weapon_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_weapon->use(&p);
+				hovered_item = nullptr;
 			}
 			
 		}
@@ -597,10 +823,12 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, shield_slot))
 		{
+			hovered_item = p.equipped_shield;
 			DrawRectangleLinesEx(shield_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_shield->use(&p);
+				hovered_item = nullptr;
 			}
 		}
 	}
@@ -614,10 +842,12 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, vest_slot))
 		{
+			hovered_item = p.equipped_vest;
 			DrawRectangleLinesEx(vest_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_vest->use(&p);
+				hovered_item = nullptr;
 			}
 		}
 	}
@@ -630,10 +860,12 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, gloves_slot))
 		{
+			hovered_item = p.equipped_gauntlets;
 			DrawRectangleLinesEx(gloves_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_gauntlets->use(&p);
+				hovered_item = nullptr;
 			}
 		}
 	}
@@ -646,10 +878,12 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 		if (CheckCollisionPointRec(mouse_pos, boots_slot))
 		{
+			hovered_item = p.equipped_boots;
 			DrawRectangleLinesEx(boots_slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
 				p.equipped_boots->use(&p);
+				hovered_item = nullptr;
 			}
 		}
 	}
@@ -832,6 +1066,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				{
 					equipment[i]->use(&p);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 				if (IsKeyPressed(KEY_D))
@@ -839,6 +1074,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					inv->pending_drops.push_back(equipment[i]);
 					p.drop_item(equipment[i]);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 			}
@@ -853,22 +1089,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 				if (is_item_hovered)
 				{
-					std::string label = equipment[i]->get_name();
-					int item_armor = equipment[i]->get_defense_stat();
-					int item_damage = equipment[i]->get_attack_stat();
-					DrawRectangle((int)(itemRect.x + btnWidth), (int)itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
-					DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
-					int y_offset = 0;
-					if (item_armor != 0)
-					{
-						y_offset += 40;
-						DrawTextEx(cabin_sketch_font_bold, TextFormat("Armor: %d", item_armor), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
-					}
-					if (item_damage != 0)
-					{
-						y_offset += 40;
-						DrawTextEx(cabin_sketch_font_bold, TextFormat("Damage: %d", item_damage), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
-					}
+					hovered_item = equipment[i];
+					DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
 				}
 			}
 			renderIndex++;
@@ -897,6 +1119,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				{
 					other_items[i]->use(&p);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 				if (IsKeyPressed(KEY_D))
@@ -904,6 +1127,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					inv->pending_drops.push_back(other_items[i]);
 					p.drop_item(other_items[i]);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 			}
@@ -916,9 +1140,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			if (is_item_hovered)
 			{
-				std::string label = other_items[i]->get_name();
-				DrawRectangle((int)(itemRect.x + 50.0f), (int)itemRect.y, 120, 30, DARKBLUE);
-				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
+				hovered_item = other_items[i];
+				DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
 			}
 		}
 	}
@@ -945,6 +1168,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				{
 					food[i]->use(&p);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 				if (IsKeyPressed(KEY_D))
@@ -952,6 +1176,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					inv->pending_drops.push_back(food[i]);
 					p.drop_item(food[i]);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 			}
@@ -964,16 +1189,8 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			if (is_item_hovered)
 			{
-				std::string label = food[i]->get_name();
-				int item_restore_health = food[i]->get_restore_health();
-				DrawRectangle((int)(itemRect.x + btnWidth), (int)itemRect.y, 180, 80, Fade(DARKBLUE, 0.6f));
-				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 60, itemRect.y + 10 }, 34, 1, WHITE);
-				int y_offset = 0;
-				if (item_restore_health != 0)
-				{
-					y_offset += 40;
-					DrawTextEx(cabin_sketch_font_bold, TextFormat("Health Restore: %d", item_restore_health), { itemRect.x + 60, itemRect.y + y_offset }, 30, 1, WHITE);
-				}
+				hovered_item = food[i];
+				DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
 			}
 		}
 	}
@@ -1000,6 +1217,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 				{
 					books[i]->use(&p);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 				if (IsKeyPressed(KEY_D))
@@ -1007,6 +1225,7 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 					inv->pending_drops.push_back(books[i]);
 					p.drop_item(books[i]);
 					p.sort_bag();
+					hovered_item = nullptr;
 					break;
 				}
 			}
@@ -1019,11 +1238,15 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 
 			if (is_item_hovered)
 			{
-				std::string label = books[i]->get_name();
-				DrawRectangle((int)(itemRect.x + 50.0f), (int)itemRect.y, 180, 30, DARKBLUE);
-				DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 50, itemRect.y }, 22, 1, WHITE);
+				hovered_item = books[i];
+				DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
 			}
 		}
+	}
+
+	if (hovered_item != nullptr)
+	{
+		draw_item_tooltip(hovered_item, mouse_pos);
 	}
 }
 
@@ -1111,6 +1334,7 @@ bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 	int padding = 25;
 
 	int clicked_index = -1;
+	item* drop_hovered_item = nullptr;
 
 	for (int i = 0; i < (int)raw_loot.size(); i++)
 	{
@@ -1150,10 +1374,7 @@ bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 
 		if (is_item_hovered)
 		{
-			std::string label = raw_loot[i]->get_name();
-			DrawRectangle((int)itemRect.x, (int)(itemRect.y - 45.0f), 140, 35, DARKBLUE);
-			DrawRectangleLines((int)itemRect.x, (int)(itemRect.y - 45.0f), 140, 35, WHITE);
-			DrawTextEx(cabin_sketch_font, label.c_str(), { itemRect.x + 5, itemRect.y - 40 }, 20, 1, WHITE);
+			drop_hovered_item = raw_loot[i];
 		}
 	}
 
@@ -1176,6 +1397,11 @@ bool draw_drop(exploration* exp, object* current_drop, bool& is_open)
 			is_open = false;
 			return true;
 		}
+	}
+
+	if (drop_hovered_item != nullptr && clicked_index == -1)
+	{
+		draw_item_tooltip(drop_hovered_item, mouse_pos);
 	}
 
 	return false;

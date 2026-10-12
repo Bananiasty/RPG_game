@@ -154,8 +154,18 @@ void boots::use(player* c)
 
 void weapon::use(player* c)
 {
-    if (!this->item_equipped && c->equipped_weapon != nullptr)
-        return;
+    if (c == nullptr) return;
+
+    if (!this->item_equipped)
+    {
+        if (c->limbs.get_limb(this->equip_slot).severely_wounded)
+        {
+            gamestate::gameLogs.push_back("Cannot hold weapon: Right arm is severely wounded!");
+            return;
+        }
+        if (c->equipped_weapon != nullptr)
+            return;
+    }
 
     bool was_equipped = this->is_equipped();
     armor::use(c);
@@ -176,9 +186,17 @@ void weapon::use(player* c)
 
 void shield::use(player* c)
 {
-    if (this->item_equipped == false && c->equipped_shield != nullptr)
+    if (c == nullptr) return;
+
+    if (!this->item_equipped)
     {
-        return;
+        if (c->limbs.left_arm.severely_wounded)
+        {
+            gamestate::gameLogs.push_back("Cannot hold shield: Left arm is severely wounded!");
+            return;
+        }
+        if (c->equipped_shield != nullptr)
+            return;
     }
 
     bool was_equipped = this->is_equipped();

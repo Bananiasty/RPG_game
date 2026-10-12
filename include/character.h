@@ -80,7 +80,8 @@ public:
 	float queued_damage = 0.0;
 
 
-	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh,Texture2D g, Vector3 pos, float rot);
+	character(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot);
+	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot);
 	virtual ~character() = default;
 
 	virtual bool is_dead() = 0;
@@ -137,7 +138,7 @@ private:
 
 	
 public:
-	player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot);
+	player(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot);
 
 	enemy* current_enemy = nullptr;
 	inventory* bag;

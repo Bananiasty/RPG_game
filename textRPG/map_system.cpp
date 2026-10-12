@@ -22,21 +22,44 @@ void exploration::add_Node(const NodeConfig& config)
     node.room_y = (int)config.dungeon_pos.y;
     node.room_width = (int)config.room_size.x;
     node.room_length = (int)config.room_size.y;
-    node.enemy_id = config.enemy_id;
+    node.enemy_ids = config.enemy_ids;
 
     node.pending_props = config.props;
 
     floors[config.floor_id].world_map[config.room_id] = node;
 
-    if (floors[config.floor_id].is_generated && config.enemy_id != -1)
+    if (floors[config.floor_id].is_generated)
     {
-        enemy* spawned_enemy = get_enemy_by_id(config.enemy_id);
-        if (spawned_enemy != nullptr)
+        for (int cx = node.room_x; cx < node.room_x + node.room_width; cx++)
         {
-            Vector3 pos = set_enemy_pos(config.enemy_id, config.room_id, config.floor_id);
-            spawned_enemy->set_position(pos);
+            for (int cy = node.room_y; cy < node.room_y + node.room_length; cy++)
+            {
+                if (cx >= 0 && cx < szerokosc && cy >= 0 && cy < dlugosc)
+                {
+                    floors[config.floor_id].dungeon[cx][cy] = 1;
+                }
+            }
+        }
 
-            floors[config.floor_id].active_enemies.push_back(spawned_enemy);
+        for (const auto& prop_info : node.pending_props)
+        {
+            spawn_object(prop_info);
+        }
+        node.pending_props.clear();
+
+        for (int enemy_id : config.enemy_ids)
+        {
+            if (enemy_id != -1)
+            {
+                enemy* spawned_enemy = get_enemy_by_id(enemy_id);
+                if (spawned_enemy != nullptr)
+                {
+                    Vector3 pos = set_enemy_pos(enemy_id, config.room_id, config.floor_id);
+                    spawned_enemy->set_position(pos);
+
+                    floors[config.floor_id].active_enemies.push_back(spawned_enemy);
+                }
+            }
         }
     }
 }
@@ -245,14 +268,17 @@ void exploration::generate_floor(int floor_id)
 
     for (auto& [id, node] : target_floor.world_map)
     {
-        if (node.enemy_id != -1)
+        for (int enemy_id : node.enemy_ids)
         {
-            enemy* spawned_enemy = get_enemy_by_id(node.enemy_id);
-            if (spawned_enemy != nullptr)
+            if (enemy_id != -1)
             {
-                Vector3 pos = set_enemy_pos(node.enemy_id, id, floor_id);
-                spawned_enemy->set_position(pos);
-                target_floor.active_enemies.push_back(spawned_enemy);
+                enemy* spawned_enemy = get_enemy_by_id(enemy_id);
+                if (spawned_enemy != nullptr)
+                {
+                    Vector3 pos = set_enemy_pos(enemy_id, id, floor_id);
+                    spawned_enemy->set_position(pos);
+                    target_floor.active_enemies.push_back(spawned_enemy);
+                }
             }
         }
     }

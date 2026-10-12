@@ -75,7 +75,7 @@ public:
 
 	void apply_collision(Vector3 stara_pos);
 	void apply_pathfinding(enemy* e);
-	std::vector<GridPosition> find_path(int startX, int startZ, int targetX, int targetZ);
+	std::vector<GridPosition> find_path(int startX, int startZ, int targetX, int targetZ, enemy* current_enemy = nullptr);
 	bool is_walkable(int x, int y);
 	bool is_walkable_subgrid(int gridX, int gridZ);
 	bool is_near_wall(int gridX, int gridZ);

@@ -52,9 +52,9 @@ enemy* exploration::get_current_enemy()
     }
 
     Node* current_node = get_node(current_node_id);
-    if (current_node != nullptr && current_node->enemy_id != -1)
+    if (current_node != nullptr && !current_node->enemy_ids.empty() && current_node->enemy_ids.front() != -1)
     {
-        return get_enemy_by_id(current_node->enemy_id);
+        return get_enemy_by_id(current_node->enemy_ids.front());
     }
 
     return nullptr;
@@ -68,9 +68,9 @@ int exploration::get_enemy_dif()
     }
 
     Node* current_node = get_node(current_node_id);
-    if (current_node != nullptr && current_node->enemy_id != -1)
+    if (current_node != nullptr && !current_node->enemy_ids.empty() && current_node->enemy_ids.front() != -1)
     {
-        enemy* e = get_enemy_by_id(current_node->enemy_id);
+        enemy* e = get_enemy_by_id(current_node->enemy_ids.front());
         if (e != nullptr)
         {
             int dif = e->get_dif();

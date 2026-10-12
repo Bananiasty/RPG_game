@@ -7,8 +7,8 @@
 int BodyStatusUI::get_status_code(const limb& l)
 {
     if (!l.is_intact) return 3;               // Odcięta
-    if (l.hp <= 0) return 2;                  // Zniszczona
-    if (l.hp < (l.max_hp * 0.8f)) return 1;   // Ranna
+    if (l.severely_wounded || l.hp <= 0) return 2; // Zniszczona / Ciężko ranna
+    if (l.limb_wounded || l.hp < (l.max_hp * 0.8f)) return 1;   // Ranna
     return 0;                                 // Zdrowa
 }
 void BodyStatusUI::init()

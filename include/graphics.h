@@ -14,6 +14,7 @@ void draw_game_scene(exploration* exp);
 void draw_battle_ui(battle* fight);
 
 void draw_inventory_ui(player& p, inventory_state* inv);
+void draw_item_tooltip(item* it, Vector2 mouse_pos);
 
 void draw_commentary();
 

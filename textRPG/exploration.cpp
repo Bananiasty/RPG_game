@@ -186,7 +186,7 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, floa
     int rw = room_ptr->room_width;
     int rh = room_ptr->room_length;
 
-    float fallback_x = (rx + rw / 2.0f) * tile_size;
+    float fallback_x = (rx + rw / 2.0f) * tile_size - 2.0f;
     float fallback_z = (rz + rh / 2.0f) * tile_size;
     Vector3 fallback_pos = { fallback_x, enemy_y, fallback_z };
 
@@ -220,9 +220,8 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, floa
             {
                 if (x >= 0 && x < szerokosc && z >= 0 && z < dlugosc)
                 {
-                    bool walkable = target_floor.dungeon.empty() ||
-                                    target_floor.dungeon[x][z] == 1 ||
-                                    target_floor.dungeon[x][z] == 2;
+                    bool walkable = !target_floor.dungeon.empty() &&
+                                    target_floor.dungeon[x][z] == 1;
                     if (walkable && !target_floor.is_tile_solid(x, z) && target_floor.is_tile_free(x, z))
                     {
                         candidates.push_back({ x, z, false });
@@ -359,7 +358,24 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, floa
             {
                 if (x >= 0 && x < szerokosc && z >= 0 && z < dlugosc)
                 {
-                    if (!target_floor.is_tile_solid(x, z) && target_floor.is_tile_free(x, z))
+                    if (target_floor.dungeon[x][z] == 1 && !target_floor.is_tile_solid(x, z) && target_floor.is_tile_free(x, z))
+                    {
+                        candidates.push_back({ x, z, false });
+                    }
+                }
+            }
+        }
+    }
+
+    if (candidates.empty())
+    {
+        for (int x = rx; x < rx + rw; ++x)
+        {
+            for (int z = rz; z < rz + rh; ++z)
+            {
+                if (x >= 0 && x < szerokosc && z >= 0 && z < dlugosc)
+                {
+                    if (target_floor.dungeon[x][z] == 1 && !target_floor.is_tile_solid(x, z))
                     {
                         candidates.push_back({ x, z, false });
                     }
@@ -378,8 +394,10 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, floa
     std::uniform_int_distribution<size_t> dist(0, candidates.size() - 1);
     const auto& chosen = candidates[dist(gen)];
 
-    // Dokladny srodek kafelka
-    float posX = (chosen.gx + 0.5f) * tile_size;
+    target_floor.occupy_tile(chosen.gx, chosen.gz, false);
+
+    // Dokladny srodek kafelka (uwzgledniajacy offset X w ukladzie wspolrzednych swiata)
+    float posX = (chosen.gx + 0.5f) * tile_size - 2.0f;
     float posZ = (chosen.gz + 0.5f) * tile_size;
     return Vector3{ posX, enemy_y, posZ };
 }

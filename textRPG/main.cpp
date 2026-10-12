@@ -23,7 +23,7 @@ int main()
     graphics_init();
     SetExitKey(KEY_NULL);
 
-    player bohater("", { 60, 60, 40, 40, 40, 40 }, 0, 30, 30, 30, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
+    player bohater("", 100, 0, 15, 15, 15, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;

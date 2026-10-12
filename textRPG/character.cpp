@@ -10,18 +10,24 @@
 
 
 
+character::character(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
+    : name(n), max_health(hp), current_health(hp), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
+{
+    this->position = pos;
+    this->rotation = rot;
+};
+
 character::character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
     : name(n), limbs(l), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
 {
     this->position = pos;
     this->rotation = rot;
-
     this->recalculate_max_health();
     this->current_health = this->max_health;
 };
 
-player::player(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, l, bdef, b_ch, c_ch, d_ch, rdh, textures.player, pos, rot)
+player::player(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
+    : character(n, hp, bdef, b_ch, c_ch, d_ch, rdh, textures.player, pos, rot)
 {
     bag = new inventory();
     equipped_items = new inventory();
@@ -85,6 +91,11 @@ enemy::enemy(const enemy_config& config)
     intro_text(config.description)
 {
     this->position = config.position;
+    if (config.max_health > 0)
+    {
+        this->set_max_health(config.max_health);
+        this->current_health = this->max_health;
+    }
 }
 
 
@@ -109,20 +120,7 @@ bool player::validate_and_set_name(const std::string& new_name)
 
 bool player::is_dead()
 {
-    if (!limbs.torso.is_intact)
-    {
-        return true;
-    }
-    if (!limbs.head.is_intact)
-    {
-        return true;
-    }
-    if (current_health <= 0)
-    {
-        return true;
-    }
-
-    return false;
+    return current_health <= 0;
 }
 bool enemy::is_dead()
 {
@@ -292,23 +290,143 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
         gs->spawn_floating_text(text_pos, floating_str, is_crit, false);
     }
 
-    if (hit_part != BodyPart::NONE)
+    bool attacker_is_enemy = (dynamic_cast<const enemy*>(attacker) != nullptr);
+
+    if (gracz_take_dmg && (attacker_is_enemy || attacker == nullptr))
     {
-        auto& target_limb = this->limbs.get_limb(hit_part);
-        int actual_limb_damage = std::min(incoming_damage, target_limb.hp);
+        this->current_health = std::max(0, this->current_health - incoming_damage);
 
-        target_limb.take_damage(actual_limb_damage);
-        this->current_health = std::max(0, this->current_health - actual_limb_damage);
-
-        if (!target_limb.is_intact)
+        if (attacker_is_enemy && incoming_damage > 0)
         {
-            this->recalculate_max_health();
-            this->current_health = std::min(this->current_health, this->max_health);
+            // Possibility to wound one of player's limbs
+            BodyPart chosen_part = hit_part;
+            if (chosen_part == BodyPart::NONE)
+            {
+                static const BodyPart all_parts[] = {
+                    BodyPart::TORSO, BodyPart::HEAD, BodyPart::LEFT_ARM,
+                    BodyPart::RIGHT_ARM, BodyPart::LEFT_LEG, BodyPart::RIGHT_LEG
+                };
+                std::uniform_int_distribution<> p_distr(0, 5);
+                chosen_part = all_parts[p_distr(gen)];
+            }
+
+            auto& target_limb = this->limbs.get_limb(chosen_part);
+            const char* part_name = "body";
+            switch (chosen_part)
+            {
+            case BodyPart::HEAD:      part_name = "head"; break;
+            case BodyPart::TORSO:     part_name = "torso"; break;
+            case BodyPart::LEFT_ARM:  part_name = "left arm"; break;
+            case BodyPart::RIGHT_ARM: part_name = "right arm"; break;
+            case BodyPart::LEFT_LEG:  part_name = "left leg"; break;
+            case BodyPart::RIGHT_LEG: part_name = "right leg"; break;
+            default: break;
+            }
+
+            int wound_chance = is_crit ? 40 : 25;
+            if (distr(gen) <= wound_chance)
+            {
+                player* p = dynamic_cast<player*>(this);
+
+                if (!target_limb.limb_wounded)
+                {
+                    target_limb.limb_wounded = true;
+                    gamestate::gameLogs.push_back(TextFormat("Your %s was wounded!", part_name));
+                    if (gs)
+                    {
+                        Vector3 w_pos = text_pos;
+                        w_pos.y += 0.35f;
+                        gs->spawn_floating_text(w_pos, TextFormat("%s wounded!", part_name), false, false);
+                    }
+                }
+                else if (!target_limb.severely_wounded)
+                {
+                    // If enemy wounds this limb again, low chance of becoming severely wounded
+                    int severe_chance = is_crit ? 40 : 25;
+                    if (distr(gen) <= severe_chance)
+                    {
+                        target_limb.severely_wounded = true;
+                        gamestate::gameLogs.push_back(TextFormat("Your %s was SEVERELY wounded!", part_name));
+                        if (gs)
+                        {
+                            Vector3 w_pos = text_pos;
+                            w_pos.y += 0.35f;
+                            gs->spawn_floating_text(w_pos, TextFormat("%s severely wounded!", part_name), true, false);
+                        }
+
+                        // Player can no longer hold items in this limb
+                        if (p != nullptr)
+                        {
+                            if (chosen_part == BodyPart::RIGHT_ARM && p->equipped_weapon != nullptr)
+                            {
+                                gamestate::gameLogs.push_back("Your right arm is severely wounded! You dropped your weapon.");
+                                p->equipped_weapon->use(p);
+                                p->sort_bag();
+                            }
+                            else if (chosen_part == BodyPart::LEFT_ARM && p->equipped_shield != nullptr)
+                            {
+                                gamestate::gameLogs.push_back("Your left arm is severely wounded! You dropped your shield.");
+                                p->equipped_shield->use(p);
+                                p->sort_bag();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        gamestate::gameLogs.push_back(TextFormat("Your wounded %s took another hit!", part_name));
+                    }
+                }
+            }
         }
     }
     else
     {
-        this->current_health = std::max(0, this->current_health - incoming_damage);
+        // Player attacking Enemy
+        const char* part_name = "body";
+        switch (hit_part)
+        {
+        case BodyPart::HEAD:      part_name = "head"; break;
+        case BodyPart::TORSO:     part_name = "body"; break;
+        case BodyPart::LEFT_ARM:  part_name = "left arm"; break;
+        case BodyPart::RIGHT_ARM: part_name = "right arm"; break;
+        case BodyPart::LEFT_LEG:  part_name = "left leg"; break;
+        case BodyPart::RIGHT_LEG: part_name = "right leg"; break;
+        default: break;
+        }
+
+        if (hit_part == BodyPart::LEFT_ARM || hit_part == BodyPart::RIGHT_ARM ||
+            hit_part == BodyPart::LEFT_LEG || hit_part == BodyPart::RIGHT_LEG)
+        {
+            // Enemy legs and arms do NOT count as total HP damage!
+            auto& target_limb = this->limbs.get_limb(hit_part);
+            target_limb.take_damage(incoming_damage);
+
+            // If player destroys limbs, they disappear and can no longer be used
+            if (!target_limb.is_intact)
+            {
+                target_limb.can_attack = false;
+
+            }
+        }
+        else if (hit_part == BodyPart::TORSO || hit_part == BodyPart::HEAD)
+        {
+            // Head or body damage reduces total HP; if head or body is destroyed, enemy dies
+            auto& target_limb = this->limbs.get_limb(hit_part);
+            target_limb.take_damage(incoming_damage);
+            this->current_health = std::max(0, this->current_health - incoming_damage);
+
+            if (!target_limb.is_intact || this->current_health <= 0)
+            {
+                target_limb.is_intact = false;
+                this->current_health = 0;
+
+            }
+        }
+        else
+        {
+            // NONE (e.g. general / spell damage)
+            this->current_health = std::max(0, this->current_health - incoming_damage);
+        }
     }
 
     return incoming_damage;
@@ -419,11 +537,14 @@ void player::drop_item(item* item_to_drop)
 	std::erase(this->bag->items, item_to_drop);
 }
 
-
 void character::recalculate_max_health()
 {
-    int max_hp = this->limbs.get_total_max_hp();
-    int max_hp_calc = (int)(max_hp * 0.8);
-	this->set_max_health(max_hp_calc);
+    int max_hp = this->limbs.torso.max_hp;
+    if (dynamic_cast<player*>(this) != nullptr)
+    {
+        max_hp = this->limbs.torso.max_hp + this->limbs.head.max_hp;
+    }
+    this->set_max_health(max_hp);
 }
+
 

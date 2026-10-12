@@ -64,6 +64,32 @@ void exploration::update_enemies()
                 apply_collision(enemyPos);
 
                 Vector3 finalPos = camera.position;
+
+                for (enemy* other : current_floor.active_enemies)
+                {
+                    if (other != nullptr && other != e && !other->is_dead())
+                    {
+                        Vector3 otherPos = other->get_position();
+                        float d = Vector3Distance(finalPos, otherPos);
+                        const float minSeparation = 0.8f;
+                        if (d < minSeparation && d > 0.0001f)
+                        {
+                            Vector3 pushDir = Vector3Normalize(Vector3Subtract(finalPos, otherPos));
+                            float pushAmount = (minSeparation - d) * 0.5f;
+                            Vector3 testSeparated = finalPos;
+                            testSeparated.x += pushDir.x * pushAmount;
+                            testSeparated.z += pushDir.z * pushAmount;
+
+                            int check_x = static_cast<int>(testSeparated.x / 2.0f) + 1;
+                            int check_z = static_cast<int>(testSeparated.z / 2.0f);
+                            if (is_walkable(check_x, check_z))
+                            {
+                                finalPos = testSeparated;
+                            }
+                        }
+                    }
+                }
+
                 e->set_position(finalPos);
 
                 camera.position = stary_cam_pos;

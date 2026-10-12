@@ -66,7 +66,7 @@ void exploration::loot_init()
 	item_pool.push_back(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon,  40, &textures.lightning, 10, 0.10f));
 
 
-	bohater.bag->add_item(new shield("Wooden shield", "Normal", 5, &textures.wooden_shield, 1, 5));
+	/*bohater.bag->add_item(new shield("Wooden shield", "Normal", 5, &textures.wooden_shield, 1, 5));
 	bohater.bag->add_item(new shield("Steel shield", "Normal", 30, &textures.steel_shield, 5, 15));
 	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
 	bohater.bag->add_item(new gauntlets("Iron gloves", "Normal", 18, &textures.iron_gauntlets, 2, 5));
@@ -76,7 +76,7 @@ void exploration::loot_init()
 	bohater.bag->add_item(new boots("Leather boots", "Normal", 7, &textures.leather_boots, 1, 0));
 	bohater.bag->add_item(new health_potion("Apple", "Normal", 20, &textures.apple, 50));
 	bohater.bag->add_item(new weapon("Long sword", "Normal", 30, &textures.long_sword, 0, 4));
-	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon, 40, &textures.lightning, 10, 0.10f));
+	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon, 40, &textures.lightning, 10, 0.10f));*/
 
 	
 	
@@ -121,7 +121,7 @@ void exploration::world_map_init()
         .right = 3,
         .dungeon_pos = { 10, 25 },
         .room_size = { 6, 6 },
-        .enemy_id = 2,
+        .enemy_ids = { 2, 2 },
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),
@@ -136,7 +136,7 @@ void exploration::world_map_init()
         .right = 5,
         .dungeon_pos = { 10, 40 },
         .room_size = { 8, 8 },
-        .enemy_id = 1,
+        .enemy_ids = { 1 },
         .props = {
             ObjectSpawnInfo::create_trapdoor({ 10, 40 }, { 8, 8 }, 1),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 40 }, { 8, 8 }),
@@ -159,7 +159,7 @@ void exploration::world_map_init()
         .right = 8,
         .dungeon_pos = { 10, 55 },
         .room_size = { 7, 7 },
-        .enemy_id = 1,
+        .enemy_ids = { 1 },
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 55 }, { 7, 7 })
         }
@@ -179,7 +179,7 @@ void exploration::world_map_init()
         .left = 8,
         .dungeon_pos = { 25, 70 },
         .room_size = { 6, 6 },
-        .enemy_id = 1
+        .enemy_ids = { 1 }
         });
 
     add_Node({
@@ -214,7 +214,7 @@ void exploration::world_map_init()
         .right = 3,
         .dungeon_pos = { 14, 22 },
         .room_size = { 8, 8 },
-        .enemy_id = 1,
+        .enemy_ids = { 1 },
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 14, 22 }, { 8, 8 }),
 
@@ -237,7 +237,7 @@ void exploration::world_map_init()
         .room_id = 4,
         .dungeon_pos = { 10, 25 },
         .room_size = { 2, 2 },
-        .enemy_id = 1
+        .enemy_ids = { 1 }
         });
 	//draw_dungeon_map();
 }

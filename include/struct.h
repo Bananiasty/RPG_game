@@ -126,7 +126,7 @@ struct Node
 	int room_width = 5;
 	int room_length = 5;
 
-	int enemy_id = -1;
+	std::vector<int> enemy_ids;
 	std::vector<ObjectSpawnInfo> pending_props;
 };
 
@@ -218,7 +218,7 @@ struct NodeConfig
 	bool discovered = false;
 	Vector2 dungeon_pos = { 0.0f, 0.0f };
 	Vector2 room_size = { 0.0f, 0.0f };
-	int enemy_id = -1;
+	std::vector<int> enemy_ids;
 	std::vector<ObjectSpawnInfo> props;
 };
 
@@ -435,8 +435,12 @@ struct limb
 	int bleed_dmg = 0;
 	int bleed_timer = 0;
 
+	bool limb_wounded = false;
+	bool severely_wounded = false;
+
 	limb(int max_val = 1, bool can_atk = false, int dmg = 0)
-		: hp(max_val), max_hp(max_val), is_intact(true), can_attack(can_atk), damage(dmg) {
+		: hp(max_val), max_hp(max_val), is_intact(true), can_attack(can_atk), damage(dmg),
+		  limb_wounded(false), severely_wounded(false) {
 	}
 
 	bool take_damage(int amount)
@@ -487,18 +491,6 @@ struct limbs_struct
 		default:
 			return torso;
 		}
-	}
-
-	int get_total_max_hp() const
-	{
-		int total = 0;
-		if (head.is_intact)      total += head.max_hp;
-		if (torso.is_intact)     total += torso.max_hp;
-		if (left_arm.is_intact)  total += left_arm.max_hp;
-		if (right_arm.is_intact) total += right_arm.max_hp;
-		if (left_leg.is_intact)  total += left_leg.max_hp;
-		if (right_leg.is_intact) total += right_leg.max_hp;
-		return total;
 	}
 };
 

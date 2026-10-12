@@ -49,6 +49,8 @@ public:
 	virtual item_type get_type() = 0;
 	virtual void use(player* c) {};
 	std::string get_name();
+	std::string get_rarity() const { return rarity; }
+	int get_cost() const { return cost; }
 	virtual bool is_equipped() { return false; };
 
 	//EQUIPMENT STATS
@@ -85,6 +87,7 @@ public:
 	item* clone() const override;	
 	void use(player* player) override;
 	bool is_equipped() override;
+	int get_head_damage_reduced() const { return head_damage_reduced; }
 };
 class vest :public armor
 {
@@ -97,6 +100,7 @@ public:
 	item* clone() const override;
 	void use(player* player) override;
 	bool is_equipped() override;
+	int get_add_health() const { return add_health; }
 };
 class gauntlets :public armor
 {
@@ -109,6 +113,7 @@ public:
 	item* clone() const override;
 	void use(player* player) override;
 	bool is_equipped() override;
+	int get_crit_chance_mod() const { return crit_chance_mod; }
 };
 class boots :public armor
 {
@@ -121,6 +126,7 @@ public:
 	item* clone() const override;
 	void use(player* player) override;
 	bool is_equipped() override;
+	int get_dodge_chance_mod() const { return dodge_chance_mod; }
 };
 
 class weapon:public armor
@@ -148,6 +154,7 @@ public:
 	item* clone() const override;
 	void use(player* player) override;
 	bool is_equipped() override;
+	int get_block_chance() const { return block_chance; }
 };
 
 class usable:public item
@@ -188,6 +195,7 @@ public:
 	combat_scroll(std::string n, std::string r, int c, Texture2D* icon, float dmg, Texture2D* tex, int frames, float speed) :scroll(n, r, c, icon) , damage(dmg), animation_texture(tex), frame_count(frames), frame_time(speed) {};
 	void use(player* player) override;
 	item* clone() const override;
+	float get_damage() const { return damage; }
 };
 class food:public usable
 {
