@@ -1,124 +1,7 @@
-#include "iostream"
-#include  "struct.h"
-#include "gamestates.h"
+#include "world/ObjectSpawnInfo.h"
+#include "world/DungeonTypes.h"
+#include "character.h"
 #include "raymath.h"
-
-
-std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& info)
-{
-    switch (info.type)
-    {
-    case ObjectType::Chest:
-    {
-        int slots = loot_object::rand_drop_slots();
-        auto loot = rand_loot(nullptr, slots);
-
-        return std::make_unique<chest>(
-            info.position,
-            &objects.chest,
-            slots,
-            std::move(loot),
-            info.rotation_y
-        );
-    }
-
-    case ObjectType::Barrel:
-    {
-        int slots = loot_object::rand_drop_slots();
-		auto loot = rand_loot(nullptr, slots);
-		return std::make_unique<barrel>(
-			info.position,
-			&objects.barrel,
-			slots,
-			std::move(loot),
-			info.rotation_y
-		);
-	}
-
-    case ObjectType::DeadBody:
-    {
-        int slots = loot_object::rand_drop_slots();
-        auto loot = rand_loot(info.linked_enemy, slots);
-
-        return std::make_unique<dead_body>(
-            info.linked_enemy,
-            info.position,
-            nullptr,
-            slots,
-            std::move(loot),
-            info.rotation_y
-        );
-        
-    }
-
-    case ObjectType::p_drop:
-    {
-        int slots = 1;
-        std::vector<std::unique_ptr<item>> empty_loot;
-        return std::make_unique<p_drop>(
-            info.position,
-            nullptr,
-            slots,
-            std::move(empty_loot),
-            info.rotation_y
-        );
-    }
-
-    case ObjectType::Trapdoor:
-    {
-        const ModelAnimation* anim_ptr = (objects.trapdoor_open_animation != nullptr) ? &objects.trapdoor_open_animation[0] : nullptr;
-        int total_frames = (anim_ptr != nullptr) ? anim_ptr->keyframeCount : 0;
-
-        return std::make_unique<trapdoor>(
-            info.position,
-            &objects.trapdoor,
-            info.target_floor_id
-        );
-    }
-
-    default:
-        return nullptr;
-    }
-}
-
-void exploration::spawn_object(ObjectSpawnInfo info)
-{
-    if (current_floor_id < 0 || current_floor_id >= static_cast<int>(floors.size()))
-    {
-        return;
-    }
-
-    auto& cur_floor = floors[current_floor_id];
-
-    if (info.is_random_wall)
-    {
-        info.position = ObjectSpawnInfo::get_random_wall_position(
-            info.room_pos,
-            info.room_size,
-            info.rotation_y,
-            cur_floor
-        );
-
-        // Odrzucenie nieudanego losowania zamiast stawiania w niepoprawnym miejscu
-        if (info.position.x < 0.0f)
-        {
-            return;
-        }
-    }
-    else if (info.type == ObjectType::Trapdoor)
-    {
-        int center_gx = (int)info.room_pos.x + (int)(info.room_size.x * 0.5f);
-        int center_gz = (int)info.room_pos.y + (int)(info.room_size.y * 0.5f);
-
-        cur_floor.occupy_tile(center_gx, center_gz, false);
-    }
-
-    auto obj = create_world_object(info);
-    if (obj != nullptr)
-    {
-        cur_floor.world_objects.push_back(std::move(obj));
-    }
-}
 
 Vector3 ObjectSpawnInfo::get_random_wall_position(
     Vector2 dungeon_pos,
@@ -195,6 +78,7 @@ Vector3 ObjectSpawnInfo::get_random_wall_position(
 
     return prop_pos;
 }
+
 ObjectSpawnInfo ObjectSpawnInfo::create_random_wall_prop(ObjectType type, Vector2 dungeon_pos, Vector2 room_size)
 {
     ObjectSpawnInfo info;
@@ -230,7 +114,6 @@ ObjectSpawnInfo ObjectSpawnInfo::create_dead_body(enemy* e, Vector3 pos)
     return info;
 }
 
-
 bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const dungeon_floor& floor)
 {
     if (floor.dungeon.empty())
@@ -244,7 +127,6 @@ bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const 
     int check_x = gx;
     int check_z = gz;
 
-    // Sprawdzamy kafelek bezpośrednio za ścianą, przy której stawiamy obiekt
     switch (wall)
     {
     case 0: // Północ
@@ -263,7 +145,6 @@ bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const 
         break;
     }
 
-    // Sprawdzenie, czy pole docelowe mieści się w granicach mapy
     if (check_x >= 0 && check_x < grid_w && check_z >= 0 && check_z < grid_h)
     {
         if (floor.dungeon[check_x][check_z] == 1)
@@ -273,36 +154,4 @@ bool ObjectSpawnInfo::is_tile_blocking_corridor(int gx, int gz, int wall, const 
     }
 
     return false;
-}
-
-void loot_object::interact(exploration& game, player& player_character)
-{
-    if (!drop_loot.empty())
-    {
-        game.active_ui_event = new loot_event(&game, player_character, this);
-    }
-}
-
-void trapdoor::interact(exploration& game, player& player_character)
-{
-    if (!is_open)
-    {
-        is_open = true;
-    }
-    else if (open_angle >= 75.0f && target_floor_id != -1)
-    {
-        game.change_floor(target_floor_id);
-    }
-}
-
-void world_item::interact(exploration& game, player& player_character)
-{
-    item* raw_item = this->stored_item.release();
-
-    if (raw_item != nullptr)
-    {
-        player_character.bag->add_item(raw_item);
-    }
-
-    this->is_destroyed = true;
 }

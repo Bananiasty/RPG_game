@@ -7,13 +7,6 @@
 #include "gamestates.h"
 #include "character.h"
 
-int loot_object::rand_drop_slots()
-{
-    static std::random_device rd;
-    static std::mt19937 gen(rd());
-    std::uniform_int_distribution<int> dist(1, 4);
-    return dist(gen);
-}
 
 std::vector<std::unique_ptr<item>> exploration::rand_loot(enemy* target_enemy, int slots_number)
 {

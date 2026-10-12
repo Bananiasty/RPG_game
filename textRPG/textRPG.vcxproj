@@ -119,7 +119,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)include\raylib</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -138,7 +138,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;$(SolutionDir)include\raylib</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
@@ -152,37 +152,73 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Audio.cpp" />
-    <ClCompile Include="battle_UI.cpp" />
-    <ClCompile Include="character.cpp" />
     <ClCompile Include="chest.cpp" />
-    <ClCompile Include="enemies.cpp" />
     <ClCompile Include="exploration.cpp" />
     <ClCompile Include="fight.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="getters_setters.cpp" />
     <ClCompile Include="init.cpp" />
-    <ClCompile Include="items.cpp" />
     <ClCompile Include="map_system.cpp" />
     <ClCompile Include="graphics.cpp" />
     <ClCompile Include="menu.cpp" />
     <ClCompile Include="movement.cpp" />
-    <ClCompile Include="objects.cpp" />
-    <ClCompile Include="stats.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="textures.cpp" />
+    <ClCompile Include="combat\Limb.cpp" />
+    <ClCompile Include="inventory\Item.cpp" />
+    <ClCompile Include="inventory\Inventory.cpp" />
+    <ClCompile Include="inventory\Equipment.cpp" />
+    <ClCompile Include="inventory\Consumable.cpp" />
+    <ClCompile Include="inventory\Scroll.cpp" />
+    <ClCompile Include="entities\Character.cpp" />
+    <ClCompile Include="entities\Player.cpp" />
+    <ClCompile Include="entities\Enemy.cpp" />
+    <ClCompile Include="entities\Ghoul.cpp" />
+    <ClCompile Include="entities\Pimpek.cpp" />
+    <ClCompile Include="world\WorldObject.cpp" />
+    <ClCompile Include="world\ObjectSpawnInfo.cpp" />
+    <ClCompile Include="ui\ItemTooltipUI.cpp" />
+    <ClCompile Include="ui\InventoryUI.cpp" />
+    <ClCompile Include="ui\LootUI.cpp" />
+    <ClCompile Include="ui\HUD.cpp" />
+    <ClCompile Include="ui\BattleUI.cpp" />
+    <ClCompile Include="ui\LoginUI.cpp" />
+    <ClCompile Include="render\DungeonRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\raylib\raygui.h" />
+    <ClInclude Include="..\include\raylib\raylib.h" />
+    <ClInclude Include="..\include\raylib\raymath.h" />
+    <ClInclude Include="..\include\raylib\rlgl.h" />
+    <ClInclude Include="..\include\ui\ItemTooltipUI.h" />
+    <ClInclude Include="..\include\ui\InventoryUI.h" />
+    <ClInclude Include="..\include\ui\LootUI.h" />
+    <ClInclude Include="..\include\ui\HUD.h" />
+    <ClInclude Include="..\include\ui\BattleUI.h" />
+    <ClInclude Include="..\include\ui\LoginUI.h" />
+    <ClInclude Include="..\include\render\DungeonRenderer.h" />
+    <ClInclude Include="..\include\world\Pathfinding.h" />
+    <ClInclude Include="..\include\world\ObjectSpawnInfo.h" />
+    <ClInclude Include="..\include\world\DungeonTypes.h" />
+    <ClInclude Include="..\include\world\WorldObject.h" />
+    <ClInclude Include="..\include\combat\BodyPart.h" />
+    <ClInclude Include="..\include\combat\Limb.h" />
+    <ClInclude Include="..\include\inventory\Item.h" />
+    <ClInclude Include="..\include\inventory\Inventory.h" />
+    <ClInclude Include="..\include\inventory\Equipment.h" />
+    <ClInclude Include="..\include\inventory\Consumable.h" />
+    <ClInclude Include="..\include\inventory\Scroll.h" />
+    <ClInclude Include="..\include\entities\Character.h" />
+    <ClInclude Include="..\include\entities\Player.h" />
+    <ClInclude Include="..\include\entities\EnemyConfig.h" />
+    <ClInclude Include="..\include\entities\Enemy.h" />
+    <ClInclude Include="..\include\entities\Ghoul.h" />
+    <ClInclude Include="..\include\entities\Pimpek.h" />
     <ClInclude Include="..\include\AudioManager.h" />
-    <ClInclude Include="..\include\battle_UI.h" />
     <ClInclude Include="..\include\character.h" />
     <ClInclude Include="..\include\gamestates.h" />
     <ClInclude Include="..\include\graphics.h" />
     <ClInclude Include="..\include\inventory_class.h" />
-    <ClInclude Include="..\include\items.h" />
-    <ClInclude Include="..\include\raygui.h" />
-    <ClInclude Include="..\include\raylib.h" />
-    <ClInclude Include="..\include\raymath.h" />
-    <ClInclude Include="..\include\rlgl.h" />
     <ClInclude Include="..\include\struct.h" />
     <ClInclude Include="..\include\textureManager.h" />
   </ItemGroup>

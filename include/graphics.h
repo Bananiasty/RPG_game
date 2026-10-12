@@ -1,40 +1,18 @@
 #pragma once
 #include "character.h"
 #include "gamestates.h"
+#include "ui/ItemTooltipUI.h"
+#include "ui/InventoryUI.h"
+#include "ui/LootUI.h"
+#include "ui/HUD.h"
+#include "ui/BattleUI.h"
+#include "ui/LoginUI.h"
+#include "render/DungeonRenderer.h"
 
 constexpr float GAME_WIDTH = 1920.0f;
 constexpr float GAME_HEIGHT = 1080.0f;
 
-void draw_login_screen(const std::string& current_name, bool has_error);
-
 void graphics_init();
-
-void draw_game_scene(exploration* exp);
-
-void draw_battle_ui(battle* fight);
-
-void draw_inventory_ui(player& p, inventory_state* inv);
-void draw_item_tooltip(item* it, Vector2 mouse_pos);
-
-void draw_commentary();
-
-void draw_game_over();
-
-void DrawGlobalAnimation();
-
-void DrawExploration(exploration* exp);
-
-void DrawHUD(exploration* exp);
-
-void draw_map_tile(exploration* exp, int x, int y);
-
-void draw_dungeon_map(exploration* exp, float player_x, float player_y);
-
-bool draw_drop(exploration* exp, object* current_drop, bool& is_open);
-
-
-
-void draw_player_stats(player& p);
 
 inline Vector2 virtual_mouse_pos = { 0.0f, 0.0f };
 

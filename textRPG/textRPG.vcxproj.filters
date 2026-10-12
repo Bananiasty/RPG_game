@@ -1,13 +1,52 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
+    <Filter Include="Source Files\combat">
+      <UniqueIdentifier>{a1b2c3d4-0001-4000-8000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\inventory">
+      <UniqueIdentifier>{a1b2c3d4-0001-4000-8000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\entities">
+      <UniqueIdentifier>{a1b2c3d4-0001-4000-8000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\world">
+      <UniqueIdentifier>{a1b2c3d4-0001-4000-8000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ui">
+      <UniqueIdentifier>{a1b2c3d4-0001-4000-8000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\render">
+      <UniqueIdentifier>{a1b2c3d4-0001-4000-8000-000000000006}</UniqueIdentifier>
+    </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
       <Extensions>h;hh;hpp;hxx;h++;hm;inl;inc;ipp;xsd</Extensions>
+    </Filter>
+    <Filter Include="Header Files\combat">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000001}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\inventory">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000002}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\entities">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000003}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\world">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000004}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\ui">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000005}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\render">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000006}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\raylib">
+      <UniqueIdentifier>{a1b2c3d4-0002-4000-8000-000000000007}</UniqueIdentifier>
     </Filter>
     <Filter Include="Resource Files">
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
@@ -16,9 +55,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="character.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="fight.cpp">
@@ -30,13 +66,7 @@
     <ClCompile Include="map_system.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="items.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="init.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="stats.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="chest.cpp">
@@ -57,27 +87,147 @@
     <ClCompile Include="movement.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="enemies.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Audio.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="battle_UI.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="objects.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="exploration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="combat\Limb.cpp">
+      <Filter>Source Files\combat</Filter>
+    </ClCompile>
+    <ClCompile Include="inventory\Item.cpp">
+      <Filter>Source Files\inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="inventory\Inventory.cpp">
+      <Filter>Source Files\inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="inventory\Equipment.cpp">
+      <Filter>Source Files\inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="inventory\Consumable.cpp">
+      <Filter>Source Files\inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="inventory\Scroll.cpp">
+      <Filter>Source Files\inventory</Filter>
+    </ClCompile>
+    <ClCompile Include="entities\Character.cpp">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="entities\Player.cpp">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="entities\Enemy.cpp">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="entities\Ghoul.cpp">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="entities\Pimpek.cpp">
+      <Filter>Source Files\entities</Filter>
+    </ClCompile>
+    <ClCompile Include="world\WorldObject.cpp">
+      <Filter>Source Files\world</Filter>
+    </ClCompile>
+    <ClCompile Include="world\ObjectSpawnInfo.cpp">
+      <Filter>Source Files\world</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\ItemTooltipUI.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\InventoryUI.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\LootUI.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\HUD.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\BattleUI.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="ui\LoginUI.cpp">
+      <Filter>Source Files\ui</Filter>
+    </ClCompile>
+    <ClCompile Include="render\DungeonRenderer.cpp">
+      <Filter>Source Files\render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\AudioManager.h">
-      <Filter>Header Files</Filter>
+    <ClInclude Include="..\include\combat\BodyPart.h">
+      <Filter>Header Files\combat</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\battle_UI.h">
+    <ClInclude Include="..\include\combat\Limb.h">
+      <Filter>Header Files\combat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inventory\Item.h">
+      <Filter>Header Files\inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inventory\Inventory.h">
+      <Filter>Header Files\inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inventory\Equipment.h">
+      <Filter>Header Files\inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inventory\Consumable.h">
+      <Filter>Header Files\inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\inventory\Scroll.h">
+      <Filter>Header Files\inventory</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\entities\Character.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\entities\Player.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\entities\EnemyConfig.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\entities\Enemy.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\entities\Ghoul.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\entities\Pimpek.h">
+      <Filter>Header Files\entities</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\world\Pathfinding.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\world\ObjectSpawnInfo.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\world\DungeonTypes.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\world\WorldObject.h">
+      <Filter>Header Files\world</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ui\ItemTooltipUI.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ui\InventoryUI.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ui\LootUI.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ui\HUD.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ui\BattleUI.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\ui\LoginUI.h">
+      <Filter>Header Files\ui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\render\DungeonRenderer.h">
+      <Filter>Header Files\render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\AudioManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\character.h">
@@ -92,26 +242,23 @@
     <ClInclude Include="..\include\inventory_class.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\items.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\raygui.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\raylib.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\raymath.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="..\include\rlgl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\struct.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\include\textureManager.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\raylib\raygui.h">
+      <Filter>Header Files\raylib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\raylib\raylib.h">
+      <Filter>Header Files\raylib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\raylib\raymath.h">
+      <Filter>Header Files\raylib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\raylib\rlgl.h">
+      <Filter>Header Files\raylib</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

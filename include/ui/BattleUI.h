@@ -1,7 +1,9 @@
 #pragma once
-#include "struct.h"
-#include "character.h"
+#include "raylib.h"
 
+struct limb;
+class player;
+class battle;
 
 class BodyStatusUI
 {
@@ -21,8 +23,10 @@ public:
     int get_status_code(const limb& l);
 
     void init();
- 
     void draw(const player& p, Vector2 position, float scale);
-
     void cleanup();
 };
+
+extern BodyStatusUI body_UI;
+
+void draw_battle_ui(battle* fight);

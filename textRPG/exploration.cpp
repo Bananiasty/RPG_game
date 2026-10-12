@@ -1,5 +1,9 @@
 #include "gamestates.h"
 #include "character.h"
+#include "AudioManager.h"
+#include "textureManager.h"
+#include "struct.h"
+#include "raymath.h"
 #include <vector>
 #include <queue>
 #include <map>
@@ -458,4 +462,216 @@ void exploration::spawn_loot_bag(Vector3 pos, const std::vector<item*>& items)
     auto bag = std::make_unique<p_drop>(pos, nullptr, slots, std::move(container));
 
     floors[current_floor_id].world_objects.push_back(std::move(bag));
+}
+
+
+void exploration::update_enemies()
+{
+    float dt = GetFrameTime();
+    float detectionRange = 8.0f;
+    float enemySpeed = 0.0f;
+
+    auto& current_floor = floors[current_floor_id];
+
+    for (enemy* e : current_floor.active_enemies)
+    {
+        if (!e || e->is_dead())
+        {
+            continue;
+        }
+
+        Vector3 enemyPos = e->get_position();
+        float distance = Vector3Distance(enemyPos, bohater.position);
+
+        if (distance <= detectionRange)
+        {
+            if (!e->get_is_alerted())
+            {
+                e->set_is_alerted(true);
+                if (!audio.is_sound_playing(SoundID::ENEMY_DETECT))
+                {
+                    audio.play_sound(SoundID::ENEMY_DETECT);
+                }
+            }
+
+            if (!e->is_moving())
+            {
+                apply_pathfinding(e);
+            }
+
+            if (e->is_moving())
+            {
+                Vector3 target = e->get_target_tile();
+                if (e->get_name() == "Ghoul")
+                {
+                    enemySpeed = 1.5f;        
+                }
+                if (e->get_name() == "Pimpek")
+                {
+                    enemySpeed = 3.0f;
+                }
+                Vector3 nextPos = Vector3MoveTowards(enemyPos, target, enemySpeed * dt);
+
+                Vector3 stary_cam_pos = camera.position;
+                Vector3 stary_cam_target = camera.target;
+
+                camera.position = nextPos;
+                camera.target = nextPos;
+
+                apply_collision(enemyPos);
+
+                Vector3 finalPos = camera.position;
+
+                for (enemy* other : current_floor.active_enemies)
+                {
+                    if (other != nullptr && other != e && !other->is_dead())
+                    {
+                        Vector3 otherPos = other->get_position();
+                        float d = Vector3Distance(finalPos, otherPos);
+                        const float minSeparation = 0.8f;
+                        if (d < minSeparation && d > 0.0001f)
+                        {
+                            Vector3 pushDir = Vector3Normalize(Vector3Subtract(finalPos, otherPos));
+                            float pushAmount = (minSeparation - d) * 0.5f;
+                            Vector3 testSeparated = finalPos;
+                            testSeparated.x += pushDir.x * pushAmount;
+                            testSeparated.z += pushDir.z * pushAmount;
+
+                            int check_x = static_cast<int>(testSeparated.x / 2.0f) + 1;
+                            int check_z = static_cast<int>(testSeparated.z / 2.0f);
+                            if (is_walkable(check_x, check_z))
+                            {
+                                finalPos = testSeparated;
+                            }
+                        }
+                    }
+                }
+
+                e->set_position(finalPos);
+
+                camera.position = stary_cam_pos;
+                camera.target = stary_cam_target;
+
+                float distToTarget = Vector3Distance(finalPos, target);
+                float movedDistance = Vector3Distance(enemyPos, finalPos);
+
+                if (distToTarget < 0.05f || movedDistance < 0.0001f)
+                {
+                    e->set_position(finalPos);
+                    e->set_is_moving(false);
+                }
+            }
+        }
+    }
+}
+
+std::unique_ptr<object> exploration::create_world_object(const ObjectSpawnInfo& info)
+{
+    switch (info.type)
+    {
+    case ObjectType::Chest:
+    {
+        int slots = loot_object::rand_drop_slots();
+        auto loot = rand_loot(nullptr, slots);
+
+        return std::make_unique<chest>(
+            info.position,
+            &objects.chest,
+            slots,
+            std::move(loot),
+            info.rotation_y
+        );
+    }
+
+    case ObjectType::Barrel:
+    {
+        int slots = loot_object::rand_drop_slots();
+        auto loot = rand_loot(nullptr, slots);
+        return std::make_unique<barrel>(
+            info.position,
+            &objects.barrel,
+            slots,
+            std::move(loot),
+            info.rotation_y
+        );
+    }
+
+    case ObjectType::DeadBody:
+    {
+        int slots = loot_object::rand_drop_slots();
+        auto loot = rand_loot(info.linked_enemy, slots);
+
+        return std::make_unique<dead_body>(
+            info.linked_enemy,
+            info.position,
+            nullptr,
+            slots,
+            std::move(loot),
+            info.rotation_y
+        );
+    }
+
+    case ObjectType::p_drop:
+    {
+        int slots = 1;
+        std::vector<std::unique_ptr<item>> empty_loot;
+        return std::make_unique<p_drop>(
+            info.position,
+            nullptr,
+            slots,
+            std::move(empty_loot),
+            info.rotation_y
+        );
+    }
+
+    case ObjectType::Trapdoor:
+    {
+        return std::make_unique<trapdoor>(
+            info.position,
+            &objects.trapdoor,
+            info.target_floor_id
+        );
+    }
+
+    default:
+        return nullptr;
+    }
+}
+
+void exploration::spawn_object(ObjectSpawnInfo info)
+{
+    if (current_floor_id < 0 || current_floor_id >= static_cast<int>(floors.size()))
+    {
+        return;
+    }
+
+    auto& cur_floor = floors[current_floor_id];
+
+    if (info.is_random_wall)
+    {
+        info.position = ObjectSpawnInfo::get_random_wall_position(
+            info.room_pos,
+            info.room_size,
+            info.rotation_y,
+            cur_floor
+        );
+
+        if (info.position.x < 0.0f)
+        {
+            return;
+        }
+    }
+    else if (info.type == ObjectType::Trapdoor)
+    {
+        int center_gx = (int)info.room_pos.x + (int)(info.room_size.x * 0.5f);
+        int center_gz = (int)info.room_pos.y + (int)(info.room_size.y * 0.5f);
+
+        cur_floor.occupy_tile(center_gx, center_gz, false);
+    }
+
+    auto obj = create_world_object(info);
+    if (obj != nullptr)
+    {
+        cur_floor.world_objects.push_back(std::move(obj));
+    }
 }

@@ -1,6 +1,9 @@
 #include <filesystem>
 #include <fstream>
 #include "gamestates.h"
+#include "graphics.h"
+
+extern Font cabin_sketch_font;
 
 
 
@@ -67,3 +70,78 @@ bool exploration::load_game()
     return false;
 }
 
+
+void gamestate::draw_menu()
+{
+	if (IsKeyPressed(KEY_ESCAPE))
+	{
+		showMenu = !showMenu;
+	}
+
+	if (!showMenu) return;
+
+	int windowWidth = (int)(GAME_WIDTH / 3.5f); 
+	int windowHeight = (int)(GAME_HEIGHT / 2.0f);
+	int windowX = (int)((GAME_WIDTH - (float)windowWidth) / 2.0f);
+	int windowY = (int)((GAME_HEIGHT - (float)windowHeight) / 2.0f);
+
+	DrawRectangle(windowX, windowY, windowWidth, windowHeight, Fade(BLACK, 0.85f));
+	DrawRectangleLines(windowX, windowY, windowWidth, windowHeight, RAYWHITE);
+
+	Vector2 mouse_pos = GetVirtualMousePosition();
+
+	int btnWidth = (int)((float)windowWidth * 0.75f);
+	int btnHeight = 60;
+	int btnX = windowX + (windowWidth - btnWidth) / 2;
+
+	Rectangle loadBtnRect = { (float)btnX, (float)(windowY + windowHeight * 0.22f), (float)btnWidth, (float)btnHeight };
+	bool is_load_hovered = CheckCollisionPointRec(mouse_pos, loadBtnRect);
+
+	DrawRectangleRec(loadBtnRect, is_load_hovered ? GRAY : DARKGRAY);
+	DrawRectangleLinesEx(loadBtnRect, 1, RAYWHITE);
+
+	Vector2 loadTextSize = MeasureTextEx(cabin_sketch_font, "Wczytaj Gre", 26, 1);
+	DrawTextEx(cabin_sketch_font, "Wczytaj Gre", { loadBtnRect.x + (btnWidth - loadTextSize.x) / 2, loadBtnRect.y + (btnHeight - loadTextSize.y) / 2 }, 26, 1, WHITE);
+
+	if (is_load_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		load_game();
+	}
+
+	Rectangle saveBtnRect = { (float)btnX, (float)(windowY + windowHeight * 0.42f), (float)btnWidth, (float)btnHeight };
+	Vector2 saveTextSize = MeasureTextEx(cabin_sketch_font, "Zapisz Gre", 26, 1);
+
+	if (can_save_game)
+	{
+		bool is_save_hovered = CheckCollisionPointRec(mouse_pos, saveBtnRect);
+
+		DrawRectangleRec(saveBtnRect, is_save_hovered ? GRAY : DARKGRAY);
+		DrawRectangleLinesEx(saveBtnRect, 1, RAYWHITE);
+		DrawTextEx(cabin_sketch_font, "Zapisz Gre", { saveBtnRect.x + (btnWidth - saveTextSize.x) / 2, saveBtnRect.y + (btnHeight - saveTextSize.y) / 2 }, 26, 1, WHITE);
+
+		if (is_save_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			save_game();
+		}
+	}
+	else
+	{
+		DrawRectangleRec(saveBtnRect, Fade(BLACK, 0.6f));
+		DrawRectangleLinesEx(saveBtnRect, 1, GRAY);
+		DrawTextEx(cabin_sketch_font, "Zapisz Gre", { saveBtnRect.x + (btnWidth - saveTextSize.x) / 2, saveBtnRect.y + (btnHeight - saveTextSize.y) / 2 }, 26, 1, GRAY);
+	}
+
+	Rectangle closeBtnRect = { (float)btnX, (float)(windowY + windowHeight * 0.62f), (float)btnWidth, (float)btnHeight };
+	bool is_close_hovered = CheckCollisionPointRec(mouse_pos, closeBtnRect);
+
+	DrawRectangleRec(closeBtnRect, is_close_hovered ? GRAY : DARKGRAY);
+	DrawRectangleLinesEx(closeBtnRect, 1, RAYWHITE);
+
+	Vector2 closeTextSize = MeasureTextEx(cabin_sketch_font, "Powrot", 26, 1);
+	DrawTextEx(cabin_sketch_font, "Powrot", { closeBtnRect.x + (btnWidth - closeTextSize.x) / 2, closeBtnRect.y + (btnHeight - closeTextSize.y) / 2 }, 26, 1, WHITE);
+
+	if (is_close_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+	{
+		showMenu = false;
+	}
+}

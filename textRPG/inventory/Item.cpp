@@ -1,0 +1,133 @@
+#include "inventory/Item.h"
+#include "character.h"
+#include <algorithm>
+
+std::string item::get_name()
+{
+	return name;
+}
+
+void item::add_player_defense(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->base_defense += val;
+	}
+}
+
+void item::add_player_block_chance(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->block_chance += val;
+	}
+}
+
+void item::add_player_damage(player* c, int val, BodyPart part)
+{
+	if (c != nullptr)
+	{
+		limb& target_limb = c->limbs.get_limb(part);
+		if (target_limb.is_intact)
+		{
+			target_limb.damage += val;
+			target_limb.can_attack = true;
+		}
+	}
+}
+
+void item::add_player_crit_chance(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->crit_chance += val;
+	}
+}
+
+void item::add_player_dodge_chance(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->dodge_chance += val;
+	}
+}
+
+void item::add_player_head_damage_reduction(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->reduced_head_damage += val;
+	}
+}
+
+void item::reduce_player_defense(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->base_defense -= val;
+		if (c->base_defense < 0)
+			c->base_defense = 0;
+	}
+}
+
+void item::reduce_player_damage(player* c, int val, BodyPart part)
+{
+	if (c != nullptr)
+	{
+		limb& target_limb = c->limbs.get_limb(part);
+		target_limb.damage -= val;
+		if (target_limb.damage < 0)
+		{
+			target_limb.damage = 0;
+		}
+	}
+}
+
+void item::reduce_player_block_chance(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->block_chance -= val;
+		if (c->block_chance < 0) c->block_chance = 0;
+	}
+}
+
+void item::reduce_player_crit_chance(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->crit_chance -= val;
+		if (c->crit_chance < 0)
+			c->crit_chance = 0;
+	}
+}
+
+void item::reduce_player_dodge_chance(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->dodge_chance -= val;
+		if (c->dodge_chance < 0)
+			c->dodge_chance = 0;
+	}
+}
+
+void item::restore_player_health(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->current_health += val;
+		if (c->get_health() > c->get_max_health())
+			c->current_health = c->get_max_health();
+	}
+}
+
+void item::reduce_player_head_damage_reduction(player* c, int val)
+{
+	if (c != nullptr)
+	{
+		c->reduced_head_damage -= val;
+		if (c->reduced_head_damage < 0)
+			c->reduced_head_damage = 0;
+	}
+}
