@@ -1,10 +1,11 @@
 #include "gamestates.h"
-#include "character.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
 
 
 enemy& battle::get_enemy()
 {
-    return e_ref;
+    return *get_current_target();
 }
 
 int battle::get_player_hp()
@@ -14,16 +15,16 @@ int battle::get_player_hp()
 
 int battle::get_enemy_hp()
 {
-    return e_ref.get_health();
+    return get_current_target()->get_health();
 }
 int battle::get_enemy_max_hp()
 {
-    return e_ref.get_max_health();
+    return get_current_target()->get_max_health();
 }
 
 std::string battle::get_enemy_name()
 {
-    return e_ref.get_name();
+    return get_current_target()->get_name();
 }
 
 

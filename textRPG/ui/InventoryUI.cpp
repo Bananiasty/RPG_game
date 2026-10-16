@@ -5,9 +5,16 @@
 #include "textureManager.h"
 #include "graphics.h"
 #include "gamestates.h"
+#include "inventory/Equipment.h"
+#include "inventory/Consumable.h"
+#include "inventory/Scroll.h"
+
 
 void draw_inventory_ui(player& p, inventory_state* inv)
 {
+	equipment_slots slots_coordinates = equipment_slots_placement();
+	p.sort_bag();
+
 	Texture2D inventory = textures.inventory_UI;
 	Texture2D item_icon;
 
@@ -20,6 +27,270 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	Rectangle item_button = { window_center.x + inventory.width * 0.181f, window_center.y + inventory.height * 0.081f, 120, 120 };
 	Rectangle food_button = { window_center.x + inventory.width * 0.308f, window_center.y + inventory.height * 0.081f, 120, 120 };
 	Rectangle books_button = { window_center.x + inventory.width * 0.437f, window_center.y + inventory.height * 0.081f, 120, 120 };
+
+	DrawTextureEx(inventory, window_center, 0.0f, 1.0f, WHITE);
+	draw_player_stats(p);
+
+	equipment_slots_handle(p, slots_coordinates, mouse_pos, hovered_item);
+
+	Vector2 body_pos = { GAME_WIDTH * 0.78f, GAME_HEIGHT * 0.15f };
+	body_UI.draw(p, body_pos, 2.0f);
+
+	if (!inv->equipment_tab && !inv->items_tab && !inv->food_tab && !inv->books_tab)
+	{
+		inv->equipment_tab = true;
+	}
+
+	InventoryTab hovered_tab = InventoryTab::NONE;
+	Rectangle hovered_rect = {};
+
+	if (CheckCollisionPointRec(mouse_pos, equipment_button))
+	{
+		hovered_tab = InventoryTab::EQUIPMENT;
+		hovered_rect = equipment_button;
+	}
+	else if (CheckCollisionPointRec(mouse_pos, item_button))
+	{
+		hovered_tab = InventoryTab::ITEMS;
+		hovered_rect = item_button;
+	}
+	else if (CheckCollisionPointRec(mouse_pos, food_button))
+	{
+		hovered_tab = InventoryTab::FOOD;
+		hovered_rect = food_button;
+	}
+	else if (CheckCollisionPointRec(mouse_pos, books_button))
+	{
+		hovered_tab = InventoryTab::BOOKS;
+		hovered_rect = books_button;
+	}
+
+	if (inv->equipment_tab) DrawRectangleLinesEx(equipment_button, 3.0f, GRAY);
+	else if (inv->items_tab) DrawRectangleLinesEx(item_button, 3.0f, GRAY);
+	else if (inv->food_tab) DrawRectangleLinesEx(food_button, 3.0f, GRAY);
+	else if (inv->books_tab) DrawRectangleLinesEx(books_button, 3.0f, GRAY);
+
+	if (hovered_tab != InventoryTab::NONE)
+	{
+		DrawRectangleLinesEx(hovered_rect, 5.0f, WHITE);
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			switch (hovered_tab)
+			{
+			case InventoryTab::EQUIPMENT:
+				inv->equipment_tab = true;
+				inv->items_tab = false;
+				inv->food_tab = false;
+				inv->books_tab = false;
+				break;
+			case InventoryTab::ITEMS:
+				inv->equipment_tab = false;
+				inv->items_tab = true;
+				inv->food_tab = false;
+				inv->books_tab = false;
+				break;
+			case InventoryTab::FOOD:
+				inv->equipment_tab = false;
+				inv->items_tab = false;
+				inv->food_tab = true;
+				inv->books_tab = false;
+				break;
+			case InventoryTab::BOOKS:
+				inv->equipment_tab = false;
+				inv->items_tab = false;
+				inv->food_tab = false;
+				inv->books_tab = true;
+				break;
+			default:
+				break;
+			}
+		}
+	}
+	
+
+	auto& equipment = p.equipment->items;
+
+	int startX = 80;
+	int startY = 250;
+	int btnWidth = 60;
+	int btnHeight = 60;
+	int bottom_padding = 15;
+	int right_padding = 140;
+
+	if (inv->equipment_tab == true)
+	{
+		int renderIndex = 0;
+		for (int i = 0; i < equipment.size(); i++)
+		{
+			if (equipment[i]->is_equipped()) continue;
+
+			item_icon = *(equipment[i]->icon_texture);
+
+			int col = renderIndex / 8;
+			int row = renderIndex % 8;
+			Rectangle itemRect = {
+				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
+				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
+				(float)btnWidth,
+				(float)btnHeight
+			};
+			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
+			if (is_item_hovered)
+			{
+				if (dynamic_cast<helm*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(slots_coordinates.helm_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(slots_coordinates.helm_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<weapon*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(slots_coordinates.weapon_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(slots_coordinates.weapon_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<shield*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(slots_coordinates.shield_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(slots_coordinates.shield_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<vest*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(slots_coordinates.vest_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(slots_coordinates.vest_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<gauntlets*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(slots_coordinates.gloves_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(slots_coordinates.gloves_slot, 2.5f, WHITE);
+				}
+				else if (dynamic_cast<boots*>(equipment[i]) != nullptr)
+				{
+					DrawRectangleRec(slots_coordinates.boots_slot, Fade(GRAY, 0.35f));
+					DrawRectangleLinesEx(slots_coordinates.boots_slot, 2.5f, WHITE);
+				}
+
+				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+				{
+					equipment[i]->use(&p);
+					p.sort_bag();
+					hovered_item = nullptr;
+					break;
+				}
+				if (IsKeyPressed(KEY_D))
+				{
+					inv->pending_drops.push_back(equipment[i]);
+					p.drop_item(equipment[i]);
+					p.sort_bag();
+					hovered_item = nullptr;
+					break;
+				}
+			}
+
+			if (!equipment[i]->is_equipped())
+			{
+				if (item_icon.id > 0)
+				{
+					float scale = (float)(btnHeight - 10) / item_icon.height;
+					DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+				}
+
+				if (is_item_hovered)
+				{
+					hovered_item = equipment[i];
+					DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
+				}
+			}
+			renderIndex++;
+		}
+	}
+	else
+	{
+		std::vector<item*>* active_list = nullptr;
+
+		if (inv->items_tab)      active_list = &p.inv_items->items;
+		else if (inv->food_tab)  active_list = &p.food->items;
+		else if (inv->books_tab) active_list = &p.books->items;
+
+		if (active_list != nullptr)
+		{
+			generic_tab_handler(*active_list, p, inv, mouse_pos, window_center, hovered_item);
+		}
+	}
+
+	if (hovered_item != nullptr)
+	{
+		draw_item_tooltip(hovered_item, mouse_pos);
+	}
+}
+
+
+
+
+void generic_tab_handler(std::vector<item*>& item_list, player& p, inventory_state* inv, Vector2 mouse_pos, Vector2 window_center, item*& hovered_item)
+{
+	const int startX = 80;
+	const int startY = 250;
+	const int btnWidth = 60;
+	const int btnHeight = 60;
+	const int bottom_padding = 15;
+	const int right_padding = 140;
+
+	for (size_t i = 0; i < item_list.size(); i++)
+	{
+		item* current_item = item_list[i];
+		Texture2D item_icon = *(current_item->icon_texture);
+
+		int row = (int)i / 5;
+		int col = (int)i % 5;
+		Rectangle itemRect = {
+			window_center.x + (float)(startX + col * (btnWidth + right_padding)),
+			window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
+			(float)btnWidth,
+			(float)btnHeight
+		};
+
+		bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
+
+		if (is_item_hovered)
+		{
+			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+			{
+				current_item->use(&p);
+				p.sort_bag();
+				hovered_item = nullptr;
+				break;
+			}
+			if (IsKeyPressed(KEY_D))
+			{
+				inv->pending_drops.push_back(current_item);
+				p.drop_item(current_item);
+				p.sort_bag();
+				hovered_item = nullptr;
+				break;
+			}
+		}
+
+		if (item_icon.id > 0)
+		{
+			float scale = (float)(btnHeight - 10) / item_icon.height;
+			DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
+		}
+
+		if (is_item_hovered)
+		{
+			hovered_item = current_item;
+			DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
+		}
+	}
+}
+
+
+equipment_slots equipment_slots_placement()
+{
+	Texture2D inventory = textures.inventory_UI;
+
+	Vector2 window_center = { (float)(GAME_WIDTH * 0.5f - inventory.width * 0.5f), (float)(GAME_HEIGHT * 0.5f - inventory.height * 0.5f) };
 
 	const float SLOT_SIZE = 75.0f;
 
@@ -59,421 +330,36 @@ void draw_inventory_ui(player& p, inventory_state* inv)
 	const float ACCESSORY_3_OFFSET_Y = 541.5f;
 	Rectangle accessory_3 = { window_center.x + ACCESSORY_3_OFFSET_X, window_center.y + ACCESSORY_3_OFFSET_Y, SLOT_SIZE, SLOT_SIZE };
 
-	DrawTextureEx(inventory, window_center, 0.0f, 1.0f, WHITE);
-	draw_player_stats(p);
-	if (p.equipped_helm != nullptr)
-	{
-		Texture2D* icon = p.equipped_helm->icon_texture;
-		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-		DrawTexturePro(*icon, source_rec, helm_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+	return { helm_slot, weapon_slot, shield_slot, vest_slot, gloves_slot, boots_slot, accessory_1, accessory_2, accessory_3 };
+}
 
-		if (CheckCollisionPointRec(mouse_pos, helm_slot))
+void handle_single_slot(item* item_ptr, Rectangle slot, Vector2 mouse_pos, player& p, item*& hovered_item)
+{
+	if (item_ptr != nullptr)
+	{
+		Texture2D* icon = item_ptr->icon_texture;
+		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
+		DrawTexturePro(*icon, source_rec, slot, { 0.0f, 0.0f }, 0.0f, WHITE);
+
+		if (CheckCollisionPointRec(mouse_pos, slot))
 		{
-			hovered_item = p.equipped_helm;
-			DrawRectangleLinesEx(helm_slot, 2.0f, GRAY);
+			hovered_item = item_ptr;
+			DrawRectangleLinesEx(slot, 2.0f, GRAY);
 			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
 			{
-				p.equipped_helm->use(&p);
+				item_ptr->use(&p);
 				hovered_item = nullptr;
 			}
 		}
 	}
+}
+void equipment_slots_handle(player& p, const equipment_slots& slots, Vector2 mouse_pos, item*& hovered_item)
+{
+	handle_single_slot(p.equipped_helm, slots.helm_slot, mouse_pos, p, hovered_item);
+	handle_single_slot(p.equipped_weapon, slots.weapon_slot, mouse_pos, p, hovered_item);
+	handle_single_slot(p.equipped_shield, slots.shield_slot, mouse_pos, p, hovered_item);
+	handle_single_slot(p.equipped_vest, slots.vest_slot, mouse_pos, p, hovered_item);
+	handle_single_slot(p.equipped_gauntlets, slots.gloves_slot, mouse_pos, p, hovered_item);
+	handle_single_slot(p.equipped_boots, slots.boots_slot, mouse_pos, p, hovered_item);
 
-	if (p.equipped_weapon != nullptr)
-	{
-		Texture2D* icon = p.equipped_weapon->icon_texture;
-		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-		DrawTexturePro(*icon, source_rec, weapon_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
-
-		if (CheckCollisionPointRec(mouse_pos, weapon_slot))
-		{
-			hovered_item = p.equipped_weapon;
-			DrawRectangleLinesEx(weapon_slot, 2.0f, GRAY);
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				p.equipped_weapon->use(&p);
-				hovered_item = nullptr;
-			}
-		}
-	}
-
-	if (p.equipped_shield != nullptr)
-	{
-		Texture2D* icon = p.equipped_shield->icon_texture;
-		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-		DrawTexturePro(*icon, source_rec, shield_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
-
-		if (CheckCollisionPointRec(mouse_pos, shield_slot))
-		{
-			hovered_item = p.equipped_shield;
-			DrawRectangleLinesEx(shield_slot, 2.0f, GRAY);
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				p.equipped_shield->use(&p);
-				hovered_item = nullptr;
-			}
-		}
-	}
-
-	if (p.equipped_vest != nullptr)
-	{
-		Texture2D* icon = p.equipped_vest->icon_texture;
-		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-		DrawTexturePro(*icon, source_rec, vest_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
-
-		if (CheckCollisionPointRec(mouse_pos, vest_slot))
-		{
-			hovered_item = p.equipped_vest;
-			DrawRectangleLinesEx(vest_slot, 2.0f, GRAY);
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				p.equipped_vest->use(&p);
-				hovered_item = nullptr;
-			}
-		}
-	}
-
-	if (p.equipped_gauntlets != nullptr)
-	{
-		Texture2D* icon = p.equipped_gauntlets->icon_texture;
-		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-		DrawTexturePro(*icon, source_rec, gloves_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
-
-		if (CheckCollisionPointRec(mouse_pos, gloves_slot))
-		{
-			hovered_item = p.equipped_gauntlets;
-			DrawRectangleLinesEx(gloves_slot, 2.0f, GRAY);
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				p.equipped_gauntlets->use(&p);
-				hovered_item = nullptr;
-			}
-		}
-	}
-
-	if (p.equipped_boots != nullptr)
-	{
-		Texture2D* icon = p.equipped_boots->icon_texture;
-		Rectangle source_rec = { 0.0f, 0.0f, (float)icon->width, (float)icon->height };
-		DrawTexturePro(*icon, source_rec, boots_slot, { 0.0f, 0.0f }, 0.0f, WHITE);
-
-		if (CheckCollisionPointRec(mouse_pos, boots_slot))
-		{
-			hovered_item = p.equipped_boots;
-			DrawRectangleLinesEx(boots_slot, 2.0f, GRAY);
-			if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-			{
-				p.equipped_boots->use(&p);
-				hovered_item = nullptr;
-			}
-		}
-	}
-
-	Vector2 body_pos = { GAME_WIDTH * 0.78f, GAME_HEIGHT * 0.15f };
-	body_UI.draw(p, body_pos, 2.0f);
-
-	bool equipment_button_isHovered = CheckCollisionPointRec(mouse_pos, equipment_button);
-	bool item_button_isHovered = CheckCollisionPointRec(mouse_pos, item_button);
-	bool food_button_isHovered = CheckCollisionPointRec(mouse_pos, food_button);
-	bool books_button_isHovered = CheckCollisionPointRec(mouse_pos, books_button);
-
-	p.sort_bag();
-
-	if (equipment_button_isHovered)
-	{
-		DrawRectangleLinesEx(equipment_button, 5, WHITE);
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
-			inv->equipment_tab = true;
-			inv->items_tab = false;
-			inv->food_tab = false;
-			inv->books_tab = false;
-		}
-	}
-	if (item_button_isHovered)
-	{
-		DrawRectangleLinesEx(item_button, 5, WHITE);
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
-			inv->equipment_tab = false;
-			inv->items_tab = true;
-			inv->food_tab = false;
-			inv->books_tab = false;
-		}
-	}
-	if (food_button_isHovered)
-	{
-		DrawRectangleLinesEx(food_button, 5, WHITE);
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
-			inv->equipment_tab = false;
-			inv->items_tab = false;
-			inv->food_tab = true;
-			inv->books_tab = false;
-		}
-	}
-	if (books_button_isHovered)
-	{
-		DrawRectangleLinesEx(books_button, 5, WHITE);
-		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-		{
-			inv->equipment_tab = false;
-			inv->items_tab = false;
-			inv->food_tab = false;
-			inv->books_tab = true;
-		}
-	}
-	auto& all_items = p.bag->items;
-
-	auto& equipment = p.equipment->items;
-	auto& other_items = p.inv_items->items;
-	auto& food = p.food->items;
-	auto& books = p.books->items;
-
-	int startX = 80;
-	int startY = 250;
-	int btnWidth = 60;
-	int btnHeight = 60;
-	int bottom_padding = 15;
-	int right_padding = 140;
-
-	bool is_item_hovered;
-	if (inv->equipment_tab == true)
-	{
-		int renderIndex = 0;
-		for (int i = 0; i < equipment.size(); i++)
-		{
-			if (equipment[i]->is_equipped()) continue;
-
-			item_icon = *(equipment[i]->icon_texture);
-
-			int col = renderIndex / 8;
-			int row = renderIndex % 8;
-			Rectangle itemRect = {
-				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
-				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-			is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
-
-			if (is_item_hovered)
-			{
-				if (dynamic_cast<helm*>(equipment[i]) != nullptr)
-				{
-					DrawRectangleRec(helm_slot, Fade(GRAY, 0.35f));
-					DrawRectangleLinesEx(helm_slot, 2.5f, WHITE);
-				}
-				else if (dynamic_cast<weapon*>(equipment[i]) != nullptr)
-				{
-					DrawRectangleRec(weapon_slot, Fade(GRAY, 0.35f));
-					DrawRectangleLinesEx(weapon_slot, 2.5f, WHITE);
-				}
-				else if (dynamic_cast<shield*>(equipment[i]) != nullptr)
-				{
-					DrawRectangleRec(shield_slot, Fade(GRAY, 0.35f));
-					DrawRectangleLinesEx(shield_slot, 2.5f, WHITE);
-				}
-				else if (dynamic_cast<vest*>(equipment[i]) != nullptr)
-				{
-					DrawRectangleRec(vest_slot, Fade(GRAY, 0.35f));
-					DrawRectangleLinesEx(vest_slot, 2.5f, WHITE);
-				}
-				else if (dynamic_cast<gauntlets*>(equipment[i]) != nullptr)
-				{
-					DrawRectangleRec(gloves_slot, Fade(GRAY, 0.35f));
-					DrawRectangleLinesEx(gloves_slot, 2.5f, WHITE);
-				}
-				else if (dynamic_cast<boots*>(equipment[i]) != nullptr)
-				{
-					DrawRectangleRec(boots_slot, Fade(GRAY, 0.35f));
-					DrawRectangleLinesEx(boots_slot, 2.5f, WHITE);
-				}
-
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					equipment[i]->use(&p);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-				if (IsKeyPressed(KEY_D))
-				{
-					inv->pending_drops.push_back(equipment[i]);
-					p.drop_item(equipment[i]);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-			}
-
-			if (!equipment[i]->is_equipped())
-			{
-				if (item_icon.id > 0)
-				{
-					float scale = (float)(btnHeight - 10) / item_icon.height;
-					DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
-				}
-
-				if (is_item_hovered)
-				{
-					hovered_item = equipment[i];
-					DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
-				}
-			}
-			renderIndex++;
-		}
-	}
-	else if (inv->items_tab == true)
-	{
-		for (int i = 0; i < other_items.size(); i++)
-		{
-			item_icon = *(other_items[i]->icon_texture);
-
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
-				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-
-			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
-
-			if (is_item_hovered)
-			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					other_items[i]->use(&p);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-				if (IsKeyPressed(KEY_D))
-				{
-					inv->pending_drops.push_back(other_items[i]);
-					p.drop_item(other_items[i]);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-			}
-
-			if (item_icon.id > 0)
-			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
-			}
-
-			if (is_item_hovered)
-			{
-				hovered_item = other_items[i];
-				DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
-			}
-		}
-	}
-	else if (inv->food_tab == true)
-	{
-		for (int i = 0; i < food.size(); i++)
-		{
-			item_icon = *(food[i]->icon_texture);
-
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
-				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-
-			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
-
-			if (is_item_hovered)
-			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					food[i]->use(&p);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-				if (IsKeyPressed(KEY_D))
-				{
-					inv->pending_drops.push_back(food[i]);
-					p.drop_item(food[i]);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-			}
-
-			if (item_icon.id > 0)
-			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
-			}
-
-			if (is_item_hovered)
-			{
-				hovered_item = food[i];
-				DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
-			}
-		}
-	}
-	else if (inv->books_tab == true)
-	{
-		for (int i = 0; i < books.size(); i++)
-		{
-			item_icon = *(books[i]->icon_texture);
-
-			int row = i / 5;
-			int col = i % 5;
-			Rectangle itemRect = {
-				window_center.x + (float)(startX + col * (btnWidth + right_padding)),
-				window_center.y + (float)(startY + row * (btnHeight + bottom_padding)),
-				(float)btnWidth,
-				(float)btnHeight
-			};
-
-			bool is_item_hovered = CheckCollisionPointRec(mouse_pos, itemRect);
-
-			if (is_item_hovered)
-			{
-				if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
-				{
-					books[i]->use(&p);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-				if (IsKeyPressed(KEY_D))
-				{
-					inv->pending_drops.push_back(books[i]);
-					p.drop_item(books[i]);
-					p.sort_bag();
-					hovered_item = nullptr;
-					break;
-				}
-			}
-
-			if (item_icon.id > 0)
-			{
-				float scale = (float)(btnHeight - 10) / item_icon.height;
-				DrawTextureEx(item_icon, { itemRect.x + 5, itemRect.y + 5 }, 0.0f, scale, WHITE);
-			}
-
-			if (is_item_hovered)
-			{
-				hovered_item = books[i];
-				DrawRectangleLinesEx(itemRect, 2.0f, RAYWHITE);
-			}
-		}
-	}
-
-	if (hovered_item != nullptr)
-	{
-		draw_item_tooltip(hovered_item, mouse_pos);
-	}
 }

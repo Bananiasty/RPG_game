@@ -1,5 +1,7 @@
 #include "gamestates.h"
-#include "character.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
+#include "inventory/Item.h"
 #include "AudioManager.h"
 #include "textureManager.h"
 #include "struct.h"

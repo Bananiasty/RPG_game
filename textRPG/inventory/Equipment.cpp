@@ -1,5 +1,5 @@
 #include "inventory/Equipment.h"
-#include "character.h"
+#include "entities/Player.h"
 #include "gamestates.h"
 #include "struct.h"
 
@@ -50,12 +50,10 @@ void helm::use(player* c)
 
 	if (this->item_equipped)
 	{
-		add_player_head_damage_reduction(c, this->head_damage_reduced);
 		c->equipped_helm = this;
 	}
 	else
 	{
-		this->reduce_player_head_damage_reduction(c, this->head_damage_reduced);
 		c->equipped_helm = nullptr;
 	}
 }

@@ -2,7 +2,8 @@
 #include "gamestates.h"
 #include "raylib.h"
 #include "raymath.h"
-#include "character.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
 
 
 

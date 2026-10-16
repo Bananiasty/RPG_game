@@ -84,8 +84,8 @@ struct dead_body : public loot_object
 
 	void draw(const Camera3D& camera) const override
 	{
-		DrawCube(position, 1.0f, 0.5f, 1.0f, RED);
-		DrawCubeWires(position, 1.0f, 0.5f, 1.0f, MAROON);
+		DrawCube(position, 0.2f, 0.2f, 0.2f, RED);
+		DrawCubeWires(position, 0.2f, 0.2f, 0.2f, MAROON);
 	}
 };
 

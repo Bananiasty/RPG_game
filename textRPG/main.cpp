@@ -2,8 +2,8 @@
 #include <ctime>
 #include <cstdlib>
 #include <clocale>
-#include "character.h"
-#include "inventory_class.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
 #include "gamestates.h"
 #include "graphics.h"
 #include "raygui.h"
@@ -23,7 +23,7 @@ int main()
     graphics_init();
     SetExitKey(KEY_NULL);
 
-    player bohater("", 100, 0, 15, 15, 15, 0, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
+    player bohater("", 100, 0, 15, 15, 15, 3.0f, 0, 1, textures.player, { 0.0f, 0.0f, 0.0f }, 0);
     exploration world{ bohater };
 
     gamestate* active_state = &world;
@@ -32,7 +32,7 @@ int main()
     bool niepoprawny_nick = false;
 
     int current_state = 1;
-    float moveSpeed = 0.1f;
+    float p_move_speed = bohater.movement_speed/30;
     float mouseSensitivity = 0.1f;
 
     audio.play_music(MusicID::EXPLORATION);
@@ -67,8 +67,8 @@ int main()
             Vector3 stara_pozycja = world.camera.position;
 
             Vector3 movement = {
-                ((float)IsKeyDown(KEY_W) - (float)IsKeyDown(KEY_S)) * moveSpeed,
-                ((float)IsKeyDown(KEY_D) - (float)IsKeyDown(KEY_A)) * moveSpeed,
+                ((float)IsKeyDown(KEY_W) - (float)IsKeyDown(KEY_S)) * p_move_speed,
+                ((float)IsKeyDown(KEY_D) - (float)IsKeyDown(KEY_A)) * p_move_speed,
                 0.0f
             };
 
@@ -116,26 +116,15 @@ int main()
 
         if (current_state == 2 && current_fight != nullptr)
         {
-            enemy* your_opponent = &current_fight->get_enemy();
-            if (your_opponent != nullptr)
+            current_fight->handle_dead_enemies();
+
+            if (current_fight->is_fight_finished())
             {
-                your_opponent->set_last_frame(0);
-                if (your_opponent->is_dead())
-                {
-                    bohater.grant_xp();
-                    bohater.check_level_up();
+                delete current_fight;
+                current_fight = nullptr;
 
-                    world.spawn_object(ObjectSpawnInfo::create_dead_body(your_opponent, your_opponent->get_position()));
-
-                    auto& active_enemies = world.floors[world.current_floor_id].active_enemies;
-                    active_enemies.erase(std::remove(active_enemies.begin(), active_enemies.end(), your_opponent), active_enemies.end());
-
-                    delete current_fight;
-                    current_fight = nullptr;
-
-                    active_state = &world;
-                    current_state = 1;
-                }
+                active_state = &world;
+                current_state = 1;
             }
         }
 

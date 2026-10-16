@@ -5,12 +5,12 @@
 #include "raylib.h"
 #include "combat/BodyPart.h"
 #include "combat/Limb.h"
+#include "inventory/Item.h"
 
 class gamestate;
 class exploration;
 class player;
 class helm;
-#include "inventory/Item.h"
 class vest;
 class gauntlets;
 class boots;
@@ -24,8 +24,8 @@ protected:
 	std::string name;
 	int base_defense;
 	int block_chance, crit_chance, dodge_chance;
-	int reduced_head_damage;
 	int current_health, max_health;
+	
 
 	Texture2D grafika;
 	float rotation;
@@ -51,6 +51,7 @@ public:
 	limbs_struct limbs;
 	Vector3 position;
 
+	float movement_speed;
 	bool is_guard = false;
 	bool is_attack = false;
 
@@ -69,8 +70,8 @@ public:
 	BodyPart queued_hit_part = BodyPart::NONE;
 	float queued_damage = 0.0f;
 
-	character(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot);
-	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot);
+	character(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, float m_s, Texture2D g, Vector3 pos, float rot);
+	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, float m_s, Texture2D g, Vector3 pos, float rot);
 	virtual ~character() = default;
 
 	virtual bool is_dead() = 0;
@@ -88,7 +89,6 @@ public:
 	int get_block_chance() { return block_chance; }
 	int get_crit_chance() { return crit_chance; }
 	int get_dodge_chance() { return dodge_chance; }
-	int get_reduced_head_damage() { return reduced_head_damage; }
 
 	Vector3 get_visual_position() const { return this->position; }
 

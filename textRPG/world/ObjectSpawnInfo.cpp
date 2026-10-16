@@ -1,6 +1,6 @@
 #include "world/ObjectSpawnInfo.h"
 #include "world/DungeonTypes.h"
-#include "character.h"
+#include "entities/Enemy.h"
 #include "raymath.h"
 
 Vector3 ObjectSpawnInfo::get_random_wall_position(

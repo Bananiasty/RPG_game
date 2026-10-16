@@ -1,5 +1,8 @@
 #include "ui/ItemTooltipUI.h"
-#include "inventory_class.h"
+#include "inventory/Item.h"
+#include "inventory/Equipment.h"
+#include "inventory/Consumable.h"
+#include "inventory/Scroll.h"
 #include "graphics.h"
 #include <vector>
 #include <string>
@@ -95,10 +98,6 @@ void draw_item_tooltip(item* it, Vector2 mouse_pos)
 	if (s != nullptr && s->get_block_chance() > 0)
 	{
 		stats.push_back({ TextFormat("Block Chance: +%d%%", s->get_block_chance()), Color{ 130, 230, 190, 255 } });
-	}
-	if (h != nullptr && h->get_head_damage_reduced() > 0)
-	{
-		stats.push_back({ TextFormat("Head Protection: +%d%%", h->get_head_damage_reduced()), Color{ 140, 210, 255, 255 } });
 	}
 	if (v != nullptr && v->get_add_health() > 0)
 	{

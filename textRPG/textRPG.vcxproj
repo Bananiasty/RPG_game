@@ -215,10 +215,8 @@
     <ClInclude Include="..\include\entities\Ghoul.h" />
     <ClInclude Include="..\include\entities\Pimpek.h" />
     <ClInclude Include="..\include\AudioManager.h" />
-    <ClInclude Include="..\include\character.h" />
     <ClInclude Include="..\include\gamestates.h" />
     <ClInclude Include="..\include\graphics.h" />
-    <ClInclude Include="..\include\inventory_class.h" />
     <ClInclude Include="..\include\struct.h" />
     <ClInclude Include="..\include\textureManager.h" />
   </ItemGroup>

@@ -8,8 +8,8 @@
 #include <regex>
 #include <algorithm>
 
-player::player(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot)
-    : character(n, hp, bdef, b_ch, c_ch, d_ch, rdh, textures.player, pos, rot)
+player::player(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, float m_s, int xp, int level, Texture2D g, Vector3 pos, float rot)
+    : character(n, hp, bdef, b_ch, c_ch, d_ch, m_s, textures.player, pos, rot)
 {
     bag = new inventory();
     equipped_items = new inventory();

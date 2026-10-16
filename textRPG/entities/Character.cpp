@@ -7,15 +7,15 @@
 #include "gamestates.h"
 #include "raymath.h"
 
-character::character(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
-    : name(n), max_health(hp), current_health(hp), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
+character::character(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, float m_s, Texture2D g, Vector3 pos, float rot)
+    : name(n), max_health(hp), current_health(hp), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), movement_speed(m_s), grafika(g)
 {
     this->position = pos;
     this->rotation = rot;
 }
 
-character::character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, int rdh, Texture2D g, Vector3 pos, float rot)
-    : name(n), limbs(l), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), reduced_head_damage(rdh), grafika(g)
+character::character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, float m_s, Texture2D g, Vector3 pos, float rot)
+    : name(n), limbs(l), base_defense(bdef), block_chance(b_ch), crit_chance(c_ch), dodge_chance(d_ch), movement_speed(m_s), grafika(g)
 {
     this->position = pos;
     this->rotation = rot;
@@ -138,11 +138,7 @@ int character::take_damage(int dmg_amount, const character* attacker, bool is_cr
     // CALCULATE INCOMING DAMAGE
     int incoming_damage = dmg_amount;
 
-    if (hit_part == BodyPart::HEAD)
-    {
-        incoming_damage = (int)(incoming_damage * 1.5f);
-        incoming_damage = std::max(0, incoming_damage - this->get_reduced_head_damage());
-    }
+
 
     if (is_guard)
     {

@@ -13,7 +13,7 @@ struct enemy_config
 	int block_chance = 0;
 	int crit_chance = 0;
 	int dodge_chance = 0;
-	int reduced_head_damage = 0;
+	float movement_speed = 0.0f;
 	Texture2D texture = {};
 	Vector3 position = { 0.0f, 1.0f, 0.0f };
 	float rotation = 0.0f;

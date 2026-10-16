@@ -2,10 +2,10 @@
 #include <vector>
 #include <memory>
 #include "struct.h"
-#include "inventory_class.h"
+#include "inventory/Item.h"
 #include "items.h"
 #include "gamestates.h"
-#include "character.h"
+#include "entities/Enemy.h"
 
 
 std::vector<std::unique_ptr<item>> exploration::rand_loot(enemy* target_enemy, int slots_number)

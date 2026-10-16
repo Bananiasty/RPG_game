@@ -1,6 +1,6 @@
-#include "TextureManager.h"
+ï»¿#include "TextureManager.h"
 #include <iostream>
-#include "character.h"
+#include "entities/Character.h"
 
 fx_animation global_fx;
 textureManager textures;
@@ -171,7 +171,7 @@ int GetSpriteFrameIndex(Vector3 enemyPos, Vector3 enemyForward, Vector3 cameraPo
 	float targetCenterAngle = newFrame * 45.0f;
 	float angleDiff = std::abs(relativeAngle - targetCenterAngle);
 
-	// Normalizacja ró¿nicy k¹tów
+	// Normalizacja rÃ³Å¼nicy kÄ…tÃ³w
 	if (angleDiff > 180.0f) angleDiff = 360.0f - angleDiff;
 
 	float margin = 6.0f;

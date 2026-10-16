@@ -1,7 +1,8 @@
 #include "ui/BattleUI.h"
 #include "graphics.h"
 #include "gamestates.h"
-#include "character.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
 #include "raylib.h"
 #include "rlgl.h"
 #include <string>
@@ -83,8 +84,6 @@ void draw_battle_ui(battle* fight)
 {
 	Vector2 mouse = GetVirtualMousePosition();
 
-	std::string e = fight->get_enemy_name();
-
 	float p_hp_width = ((float)fight->p_ref.get_health() / fight->p_ref.get_max_health()) * 400.0f;
 
 	Vector2 body_pos = { GAME_WIDTH * 0.85f, GAME_HEIGHT * 0.60f };
@@ -141,6 +140,55 @@ void draw_battle_ui(battle* fight)
 		{
 			fight->guard_clicked = true;
 			fight->player_cooldown = 1.0;
+		}
+	}
+
+	// LICZNIK NADCHODZACYCH WZMOCNIEN (REINFORCEMENTS TIMER) - PO PRAWEJ STRONIE, BEZ CZERWONEGO KONTURU
+	if (!fight->incoming_reinforcements.empty())
+	{
+		float rein_box_w = 90.0f;
+		float rein_box_h = 52.0f;
+		float rein_box_x = GAME_WIDTH - rein_box_w - 60.0f;
+		float rein_box_y = 50.0f;
+
+		for (size_t i = 0; i < fight->incoming_reinforcements.size(); ++i)
+		{
+			const auto& rein = fight->incoming_reinforcements[i];
+			if (rein.enemy_ptr == nullptr) continue;
+
+			float current_y = rein_box_y + (i * (rein_box_h + 10.0f));
+
+			const char* rein_text = TextFormat("! %d", rein.rounds_to_arrive);
+			Vector2 text_size = MeasureTextEx(cabin_sketch_font, rein_text, 36, 1);
+			Vector2 text_pos = {
+				rein_box_x + (rein_box_w - text_size.x) * 0.5f,
+				current_y + (rein_box_h - text_size.y) * 0.5f
+			};
+
+			DrawTextEx(cabin_sketch_font, rein_text, text_pos, 50, 1, YELLOW);
+		}
+	}
+
+	// PRZECIWNICY OCZEKUJACY W KOLEJCE (W WASKIM KORYTARZU)
+	if (!fight->queued_enemies.empty())
+	{
+		float queue_box_w = 520.0f;
+		float queue_box_h = 38.0f;
+		float queue_box_x = (GAME_WIDTH - queue_box_w) * 0.5f;
+		float queue_box_y = 30.0f;
+
+		for (size_t i = 0; i < fight->queued_enemies.size(); ++i)
+		{
+			enemy* q_enemy = fight->queued_enemies[i];
+			if (q_enemy == nullptr) continue;
+
+			float current_y = queue_box_y + (i * (queue_box_h + 8.0f));
+
+			DrawRectangle((int)queue_box_x, (int)current_y, (int)queue_box_w, (int)queue_box_h, Fade(BLACK, 0.8f));
+			DrawRectangleLines((int)queue_box_x, (int)current_y, (int)queue_box_w, (int)queue_box_h, ORANGE);
+
+			const char* queue_text = TextFormat("%s waiting in line behind opponent", q_enemy->get_name().c_str());
+			DrawTextEx(cabin_sketch_font, queue_text, { queue_box_x + 16.0f, current_y + 6.0f }, 22, 1, ORANGE);
 		}
 	}
 }

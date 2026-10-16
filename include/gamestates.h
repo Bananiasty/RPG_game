@@ -7,7 +7,10 @@
 #include <memory>
 #include "raylib.h"
 #include "struct.h"
-#include "character.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
+#include "inventory/Item.h"
+#include "world/Pathfinding.h"
 
 
 class gamestate
@@ -122,17 +125,35 @@ public:
 };
 
 
+struct ReinforcementEnemy
+{
+	enemy* enemy_ptr = nullptr;
+	int rounds_to_arrive = 0;
+	std::vector<GridPosition> path;
+	int current_path_step = 0;
+	int steps_per_round = 4;
+	bool is_approaching_from_left = false;
+};
+
 class battle : public gamestate
 {
-
-	
 public:
 	player& p_ref;
 	enemy& e_ref;
 
 	battle(player& p, enemy& e);
 
-	exploration* exp;
+	exploration* exp = nullptr;
+
+	std::vector<enemy*> active_enemies;
+	std::vector<enemy*> queued_enemies;
+	std::vector<ReinforcementEnemy> incoming_reinforcements;
+	std::vector<enemy*> pending_enemy_actions;
+	bool turn_start_effects_processed = false;
+
+	Vector3 combat_facing_dir = { 0.0f, 0.0f, 1.0f };
+	Vector3 combat_enemy_center = { 0.0f, 0.0f, 0.0f };
+	Vector3 combat_player_pos = { 0.0f, 0.0f, 0.0f };
 
 	bool showMap = false;
 	bool showInventory = false;
@@ -141,22 +162,28 @@ public:
 	bool attack_clicked = false;
 	bool guard_clicked = false;
 
-
-
 	float enemy_cooldown = 0.0;
 	float player_cooldown = 0.0;
-
 
 	void draw() override;
 
 	void initiate_fight_view();
 	int player_turn();
 	int enemy_turn();
-	
 
-	
+	void scan_reinforcements();
+	void tick_reinforcements();
+	void join_battle(enemy* e, bool comes_from_left = false);
+	int get_max_combat_capacity() const;
+	bool is_tile_walkable_at(Vector3 world_pos) const;
+	bool is_player_in_room() const;
+	bool is_player_in_narrow_corridor() const;
+	bool is_narrow_corridor_at_fight() const;
+	void reposition_active_enemies();
+	void handle_dead_enemies();
+	bool is_fight_finished() const;
 
-
+	enemy* get_current_target();
 	enemy& get_enemy();
 	int get_player_hp();
 	int get_enemy_hp();
@@ -180,6 +207,7 @@ private:
 public:
 	exploration* exp;
 	battle* fight;
+
 	bool equipment_tab = false;
 	bool food_tab = false;
 	bool books_tab = false;

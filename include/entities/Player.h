@@ -16,7 +16,7 @@ private:
 	int xp_to_level_up = 1;
 
 public:
-	player(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, int rdh, int xp, int level, Texture2D g, Vector3 pos, float rot);
+	player(std::string n, int hp, int bdef, int b_ch, int c_ch, int d_ch, float m_s, int xp, int level, Texture2D g, Vector3 pos, float rot);
 	virtual ~player();
 
 	enemy* current_enemy = nullptr;

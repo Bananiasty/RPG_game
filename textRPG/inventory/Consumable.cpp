@@ -1,5 +1,5 @@
 #include "inventory/Consumable.h"
-#include "character.h"
+#include "entities/Player.h"
 #include "gamestates.h"
 #include "struct.h"
 

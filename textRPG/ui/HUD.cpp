@@ -1,6 +1,6 @@
 #include "ui/HUD.h"
 #include "graphics.h"
-#include "character.h"
+#include "entities/Player.h"
 #include "gamestates.h"
 #include "textureManager.h"
 #include <ranges>
@@ -58,7 +58,7 @@ void draw_commentary()
 		float przesuniecie_y = 0.0f;
 		for (const auto& log : gamestate::gameLogs | std::views::reverse | std::views::take(3))
 		{
-			DrawTextEx(cabin_sketch_font, log.c_str(), { 50, 410 + przesuniecie_y }, 50, 2, WHITE);
+			DrawTextEx(cabin_sketch_font, log.c_str(), { 50, 410 + przesuniecie_y }, 40, 2, WHITE);
 			przesuniecie_y += 70.0f;
 		}
 	}

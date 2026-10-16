@@ -16,7 +16,6 @@ protected:
 	void add_player_block_chance(player* c, int val);
 	void add_player_crit_chance(player* c, int val);
 	void add_player_dodge_chance(player* c, int val);
-	void add_player_head_damage_reduction(player* c, int val);
 
 	void reduce_player_defense(player* c, int val);
 	//void reduce_player_health(player* c, int val);
@@ -25,7 +24,6 @@ protected:
 	void reduce_player_crit_chance(player* c, int val);
 	void reduce_player_dodge_chance(player* c, int val);
 	//void reduce_player_mana(player* c, int val);
-	void reduce_player_head_damage_reduction(player* c, int val);
 
 	void restore_player_health(player* c, int val);
 	//void restore_player_mana(player* c, int val);

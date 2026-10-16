@@ -1,8 +1,8 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include "character.h"
-#include "inventory_class.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
 #include "gamestates.h"
 #include "struct.h"
 #include "graphics.h"

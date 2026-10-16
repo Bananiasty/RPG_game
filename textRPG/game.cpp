@@ -4,8 +4,9 @@
 #include <algorithm>
 #include <memory>
 
-#include "character.h"
-#include "inventory_class.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
+#include "inventory/Item.h"
 #include "gamestates.h"
 #include "struct.h"
 #include "graphics.h"
@@ -66,16 +67,17 @@ int exploration::update_state()
 
 int battle::update_state()
 {
-    if (e_ref.is_dead())
+    handle_dead_enemies();
+
+    if (is_fight_finished())
     {
-        return 1; 
+        return 1;
     }
     if (p_ref.is_dead())
     {
-        return 5; 
+        return 5;
     }
 
-    
     if (IsKeyPressed(KEY_I) || this->showInventory)
     {
         this->showInventory = false;
@@ -88,15 +90,15 @@ int battle::update_state()
 
     if (!waiting_for_enemy)
     {
-        this->player_turn();           
+        this->player_turn();
     }
-   
-    if (waiting_for_enemy) 
-    {      
+
+    if (waiting_for_enemy)
+    {
         this->enemy_turn();
     }
 
-    return 2; 
+    return 2;
 }
 
 

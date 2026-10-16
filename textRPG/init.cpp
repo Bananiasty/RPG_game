@@ -1,8 +1,14 @@
 #include <iostream>
 #include <map>
 #include <string>
-#include "character.h"
-#include "inventory_class.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
+#include "entities/Ghoul.h"
+#include "entities/Pimpek.h"
+#include "inventory/Item.h"
+#include "inventory/Equipment.h"
+#include "inventory/Consumable.h"
+#include "inventory/Scroll.h"
 #include "gamestates.h"
 #include "struct.h"
 #include "graphics.h"
@@ -66,7 +72,7 @@ void exploration::loot_init()
 	item_pool.push_back(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon,  40, &textures.lightning, 10, 0.10f));
 
 
-	/*bohater.bag->add_item(new shield("Wooden shield", "Normal", 5, &textures.wooden_shield, 1, 5));
+	bohater.bag->add_item(new shield("Wooden shield", "Normal", 5, &textures.wooden_shield, 1, 5));
 	bohater.bag->add_item(new shield("Steel shield", "Normal", 30, &textures.steel_shield, 5, 15));
 	bohater.bag->add_item(new weapon("Short sword", "Normal", 10, &textures.short_sword, 0, 2));
 	bohater.bag->add_item(new gauntlets("Iron gloves", "Normal", 18, &textures.iron_gauntlets, 2, 5));
@@ -76,7 +82,7 @@ void exploration::loot_init()
 	bohater.bag->add_item(new boots("Leather boots", "Normal", 7, &textures.leather_boots, 1, 0));
 	bohater.bag->add_item(new health_potion("Apple", "Normal", 20, &textures.apple, 50));
 	bohater.bag->add_item(new weapon("Long sword", "Normal", 30, &textures.long_sword, 0, 4));
-	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon, 40, &textures.lightning, 10, 0.10f));*/
+	bohater.bag->add_item(new combat_scroll("Lightning bolt", "Rare", 120, &textures.lightning_icon, 40, &textures.lightning, 10, 0.10f));
 
 	
 	
@@ -91,8 +97,8 @@ void exploration::enemies_init()
 	}
 	enemy_pool.clear();
 
-	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .max_health = 50, .limbs = {5, 50, 20, 20, 20, 20}, .armor = 0, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .reduced_head_damage = 0, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
-	enemy_pool.push_back(new pimpek({ .id = 2, .name = "Pimpek", .max_health = 30, .limbs = {3, 30, 10, 10, 10, 10}, .armor = 0, .block_chance = 5, .crit_chance = 2, .dodge_chance = 15, .reduced_head_damage = 0, .texture = textures.pimpek, .rotation = 0.0f, .level = 1, .description = "rawr" }));
+	enemy_pool.push_back(new ghoul({ .id = 1, .name = "Ghoul", .max_health = 50, .limbs = {5, 50, 20, 20, 20, 20}, .armor = 0, .block_chance = 10, .crit_chance = 5, .dodge_chance = 0, .movement_speed = 2.0f, .texture = textures.ghoul, .rotation = 0.0f, .level = 1, .description = "..." }));
+	enemy_pool.push_back(new pimpek({ .id = 2, .name = "Pimpek", .max_health = 30, .limbs = {3, 30, 10, 10, 10, 10}, .armor = 0, .block_chance = 5, .crit_chance = 2, .dodge_chance = 15, .movement_speed = 3.0f, .texture = textures.pimpek, .rotation = 0.0f, .level = 1, .description = "rawr" }));
 
 }
 void exploration::world_map_init()
@@ -121,7 +127,7 @@ void exploration::world_map_init()
         .right = 3,
         .dungeon_pos = { 10, 25 },
         .room_size = { 6, 6 },
-        .enemy_ids = { 2, 2 },
+        .enemy_ids = { 1 , 2},
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),

@@ -10,7 +10,7 @@ enemy::enemy(const enemy_config& config)
         config.block_chance,
         config.crit_chance,
         config.dodge_chance,
-        config.reduced_head_damage,
+        config.movement_speed,
         config.texture,
         config.position,
         config.rotation

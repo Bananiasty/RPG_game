@@ -1,5 +1,5 @@
 #pragma once
-#include "character.h"
+#include "entities/Character.h"
 #include "gamestates.h"
 #include "ui/ItemTooltipUI.h"
 #include "ui/InventoryUI.h"

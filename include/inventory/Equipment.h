@@ -18,15 +18,12 @@ public:
 
 class helm : public armor
 {
-private:
-	int head_damage_reduced;
-
 public:
-	helm(std::string n, std::string r, int c, Texture2D* icon, int def, int h_dmg_red) : armor(n, r, c, icon, def), head_damage_reduced(h_dmg_red) {}
+	helm(std::string n, std::string r, int c, Texture2D* icon, int def, int h_dmg_red = 0) : armor(n, r, c, icon, def) {}
 	item* clone() const override;
 	void use(player* player) override;
 	bool is_equipped() override;
-	int get_head_damage_reduced() const { return head_damage_reduced; }
+	int get_head_damage_reduced() const { return 0; }
 };
 
 class vest : public armor

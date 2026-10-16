@@ -1,6 +1,7 @@
 #include "world/WorldObject.h"
 #include "gamestates.h"
-#include "character.h"
+#include "entities/Player.h"
+#include "entities/Enemy.h"
 #include <random>
 
 int loot_object::rand_drop_slots()
