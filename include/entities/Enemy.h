@@ -42,6 +42,8 @@ public:
 
 	virtual SpriteRenderParams get_render_params(Texture2D texture) const = 0;
 	virtual int execute_ai_turn(character& target) = 0;
+	virtual std::vector<BodyPart> decide_attacks() { return {}; }
+	virtual int perform_strike(BodyPart attacking_part, character& target);
 
 	virtual enemy* clone() const = 0;
 

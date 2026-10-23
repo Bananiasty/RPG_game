@@ -6,6 +6,7 @@
 #include "combat/BodyPart.h"
 #include "combat/Limb.h"
 #include "inventory/Item.h"
+#include "combat/StatusEffect.h"
 
 class gamestate;
 class exploration;
@@ -74,6 +75,17 @@ public:
 	character(std::string n, const limbs_struct& l, int bdef, int b_ch, int c_ch, int d_ch, float m_s, Texture2D g, Vector3 pos, float rot);
 	virtual ~character() = default;
 
+	// Status Effects (Wzorzec Strategia)
+	std::vector<std::shared_ptr<StatusEffect>> active_effects;
+	void apply_effect(std::shared_ptr<StatusEffect> effect, gamestate* gs = nullptr);
+	void remove_effect(EffectType type, gamestate* gs = nullptr);
+	bool has_effect(EffectType type) const;
+	std::shared_ptr<StatusEffect> get_effect(EffectType type) const;
+	const std::vector<std::shared_ptr<StatusEffect>>& get_effects() const { return active_effects; }
+	void clear_effects(gamestate* gs = nullptr);
+	void take_status_damage(int amount, gamestate* gs, const std::string& effect_name, Color color);
+	void sync_legacy_bleed_state();
+
 	virtual bool is_dead() = 0;
 
 	virtual void process_turn_start_effects(gamestate* gs);
@@ -85,7 +97,8 @@ public:
 
 	int get_health() { return current_health; }
 	int get_max_health() { return max_health; }
-	int get_defense() { return base_defense; }
+	int get_defense() const;
+	int get_base_defense() const { return base_defense; }
 	int get_block_chance() { return block_chance; }
 	int get_crit_chance() { return crit_chance; }
 	int get_dodge_chance() { return dodge_chance; }

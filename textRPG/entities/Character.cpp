@@ -40,45 +40,156 @@ std::pair<int, bool> character::calculate_dmg(int limb_damage)
     return std::make_pair(damage_amount, is_crit);
 }
 
+void character::apply_effect(std::shared_ptr<StatusEffect> effect, gamestate* gs)
+{
+    if (!effect || this->current_health <= 0) return;
+
+    for (auto& existing : active_effects)
+    {
+        if (existing->try_stack(*effect))
+        {
+            sync_legacy_bleed_state();
+            return;
+        }
+    }
+
+    effect->on_apply(*this, gs ? gs : this->gs);
+    active_effects.push_back(effect);
+    sync_legacy_bleed_state();
+}
+
+void character::remove_effect(EffectType type, gamestate* gs)
+{
+    for (auto it = active_effects.begin(); it != active_effects.end(); )
+    {
+        if ((*it)->get_type() == type)
+        {
+            (*it)->on_remove(*this, gs ? gs : this->gs);
+            it = active_effects.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    sync_legacy_bleed_state();
+}
+
+bool character::has_effect(EffectType type) const
+{
+    for (const auto& eff : active_effects)
+    {
+        if (eff && eff->get_type() == type) return true;
+    }
+    return false;
+}
+
+std::shared_ptr<StatusEffect> character::get_effect(EffectType type) const
+{
+    for (const auto& eff : active_effects)
+    {
+        if (eff && eff->get_type() == type) return eff;
+    }
+    return nullptr;
+}
+
+void character::clear_effects(gamestate* gs)
+{
+    for (auto& eff : active_effects)
+    {
+        if (eff) eff->on_remove(*this, gs ? gs : this->gs);
+    }
+    active_effects.clear();
+    sync_legacy_bleed_state();
+}
+
+void character::take_status_damage(int amount, gamestate* gs, const std::string& effect_name, Color color)
+{
+    if (this->current_health <= 0 || amount <= 0) return;
+
+    this->current_health = std::max(0, this->current_health - amount);
+
+    bool is_player = (dynamic_cast<const player*>(this) != nullptr);
+    if (is_player)
+    {
+        gamestate::gameLogs.push_back(TextFormat("You suffer from %s! Received %d damage", effect_name.c_str(), amount));
+    }
+    else
+    {
+        gamestate::gameLogs.push_back(TextFormat("%s suffers from %s! Dealt %d damage", this->name.c_str(), effect_name.c_str(), amount));
+    }
+
+    gamestate* active_gs = gs ? gs : this->gs;
+    if (active_gs)
+    {
+        static float status_text_jitter = 0.0f;
+        status_text_jitter += 0.35f;
+        if (status_text_jitter > 0.8f) status_text_jitter = 0.0f;
+
+        Vector3 text_pos = this->get_visual_position();
+        text_pos.y += 1.5f + status_text_jitter;
+        active_gs->spawn_floating_text(text_pos, TextFormat("-%d %s", amount, effect_name.c_str()), false, false, color);
+    }
+}
+
+void character::sync_legacy_bleed_state()
+{
+    int total_bleed_dmg = 0;
+    int max_bleed_timer = 0;
+    bool found = false;
+
+    for (const auto& eff : active_effects)
+    {
+        if (eff && eff->get_type() == EffectType::BLEED)
+        {
+            found = true;
+            total_bleed_dmg += eff->get_potency();
+            max_bleed_timer = std::max(max_bleed_timer, eff->get_remaining_turns());
+        }
+    }
+
+    this->is_bleeding = found;
+    this->applied_bleed_damage = total_bleed_dmg;
+    this->bleed_status_timer = max_bleed_timer;
+}
+
+int character::get_defense() const
+{
+    int def = base_defense;
+    for (const auto& eff : active_effects)
+    {
+        if (eff)
+        {
+            def = eff->modify_defense(def);
+        }
+    }
+    return std::max(0, def);
+}
+
 void character::process_turn_start_effects(gamestate* gs)
 {
     if (this->current_health <= 0) return;
 
-    bool gracz = (dynamic_cast<const player*>(this) != nullptr);
+    gamestate* active_gs = gs ? gs : this->gs;
 
-    if (this->is_bleeding)
+    for (auto it = active_effects.begin(); it != active_effects.end(); )
     {
-        int bleed_damage = this->applied_bleed_damage;
+        (*it)->on_turn_start(*this, active_gs);
 
-        if (bleed_damage > 0)
+        if (this->current_health <= 0) break;
+
+        if ((*it)->tick())
         {
-            this->current_health = std::max(0, this->current_health - bleed_damage);
-
-            if (gracz)
-            {
-                gamestate::gameLogs.push_back(TextFormat("You're bleeding! Received %d damage", bleed_damage));
-            }
-            else
-            {
-                gamestate::gameLogs.push_back(TextFormat("Enemy bleeds! Dealt %d damage", bleed_damage));
-            }
-
-            if (gs)
-            {
-                Vector3 text_pos = this->get_visual_position();
-                text_pos.y += 1.5f;
-                gs->spawn_floating_text(text_pos, TextFormat("-%d Bleed", bleed_damage), false, true);
-            }
+            (*it)->on_remove(*this, active_gs);
+            it = active_effects.erase(it);
         }
-
-        this->bleed_status_timer--;
-        if (this->bleed_status_timer <= 0)
+        else
         {
-            this->is_bleeding = false;
-            this->applied_bleed_damage = 0;
-            this->bleed_status_timer = 0;
+            ++it;
         }
     }
+
+    sync_legacy_bleed_state();
 }
 
 int character::take_damage(int dmg_amount, const character* attacker, bool is_crit, bool is_guard, BodyPart hit_part, gamestate* gs, Vector3 impact_pos)

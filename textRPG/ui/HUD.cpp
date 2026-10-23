@@ -11,10 +11,25 @@ void DrawHUD(exploration* exp)
 {
 	const player& p = exp->bohater;
 
-	if (p.is_bleeding)
+	float start_x = GAME_WIDTH * 0.90f;
+	float start_y = GAME_HEIGHT * 0.55f;
+	int icon_idx = 0;
+
+	for (const auto& effect : p.get_effects())
+	{
+		Texture2D icon = effect->get_icon();
+		if (icon.id > 0)
+		{
+			Vector2 pos = { start_x, start_y + (icon_idx * 50.0f) };
+			DrawTextureEx(icon, pos, 0.0f, 2.5f, WHITE);
+			DrawText(TextFormat("%d", effect->get_remaining_turns()), (int)pos.x + 36, (int)pos.y + 24, 18, YELLOW);
+			icon_idx++;
+		}
+	}
+	if (icon_idx == 0 && p.is_bleeding)
 	{
 		Texture2D bleed = textures.bleeding_icon;
-		Vector2 pos = { GAME_WIDTH * 0.90f, GAME_HEIGHT * 0.55f };
+		Vector2 pos = { start_x, start_y };
 		DrawTextureEx(bleed, pos, 0.0f, 2.5f, WHITE);
 	}
 	DrawRectangle((int)(GAME_WIDTH * 0.8f), (int)(GAME_HEIGHT * 0.9f), 50, 20, WHITE);

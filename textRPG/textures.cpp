@@ -1,4 +1,4 @@
-﻿#include "TextureManager.h"
+#include "TextureManager.h"
 #include <iostream>
 #include "entities/Character.h"
 
@@ -33,6 +33,7 @@ void LoadGameTextures()
 	textures.ignite_icon = LoadTexture("graphics/GAME ASSETS/SPELLS/Icons/7-Fire-wall.png");
 
 	textures.bleeding_icon = LoadTexture("graphics/GAME ASSETS/Status Effects/bleed_v1.png");
+	textures.plague_icon = LoadTexture("graphics/GAME ASSETS/Status Effects/Deadly Poison.png");
 
 
 	textures.short_sword = LoadTexture("graphics/GAME ASSETS/WEAPONS/Icons/item4.png");

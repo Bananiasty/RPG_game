@@ -73,6 +73,24 @@ BodyPart ghoul::calculate_hovered_body_part(Vector3 drawPos, float targetWidth, 
     return BodyPart::NONE;
 }
 
+std::vector<BodyPart> ghoul::decide_attacks()
+{
+    std::vector<BodyPart> attacks;
+    const auto& right_arm = this->limbs.get_limb(BodyPart::RIGHT_ARM);
+    const auto& head = this->limbs.get_limb(BodyPart::HEAD);
+
+    if (right_arm.is_intact && right_arm.can_attack)
+    {
+        attacks.push_back(BodyPart::RIGHT_ARM);
+    }
+    else if (head.is_intact && head.can_attack)
+    {
+        attacks.push_back(BodyPart::HEAD);
+    }
+
+    return attacks;
+}
+
 int ghoul::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
@@ -86,45 +104,13 @@ int ghoul::execute_ai_turn(character& target)
     this->process_turn_start_effects(this->gs);
     if (this->is_dead()) return 0;
 
-    int ghoul_output_dmg = 0;
-    this->attack_part_1 = BodyPart::NONE;
-
-    const auto& right_arm = this->limbs.get_limb(BodyPart::RIGHT_ARM);
-    const auto& head = this->limbs.get_limb(BodyPart::HEAD);
-
-    if (right_arm.is_intact && right_arm.can_attack)
+    auto attacks = decide_attacks();
+    int total_dmg = 0;
+    for (BodyPart part : attacks)
     {
-        this->attack_part_1 = BodyPart::RIGHT_ARM;
-        ghoul_output_dmg = right_arm.damage;
+        total_dmg += perform_strike(part, target);
     }
-    else if (head.is_intact && head.can_attack)
-    {
-        this->attack_part_1 = BodyPart::HEAD;
-        ghoul_output_dmg = head.damage;
-    }
-
-    if (this->attack_part_1 != BodyPart::NONE)
-    {
-        const auto& attacking_limb = this->limbs.get_limb(this->attack_part_1);
-        if (attacking_limb.applies_bleed)
-        {
-            if (!target.is_bleeding)
-            {
-                gamestate::gameLogs.push_back(TextFormat("You started bleeding!"));
-            }
-
-            target.is_bleeding = true;
-            target.applied_bleed_damage += attacking_limb.bleed_dmg;
-            target.bleed_status_timer = attacking_limb.bleed_timer;
-        }
-    }
-
-    BodyPart hit_part = this->select_random_target_part(target);
-    auto [e_dmg, crit] = this->calculate_dmg(ghoul_output_dmg);
-    audio.play_sound(SoundID::ENEMY_HIT);
-
-    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, hit_part, this->gs);
     target.is_guard = false;
 
-    return final_dmg;
+    return total_dmg;
 }

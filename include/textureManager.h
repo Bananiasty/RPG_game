@@ -64,6 +64,7 @@ struct textureManager {
 	Texture2D sun_strike;
 
 	Texture2D bleeding_icon;
+	Texture2D plague_icon;
 
 	Texture2D lightning_bolt_icon;
 	Texture2D fireball_icon;

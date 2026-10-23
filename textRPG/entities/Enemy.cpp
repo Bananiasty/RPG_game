@@ -1,5 +1,8 @@
 #include "entities/Enemy.h"
+#include "combat/StatusEffectFactory.h"
 #include "raylib.h"
+#include "gamestates.h"
+#include "AudioManager.h"
 #include <vector>
 
 enemy::enemy(const enemy_config& config)
@@ -79,4 +82,29 @@ int enemy::GetAdjustedSideLimit(int baseSideLimit, int frameIndex)
     }
 
     return baseSideLimit;
+}
+
+int enemy::perform_strike(BodyPart attacking_part, character& target)
+{
+    if (target.is_dead()) return 0;
+
+    const auto& attacking_limb = this->limbs.get_limb(attacking_part);
+    if (!attacking_limb.is_intact || !attacking_limb.can_attack) return 0;
+
+    if (attacking_limb.applies_bleed)
+    {
+        target.apply_effect(StatusEffectFactory::create_bleed(attacking_limb.bleed_timer, attacking_limb.bleed_dmg), this->gs);
+    }
+
+    if (attacking_limb.applies_plague)
+    {
+        target.apply_effect(StatusEffectFactory::create_plague(attacking_limb.plague_timer, attacking_limb.plague_dmg), this->gs);
+    }
+
+    BodyPart hit_part = this->select_random_target_part(target);
+    auto [e_dmg, crit] = this->calculate_dmg(attacking_limb.damage);
+    audio.play_sound(SoundID::ENEMY_HIT);
+
+    int final_dmg = target.take_damage(e_dmg, this, crit, target.is_guard, hit_part, this->gs);
+    return final_dmg;
 }

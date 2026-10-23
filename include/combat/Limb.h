@@ -13,6 +13,10 @@ struct limb
 	int bleed_dmg = 0;
 	int bleed_timer = 0;
 
+	bool applies_plague = false;
+	int plague_dmg = 0;
+	int plague_timer = 0;
+
 	bool limb_wounded = false;
 	bool severely_wounded = false;
 

@@ -41,5 +41,6 @@ public:
 		return new ghoul(*this);
 	}
 
+	std::vector<BodyPart> decide_attacks() override;
 	int execute_ai_turn(character& target) override;
 };

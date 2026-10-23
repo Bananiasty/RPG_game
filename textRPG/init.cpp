@@ -18,20 +18,8 @@
 
 void exploration::player_stats_init(player* c)
 {
-
-	auto& start_map = floors[current_floor_id].world_map;
-	auto it = start_map.find(1);
-
-	if (it != start_map.end())
-	{
-		const Node& start_node = it->second;
-
-		float start_tile_x = start_node.room_x + (start_node.room_width / 2.0f);
-		float start_tile_y = start_node.room_y + (start_node.room_length / 2.0f);
-
-		c->position.x = start_tile_x * 2.0f;
-		c->position.z = start_tile_y * 2.0f;
-	}
+	Vector3 pos = set_player_pos(1, current_floor_id);
+	c->position = pos;
 }
 
 void exploration::loot_init()
@@ -103,7 +91,6 @@ void exploration::enemies_init()
 }
 void exploration::world_map_init()
 {
-	
 	loot_init();
 	enemies_init();
 	
@@ -113,11 +100,12 @@ void exploration::world_map_init()
         .room_id = 1,
         .left = 2,
         .dungeon_pos = { 10, 10 },
-        .room_size = { 5, 5 },
+        .room_width = 5,
+        .room_height = 5,
+        .room_shape = Room_type::Rectangle,
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 10 }, { 5, 5 }),
-
             }
         });
 
@@ -126,8 +114,10 @@ void exploration::world_map_init()
         .room_id = 2,
         .right = 3,
         .dungeon_pos = { 10, 25 },
-        .room_size = { 6, 6 },
-        .enemy_ids = { 1 , 2},
+        .room_width = 6,
+        .room_height = 6,
+        .room_shape = Room_type::FourPillars,
+        .enemy_ids = { 1 , 2, 2, 1},
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 25 }, { 6, 6 }),
@@ -141,10 +131,12 @@ void exploration::world_map_init()
         .left = 4,
         .right = 5,
         .dungeon_pos = { 10, 40 },
-        .room_size = { 8, 8 },
+        .room_width = 8,
+        .room_height = 8,
+        .room_shape = Room_type::Center_pillar,
         .enemy_ids = { 1 },
         .props = {
-            ObjectSpawnInfo::create_trapdoor({ 10, 40 }, { 8, 8 }, 1),
+            ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 40 }, { 8, 8 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 40 }, { 8, 8 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 40 }, { 8, 8 }),
         }
@@ -155,7 +147,7 @@ void exploration::world_map_init()
         .room_id = 4,
         .left = 5,
         .dungeon_pos = { 25, 40 },
-        .room_size = { 6, 6 }
+        .room_shape = Room_type::Cross,
         });
 
     add_Node({
@@ -164,7 +156,9 @@ void exploration::world_map_init()
         .left = 6,
         .right = 8,
         .dungeon_pos = { 10, 55 },
-        .room_size = { 7, 7 },
+        .room_width = 7,
+        .room_height = 7,
+        .room_shape = Room_type::Center_pillar,
         .enemy_ids = { 1 },
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 10, 55 }, { 7, 7 })
@@ -176,7 +170,7 @@ void exploration::world_map_init()
         .room_id = 6,
         .left = 7,
         .dungeon_pos = { 25, 55 },
-        .room_size = { 6, 6 }
+        .room_shape = Room_type::LShape,
         });
 
     add_Node({
@@ -184,7 +178,7 @@ void exploration::world_map_init()
         .room_id = 7,
         .left = 8,
         .dungeon_pos = { 25, 70 },
-        .room_size = { 6, 6 },
+        .room_shape = Room_type::Rectangle,
         .enemy_ids = { 1 }
         });
 
@@ -192,8 +186,12 @@ void exploration::world_map_init()
         .floor_id = 0,
         .room_id = 8,
         .dungeon_pos = { 10, 70 },
-        .room_size = { 10, 10 },
+        .room_width = 10,
+        .room_height = 10,
+        .room_shape = Room_type::FourPillars,
+        .enemy_ids = { 1 },
         .props = {
+            ObjectSpawnInfo::create_trapdoor({ 10, 70 }, { 10, 10 }, 1),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 70 }, { 10, 10 }),
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 10, 70 }, { 10, 10 }),
         }
@@ -207,7 +205,7 @@ void exploration::world_map_init()
         .left = 2,
         .right = 3,
         .dungeon_pos = { 24, 10 },
-        .room_size = { 3, 3 },
+        .room_shape = Room_type::Rectangle,
         .props = {
 
         }
@@ -219,11 +217,12 @@ void exploration::world_map_init()
         .left = 4,
         .right = 3,
         .dungeon_pos = { 14, 22 },
-        .room_size = { 8, 8 },
+        .room_width = 8,
+        .room_height = 8,
+        .room_shape = Room_type::FourPillars,
         .enemy_ids = { 1 },
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Barrel, { 14, 22 }, { 8, 8 }),
-
             }
         });
 
@@ -232,7 +231,9 @@ void exploration::world_map_init()
         .room_id = 3,
         .left = 2,
         .dungeon_pos = { 3, 4 },
-        .room_size = { 5, 5 },
+        .room_width = 5,
+        .room_height = 5,
+        .room_shape = Room_type::Center_pillar,
         .props = {
             ObjectSpawnInfo::create_random_wall_prop(ObjectType::Chest, { 3, 4 }, { 5, 5 })
         }
@@ -242,12 +243,10 @@ void exploration::world_map_init()
         .floor_id = 1,
         .room_id = 4,
         .dungeon_pos = { 10, 25 },
-        .room_size = { 2, 2 },
-        .enemy_ids = { 1 }
+        .room_shape = Room_type::Cross,
+        .enemy_ids = { 1 },
+        .props = {
+            ObjectSpawnInfo::create_trapdoor({ 10, 25 }, { 7, 7 }, 0),
+        }
         });
-	//draw_dungeon_map();
 }
-
-
-
-

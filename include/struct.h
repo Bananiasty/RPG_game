@@ -52,6 +52,7 @@ struct floating_text
 	std::string text;
 	bool is_crit;
 	bool is_bleed;
+	Color custom_color;
 	float max_lifetime = 1.0f;
 	float offsetY;
 };

@@ -20,6 +20,14 @@ enum class TileType : uint8_t
 	SolidProp = 3
 };
 
+enum class Room_type
+{
+	Rectangle,
+	Center_pillar,
+	FourPillars,
+	Cross,
+	LShape
+};
 // SIATKA PIETRA
 struct floor_data
 {
@@ -89,8 +97,9 @@ struct Node
 
 	int room_x = 0;
 	int room_y = 0;
-	int room_width = 5;
-	int room_length = 5;
+	int room_width = 0;
+	int room_height = 0;
+	Room_type room_shape = Room_type::Rectangle;
 
 	std::vector<int> enemy_ids;
 	std::vector<ObjectSpawnInfo> pending_props;
@@ -142,6 +151,53 @@ struct dungeon_floor
 };
 
 // --- NodeConfig ---
+inline void determine_room_size(Room_type type, int& width, int& height)
+{
+	if (width <= 0 || height <= 0)
+	{
+		switch (type)
+		{
+		case Room_type::FourPillars:
+		{
+			const int even_sizes[] = { 6, 8, 10, 12 };
+			int s = even_sizes[GetRandomValue(0, 3)];
+			width = s;
+			height = s;
+			break;
+		}
+		case Room_type::Center_pillar:
+		{
+			const int sizes[] = { 5, 6, 7, 8, 9, 10, 11, 12};
+			int s = sizes[GetRandomValue(0, 5)];
+			width = s;
+			height = s;
+			break;
+		}
+		case Room_type::Cross:
+		{
+			const int cross_sizes[] = { 7, 8, 9, 10, 11 };
+			int s = cross_sizes[GetRandomValue(0, 4)];
+			width = s;
+			height = s;
+			break;
+		}
+		case Room_type::LShape:
+		{
+			width = GetRandomValue(6, 11);
+			height = GetRandomValue(6, 11);
+			break;
+		}
+		case Room_type::Rectangle:
+		default:
+		{
+			width = GetRandomValue(4, 12);
+			height = GetRandomValue(4, 12);
+			break;
+		}
+		}
+	}
+}
+
 struct NodeConfig
 {
 	int floor_id = 0;
@@ -151,7 +207,9 @@ struct NodeConfig
 	int previous = -1;
 	bool discovered = false;
 	Vector2 dungeon_pos = { 0.0f, 0.0f };
-	Vector2 room_size = { 0.0f, 0.0f };
+	int room_width = 0;
+	int room_height = 0;
+	Room_type room_shape = static_cast<Room_type>(GetRandomValue(0, 4));
 	std::vector<int> enemy_ids;
 	std::vector<ObjectSpawnInfo> props;
 };

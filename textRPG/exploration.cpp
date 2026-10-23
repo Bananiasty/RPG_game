@@ -190,7 +190,7 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, floa
     int rx = room_ptr->room_x;
     int rz = room_ptr->room_y;
     int rw = room_ptr->room_width;
-    int rh = room_ptr->room_length;
+    int rh = room_ptr->room_height;
 
     float fallback_x = (rx + rw / 2.0f) * tile_size - 2.0f;
     float fallback_z = (rz + rh / 2.0f) * tile_size;
@@ -208,7 +208,7 @@ Vector3 exploration::set_enemy_pos(int enemy_id, int room_id, int floor_id, floa
         for (const auto& [id, node] : target_floor.world_map)
         {
             if (gx >= node.room_x && gx < node.room_x + node.room_width &&
-                gz >= node.room_y && gz < node.room_y + node.room_length)
+                gz >= node.room_y && gz < node.room_y + node.room_height)
             {
                 return true;
             }
@@ -417,8 +417,44 @@ Vector3 exploration::set_player_pos(int room_id, int floor_id)
     }
 
     float player_y = 1.5f;
+    int rx = room_ptr->room_x;
+    int rz = room_ptr->room_y;
+    int rw = room_ptr->room_width;
+    int rh = room_ptr->room_height;
+
+    int center_gx = rx + rw / 2;
+    int center_gz = rz + rh / 2;
+
+    int best_gx = -1;
+    int best_gz = -1;
+    float min_dist_sq = 1e9f;
+
+    for (int x = rx; x < rx + rw; ++x)
+    {
+        for (int z = rz; z < rz + rh; ++z)
+        {
+            if (is_walkable(x, z))
+            {
+                float dx = (float)(x - center_gx);
+                float dz = (float)(z - center_gz);
+                float dist_sq = dx * dx + dz * dz;
+                if (dist_sq < min_dist_sq)
+                {
+                    min_dist_sq = dist_sq;
+                    best_gx = x;
+                    best_gz = z;
+                }
+            }
+        }
+    }
+
+    if (best_gx != -1)
+    {
+        return Vector3{ (best_gx + 0.5f) * 2.0f, player_y, (best_gz + 0.5f) * 2.0f };
+    }
+
     float centerX = room_ptr->room_x + (room_ptr->room_width / 2.0f);
-    float centerZ = room_ptr->room_y + (room_ptr->room_length / 2.0f);
+    float centerZ = room_ptr->room_y + (room_ptr->room_height / 2.0f);
 
     return Vector3{ centerX * 2.0f, player_y, centerZ * 2.0f };
 }
@@ -471,6 +507,7 @@ void exploration::update_enemies()
 {
     float dt = GetFrameTime();
     float detectionRange = 8.0f;
+    float loseInterestRange = 12.0f;
     float enemySpeed = 0.0f;
 
     auto& current_floor = floors[current_floor_id];
@@ -495,7 +532,15 @@ void exploration::update_enemies()
                     audio.play_sound(SoundID::ENEMY_DETECT);
                 }
             }
+        }
+        else if (distance > loseInterestRange && e->get_is_alerted())
+        {
+            e->set_is_alerted(false);
+            e->set_is_moving(false);
+        }
 
+        if (e->get_is_alerted() && distance <= loseInterestRange)
+        {
             if (!e->is_moving())
             {
                 apply_pathfinding(e);
@@ -665,10 +710,41 @@ void exploration::spawn_object(ObjectSpawnInfo info)
     }
     else if (info.type == ObjectType::Trapdoor)
     {
-        int center_gx = (int)info.room_pos.x + (int)(info.room_size.x * 0.5f);
-        int center_gz = (int)info.room_pos.y + (int)(info.room_size.y * 0.5f);
+        int rx = (int)info.room_pos.x;
+        int rz = (int)info.room_pos.y;
+        int rw = (int)info.room_size.x;
+        int rh = (int)info.room_size.y;
 
-        cur_floor.occupy_tile(center_gx, center_gz, false);
+        int center_gx = rx + rw / 2;
+        int center_gz = rz + rh / 2;
+
+        int best_gx = center_gx;
+        int best_gz = center_gz;
+        float min_dist_sq = 1e9f;
+
+        for (int x = rx; x < rx + rw; ++x)
+        {
+            for (int z = rz; z < rz + rh; ++z)
+            {
+                if (!cur_floor.dungeon.empty() && cur_floor.dungeon[x][z] == 1 &&
+                    cur_floor.is_tile_free(x, z) && !cur_floor.is_tile_solid(x, z))
+                {
+                    float dx = (float)(x - center_gx);
+                    float dz = (float)(z - center_gz);
+                    float dist_sq = dx * dx + dz * dz;
+                    if (dist_sq < min_dist_sq)
+                    {
+                        min_dist_sq = dist_sq;
+                        best_gx = x;
+                        best_gz = z;
+                    }
+                }
+            }
+        }
+
+        const float tile_size = 2.0f;
+        info.position = Vector3{ (best_gx + 0.5f) * tile_size, 0.05f, (best_gz + 0.5f) * tile_size };
+        cur_floor.occupy_tile(best_gx, best_gz, false);
     }
 
     auto obj = create_world_object(info);

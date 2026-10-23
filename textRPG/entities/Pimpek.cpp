@@ -94,6 +94,24 @@ int pimpek::take_damage(int dmg_amount, const character* attacker, bool is_crit,
     return character::take_damage(dmg_amount, attacker, is_crit, is_guard, hit_part, gs, impact_pos);
 }
 
+std::vector<BodyPart> pimpek::decide_attacks()
+{
+    std::vector<BodyPart> attacks;
+    const auto& right_leg = this->limbs.get_limb(BodyPart::RIGHT_LEG);
+    const auto& left_leg = this->limbs.get_limb(BodyPart::LEFT_LEG);
+
+    if (right_leg.is_intact && right_leg.can_attack)
+    {
+        attacks.push_back(BodyPart::RIGHT_LEG);
+    }
+    if (left_leg.is_intact && left_leg.can_attack)
+    {
+        attacks.push_back(BodyPart::LEFT_LEG);
+    }
+
+    return attacks;
+}
+
 int pimpek::execute_ai_turn(character& target)
 {
     if (!global_fx.is_playing && target.queued_damage > 0)
@@ -107,58 +125,12 @@ int pimpek::execute_ai_turn(character& target)
     this->process_turn_start_effects(this->gs);
     if (this->is_dead()) return 0;
 
-    this->attack_part_1 = BodyPart::NONE;
-    this->attack_part_2 = BodyPart::NONE;
-
-    const auto& right_leg = this->limbs.get_limb(BodyPart::RIGHT_LEG);
-    const auto& left_leg = this->limbs.get_limb(BodyPart::LEFT_LEG);
-
-    if (right_leg.is_intact && right_leg.can_attack)
-    {
-        this->attack_part_1 = BodyPart::RIGHT_LEG;
-    }
-    if (left_leg.is_intact && left_leg.can_attack)
-    {
-        this->attack_part_2 = BodyPart::LEFT_LEG;
-    }
-
+    auto attacks = decide_attacks();
     int total_dmg = 0;
-    bool was_guarding = target.is_guard;
-
-    auto perform_strike = [&](BodyPart attacking_part) {
-        if (target.is_dead()) return;
-
-        const auto& attacking_limb = this->limbs.get_limb(attacking_part);
-        if (attacking_limb.applies_bleed)
-        {
-            if (!target.is_bleeding)
-            {
-                gamestate::gameLogs.push_back(TextFormat("You started bleeding!"));
-            }
-
-            target.is_bleeding = true;
-            target.applied_bleed_damage += attacking_limb.bleed_dmg;
-            target.bleed_status_timer = attacking_limb.bleed_timer;
-        }
-
-        BodyPart hit_part = this->select_random_target_part(target);
-        auto [e_dmg, crit] = this->calculate_dmg(attacking_limb.damage);
-        audio.play_sound(SoundID::ENEMY_HIT);
-
-        int dmg = target.take_damage(e_dmg, this, crit, was_guarding, hit_part, this->gs);
-        total_dmg += dmg;
-    };
-
-    if (this->attack_part_1 != BodyPart::NONE)
+    for (BodyPart part : attacks)
     {
-        perform_strike(this->attack_part_1);
+        total_dmg += perform_strike(part, target);
     }
-
-    if (this->attack_part_2 != BodyPart::NONE)
-    {
-        perform_strike(this->attack_part_2);
-    }
-
     target.is_guard = false;
 
     return total_dmg;

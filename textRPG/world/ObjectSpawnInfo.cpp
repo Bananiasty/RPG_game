@@ -58,7 +58,13 @@ Vector3 ObjectSpawnInfo::get_random_wall_position(
 
         attempts++;
 
-        tile_valid = current_floor.is_tile_free(chosen_gx, chosen_gz);
+        bool in_bounds = (!current_floor.dungeon.empty() &&
+                          chosen_gx >= 0 && chosen_gx < (int)current_floor.dungeon.size() &&
+                          chosen_gz >= 0 && chosen_gz < (int)current_floor.dungeon[0].size());
+
+        tile_valid = in_bounds &&
+                     current_floor.is_tile_free(chosen_gx, chosen_gz) &&
+                     (current_floor.dungeon[chosen_gx][chosen_gz] == 1);
 
     } while (!tile_valid && attempts < 50);
 

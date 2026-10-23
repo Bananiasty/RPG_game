@@ -14,117 +14,118 @@
 
 
 
+battle::~battle()
+{
+    for (auto& rein : incoming_reinforcements)
+    {
+        if (rein.enemy_ptr != nullptr && !rein.enemy_ptr->is_dead())
+        {
+            rein.enemy_ptr->set_is_alerted(false);
+            rein.enemy_ptr->set_is_moving(false);
+        }
+    }
+}
+
 void battle::initiate_fight_view()
 {
     enemy& e = this->e_ref;
     player& p = this->p_ref;
     e.exp = this->exp;
-    auto& current_dungeon = exp->floors[exp->current_floor_id].dungeon;
 
     Vector3 e_pos = e.get_position();
     Vector3 p_pos = p.get_position();
 
     const float DUNGEON_TILE = 2.0f;
 
-    Vector3 raw_diff = Vector3Subtract(e_pos, p_pos);
-    raw_diff.y = 0.0f;
-
-    Vector3 primary_dir = { 0.0f, 0.0f, 0.0f };
-    if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
-    {
-        primary_dir.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
-    }
-    else
-    {
-        primary_dir.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
-    }
-
+    // Centrujemy pozycje gracza na kafelku lochu
     float p_center_x = floorf(p_pos.x / DUNGEON_TILE) * DUNGEON_TILE + (DUNGEON_TILE * 0.5f);
     float p_center_z = floorf(p_pos.z / DUNGEON_TILE) * DUNGEON_TILE + (DUNGEON_TILE * 0.5f);
     Vector3 target_p_pos = { p_center_x, p_pos.y, p_center_z };
 
-    bool player_in_room = false;
-    if (exp && !exp->floors.empty() && exp->current_floor_id >= 0 && exp->current_floor_id < static_cast<int>(exp->floors.size()))
+    if (!is_tile_walkable_at(target_p_pos))
     {
-        const auto& cur_floor = exp->floors[exp->current_floor_id];
-        int p_gx = static_cast<int>(floorf(target_p_pos.x / DUNGEON_TILE)) + 1;
-        int p_gz = static_cast<int>(floorf(target_p_pos.z / DUNGEON_TILE));
-        for (const auto& [id, node] : cur_floor.world_map)
+        target_p_pos = p_pos;
+    }
+
+    // Wektor wskazujacy od gracza bezposrednio na przeciwnika w momencie inicjacji
+    Vector3 raw_diff = Vector3Subtract(e_pos, target_p_pos);
+    raw_diff.y = 0.0f;
+
+    Vector3 norm_raw = { 0.0f, 0.0f, 1.0f };
+    float raw_len = Vector3Length(raw_diff);
+    if (raw_len > 0.0001f)
+    {
+        norm_raw = Vector3Scale(raw_diff, 1.0f / raw_len);
+    }
+
+    const Vector3 CARDINAL_DIRS[4] = {
+        {  1.0f, 0.0f,  0.0f },
+        { -1.0f, 0.0f,  0.0f },
+        {  0.0f, 0.0f,  1.0f },
+        {  0.0f, 0.0f, -1.0f }
+    };
+
+    Vector3 final_dir = { 0.0f, 0.0f, 0.0f };
+    float best_score = -999999.0f;
+    bool found_walkable = false;
+
+    // Wybieramy kierunek cardinalny, ktory jest chodzalny i NAJBLIZSZY fizycznej pozycji wroga
+    for (int i = 0; i < 4; i++)
+    {
+        Vector3 cand_dir = CARDINAL_DIRS[i];
+        Vector3 cand_e_pos = Vector3Add(target_p_pos, Vector3Scale(cand_dir, DUNGEON_TILE));
+
+        if (!is_tile_walkable_at(cand_e_pos))
         {
-            if (p_gx >= node.room_x && p_gx < node.room_x + node.room_width &&
-                p_gz >= node.room_y && p_gz < node.room_y + node.room_length)
-            {
-                player_in_room = true;
-                break;
-            }
+            continue;
+        }
+
+        found_walkable = true;
+
+        // Odleglosc kafelka walki do rzeczywistej pozycji wroga
+        float dist_to_actual = Vector3Distance(cand_e_pos, e_pos);
+
+        // Zgodnosc katowa (kierunek natarcia wroga)
+        float dot = Vector3DotProduct(norm_raw, cand_dir);
+
+        // Pojemnosc boczna (dodatkowe miejsce dla posilkow) - wylacznie jako minimalny tie-breaker
+        Vector3 cand_side = Vector3Normalize(Vector3CrossProduct(cand_dir, { 0.0f, 1.0f, 0.0f }));
+        int left_c = 0;
+        for (int step = 1; step <= 3; ++step)
+        {
+            Vector3 p_step = Vector3Subtract(cand_e_pos, Vector3Scale(cand_side, DUNGEON_TILE * step));
+            if (is_tile_walkable_at(p_step)) left_c++;
+            else break;
+        }
+        int right_c = 0;
+        for (int step = 1; step <= 3; ++step)
+        {
+            Vector3 p_step = Vector3Add(cand_e_pos, Vector3Scale(cand_side, DUNGEON_TILE * step));
+            if (is_tile_walkable_at(p_step)) right_c++;
+            else break;
+        }
+        int capacity = 1 + left_c + right_c;
+
+        // Kluczowe: dot (kat natarcia) i dist (bliskosc fizycznej pozycji) bezwzglednie dominuja.
+        // capacity daje maksymalnie 0.4 pkt, wiec nigdy nie obroci widoku o 90 stopni wzdluz innej sciezki.
+        float score = (dot * 100.0f) - (dist_to_actual * 25.0f) + (capacity * 0.1f);
+
+        if (score > best_score)
+        {
+            best_score = score;
+            final_dir = cand_dir;
         }
     }
 
-    Vector3 test_pos = Vector3Add(target_p_pos, Vector3Scale(primary_dir, DUNGEON_TILE));
-    bool primary_blocked = !is_tile_walkable_at(test_pos);
-
-    Vector3 test_side = Vector3Normalize(Vector3CrossProduct(primary_dir, { 0.0f, 1.0f, 0.0f }));
-    bool left_walk = is_tile_walkable_at(Vector3Subtract(test_pos, Vector3Scale(test_side, DUNGEON_TILE)));
-    bool right_walk = is_tile_walkable_at(Vector3Add(test_pos, Vector3Scale(test_side, DUNGEON_TILE)));
-    bool facing_narrow = (!left_walk && !right_walk);
-
-    Vector3 final_dir = primary_dir;
-
-    if (primary_blocked || (player_in_room && facing_narrow))
+    if (!found_walkable)
     {
-        const Vector3 CARDINAL_DIRS[4] = {
-            {  1.0f, 0.0f,  0.0f },
-            { -1.0f, 0.0f,  0.0f },
-            {  0.0f, 0.0f,  1.0f },
-            {  0.0f, 0.0f, -1.0f }
-        };
-
-        Vector3 norm_raw = Vector3Normalize(raw_diff);
-        float best_score = -9999.0f;
-
-        for (int i = 0; i < 4; i++)
+        if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
         {
-            Vector3 cand_dir = CARDINAL_DIRS[i];
-            Vector3 cand_e_pos = Vector3Add(target_p_pos, Vector3Scale(cand_dir, DUNGEON_TILE));
-
-            if (!is_tile_walkable_at(cand_e_pos))
-            {
-                continue;
-            }
-
-            Vector3 cand_side = Vector3Normalize(Vector3CrossProduct(cand_dir, { 0.0f, 1.0f, 0.0f }));
-            int left_c = 0;
-            for (int step = 1; step <= 3; ++step)
-            {
-                Vector3 p_step = Vector3Subtract(cand_e_pos, Vector3Scale(cand_side, DUNGEON_TILE * step));
-                if (is_tile_walkable_at(p_step)) left_c++;
-                else break;
-            }
-            int right_c = 0;
-            for (int step = 1; step <= 3; ++step)
-            {
-                Vector3 p_step = Vector3Add(cand_e_pos, Vector3Scale(cand_side, DUNGEON_TILE * step));
-                if (is_tile_walkable_at(p_step)) right_c++;
-                else break;
-            }
-
-            int capacity = 1 + left_c + right_c;
-            float score = 0.0f;
-
-            if (player_in_room && facing_narrow)
-            {
-                score = capacity * 100.0f;
-            }
-            else
-            {
-                score = Vector3DotProduct(norm_raw, cand_dir) * 10.0f + capacity;
-            }
-
-            if (score > best_score)
-            {
-                best_score = score;
-                final_dir = cand_dir;
-            }
+            final_dir.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
+        }
+        else
+        {
+            final_dir.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
         }
     }
 
@@ -174,6 +175,8 @@ void battle::scan_reinforcements()
     int p_grid_x = static_cast<int>(std::floor(combat_player_pos.x / nodeSize)) + 4;
     int p_grid_z = static_cast<int>(std::floor(combat_player_pos.z / nodeSize));
 
+    const float DUNGEON_TILE = 2.0f;
+
     for (enemy* other_e : floor_enemies)
     {
         if (other_e == nullptr || other_e->is_dead() || other_e == &e_ref)
@@ -188,10 +191,80 @@ void battle::scan_reinforcements()
         }
 
         Vector3 other_pos = other_e->get_position();
+        float dist_to_battle = Vector3Distance(other_pos, combat_player_pos);
+        if (dist_to_battle > 16.0f)
+        {
+            other_e->set_is_alerted(false);
+            continue;
+        }
+
+        // If other_e is already adjacent to the player (distance <= 3.0f, ~1 dungeon tile)
+        if (dist_to_battle <= 3.0f)
+        {
+            Vector3 raw_diff = Vector3Subtract(other_pos, combat_player_pos);
+            raw_diff.y = 0.0f;
+            Vector3 best_card = { 0.0f, 0.0f, 0.0f };
+            if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
+            {
+                best_card.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
+            }
+            else
+            {
+                best_card.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
+            }
+
+            Vector3 cand_pos = Vector3Add(combat_player_pos, Vector3Scale(best_card, DUNGEON_TILE));
+            cand_pos.y = other_pos.y;
+
+            if (is_tile_walkable_at(cand_pos))
+            {
+                other_e->exp = this->exp;
+                other_e->set_position(cand_pos);
+                Vector3 to_p = Vector3Normalize(Vector3Subtract(combat_player_pos, cand_pos));
+                to_p.y = 0.0f;
+                other_e->set_forward(to_p);
+                other_e->set_last_frame(0);
+
+                float dot_front = Vector3DotProduct(best_card, combat_facing_dir);
+                if (dot_front > 0.8f)
+                {
+                    int front_count = 0;
+                    for (enemy* act : active_enemies)
+                    {
+                        if (act == nullptr || act->is_dead()) continue;
+                        Vector3 d = Vector3Normalize(Vector3Subtract(act->get_position(), combat_player_pos));
+                        d.y = 0.0f;
+                        if (Vector3DotProduct(d, combat_facing_dir) > 0.8f) front_count++;
+                    }
+
+                    if (front_count < get_max_combat_capacity())
+                    {
+                        active_enemies.push_back(other_e);
+                        gamestate::gameLogs.push_back(other_e->get_name() + " joined the fight!");
+                    }
+                    else
+                    {
+                        queued_enemies.push_back(other_e);
+                        Vector3 q_pos = Vector3Add(combat_enemy_center, Vector3Scale(combat_facing_dir, DUNGEON_TILE * queued_enemies.size()));
+                        q_pos.y = other_pos.y;
+                        other_e->set_position(q_pos);
+                        gamestate::gameLogs.push_back(other_e->get_name() + " waits behind the opponent!");
+                    }
+                }
+                else
+                {
+                    // Directly join battle on flank!
+                    active_enemies.push_back(other_e);
+                    gamestate::gameLogs.push_back(other_e->get_name() + " attacks from the flank!");
+                }
+                continue;
+            }
+        }
+
         int e_grid_x = static_cast<int>(std::floor(other_pos.x / nodeSize)) + 4;
         int e_grid_z = static_cast<int>(std::floor(other_pos.z / nodeSize));
 
-        std::vector<GridPosition> path = exp->find_path(e_grid_x, e_grid_z, p_grid_x, p_grid_z, other_e);
+        std::vector<GridPosition> path = exp->find_path(e_grid_x, e_grid_z, p_grid_x, p_grid_z, other_e, true);
 
         if (!path.empty())
         {
@@ -201,7 +274,29 @@ void battle::scan_reinforcements()
             rein.current_path_step = 0;
             rein.steps_per_round = (other_e->get_name() == "Pimpek") ? 8 : 4;
 
-            int calculated_rounds = static_cast<int>(std::ceil(static_cast<float>(path.size()) / static_cast<float>(rein.steps_per_round)));
+            const float COMBAT_RADIUS = 2.4f;
+            int steps_to_combat = static_cast<int>(path.size());
+            for (size_t p_idx = 0; p_idx < path.size(); ++p_idx)
+            {
+                float wx = (path[p_idx].x - 4) * 0.5f + 0.25f;
+                float wz = path[p_idx].z * 0.5f + 0.25f;
+                float d = Vector3Distance({ wx, combat_player_pos.y, wz }, combat_player_pos);
+                if (d <= COMBAT_RADIUS)
+                {
+                    steps_to_combat = static_cast<int>(p_idx + 1);
+                    break;
+                }
+            }
+
+            int calculated_rounds = static_cast<int>(std::ceil(static_cast<float>(steps_to_combat) / static_cast<float>(rein.steps_per_round)));
+            
+            const int MAX_REINFORCEMENT_ROUNDS = 6;
+            if (calculated_rounds > MAX_REINFORCEMENT_ROUNDS)
+            {
+                other_e->set_is_alerted(false);
+                continue;
+            }
+
             rein.rounds_to_arrive = std::max(1, calculated_rounds);
 
             Vector3 player_right = Vector3Normalize(Vector3CrossProduct(combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
@@ -211,7 +306,13 @@ void battle::scan_reinforcements()
 
             incoming_reinforcements.push_back(rein);
         }
+        else
+        {
+            other_e->set_is_alerted(false);
+        }
     }
+
+    reposition_active_enemies();
 }
 
 bool battle::is_tile_walkable_at(Vector3 world_pos) const
@@ -238,7 +339,7 @@ bool battle::is_player_in_room() const
     for (const auto& [id, node] : cur_floor.world_map)
     {
         if (gx >= node.room_x && gx < node.room_x + node.room_width &&
-            gz >= node.room_y && gz < node.room_y + node.room_length)
+            gz >= node.room_y && gz < node.room_y + node.room_height)
         {
             return true;
         }
@@ -257,7 +358,7 @@ bool battle::is_player_in_narrow_corridor() const
         return false;
     }
 
-    // Player is in a corridor! Check if corridor width perpendicular to facing direction is 1 tile
+    // Player is in a corridor
     const float DUNGEON_TILE = 2.0f;
     Vector3 side_dir = Vector3Normalize(Vector3CrossProduct(combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
 
@@ -271,7 +372,7 @@ int battle::get_max_combat_capacity() const
 {
     if (exp == nullptr) return 1;
 
-    // Tactical positioning: If the PLAYER is in a narrow corridor, enemies must queue 1-by-1!
+    // Tactical positioning
     if (is_player_in_narrow_corridor())
     {
         return 1;
@@ -321,74 +422,122 @@ void battle::reposition_active_enemies()
 {
     if (active_enemies.empty()) return;
 
-    int n = static_cast<int>(active_enemies.size());
-    if (n == 1)
-    {
-        active_enemies[0]->set_position(combat_enemy_center);
-        Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, combat_enemy_center));
-        to_cam.y = 0.0f;
-        active_enemies[0]->set_forward(to_cam);
-        active_enemies[0]->set_last_frame(0);
-        return;
-    }
-
-    Vector3 side_dir = Vector3Normalize(Vector3CrossProduct(combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
     const float DUNGEON_TILE = 2.0f;
+    const Vector3 CARDINAL_DIRS[4] = {
+        {  1.0f, 0.0f,  0.0f },
+        { -1.0f, 0.0f,  0.0f },
+        {  0.0f, 0.0f,  1.0f },
+        {  0.0f, 0.0f, -1.0f }
+    };
 
-    int left_tiles = 0;
-    for (int step = 1; step <= 3; ++step)
+    // Group active enemies by their closest cardinal direction from combat_player_pos
+    std::vector<enemy*> dir_groups[4];
+
+    for (enemy* e : active_enemies)
     {
-        Vector3 test_pos = Vector3Subtract(combat_enemy_center, Vector3Scale(side_dir, DUNGEON_TILE * step));
-        if (is_tile_walkable_at(test_pos)) left_tiles++;
-        else break;
+        if (e == nullptr || e->is_dead()) continue;
+
+        Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
+        diff.y = 0.0f;
+
+        int best_idx = 0;
+        float best_dot = -999.0f;
+        float diff_len = Vector3Length(diff);
+        Vector3 norm_diff = (diff_len > 0.001f) ? Vector3Scale(diff, 1.0f / diff_len) : combat_facing_dir;
+
+        for (int i = 0; i < 4; ++i)
+        {
+            float d = Vector3DotProduct(norm_diff, CARDINAL_DIRS[i]);
+            if (d > best_dot)
+            {
+                best_dot = d;
+                best_idx = i;
+            }
+        }
+        dir_groups[best_idx].push_back(e);
     }
 
-    int right_tiles = 0;
-    for (int step = 1; step <= 3; ++step)
+    // Position each group along its respective cardinal flank
+    for (int k = 0; k < 4; ++k)
     {
-        Vector3 test_pos = Vector3Add(combat_enemy_center, Vector3Scale(side_dir, DUNGEON_TILE * step));
-        if (is_tile_walkable_at(test_pos)) right_tiles++;
-        else break;
-    }
+        auto& group = dir_groups[k];
+        if (group.empty()) continue;
 
-    std::vector<float> offsets;
-    if (n == 2)
-    {
-        offsets = { -0.75f, 0.75f };
-    }
-    else if (n == 3)
-    {
-        offsets = { -1.1f, 0.0f, 1.1f };
-    }
-    else // n >= 4
-    {
-        offsets = { -1.5f, -0.5f, 0.5f, 1.5f };
-    }
+        Vector3 dir = CARDINAL_DIRS[k];
+        Vector3 group_center = Vector3Add(combat_player_pos, Vector3Scale(dir, DUNGEON_TILE));
+        int count = static_cast<int>(group.size());
 
-    float min_safe = -1.0f - (DUNGEON_TILE * left_tiles) + 0.45f;
-    float max_safe = 1.0f + (DUNGEON_TILE * right_tiles) - 0.45f;
+        if (count == 1)
+        {
+            Vector3 pos = group_center;
+            pos.y = group[0]->get_position().y;
+            group[0]->set_position(pos);
 
-    if (offsets.front() < min_safe)
-    {
-        float shift = min_safe - offsets.front();
-        for (float& off : offsets) off += shift;
-    }
-    if (offsets.back() > max_safe)
-    {
-        float shift = offsets.back() - max_safe;
-        for (float& off : offsets) off -= shift;
-    }
+            Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, pos));
+            to_cam.y = 0.0f;
+            group[0]->set_forward(to_cam);
+            group[0]->set_last_frame(0);
+        }
+        else
+        {
+            Vector3 side_dir = Vector3Normalize(Vector3CrossProduct(dir, { 0.0f, 1.0f, 0.0f }));
 
-    for (int i = 0; i < n && i < static_cast<int>(offsets.size()); ++i)
-    {
-        Vector3 pos = Vector3Add(combat_enemy_center, Vector3Scale(side_dir, offsets[i]));
-        pos.y = active_enemies[i]->get_position().y;
-        active_enemies[i]->set_position(pos);
+            int left_tiles = 0;
+            for (int step = 1; step <= 3; ++step)
+            {
+                Vector3 test_pos = Vector3Subtract(group_center, Vector3Scale(side_dir, DUNGEON_TILE * step));
+                if (is_tile_walkable_at(test_pos)) left_tiles++;
+                else break;
+            }
 
-        Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, pos));
-        to_cam.y = 0.0f;
-        active_enemies[i]->set_forward(to_cam);
-        active_enemies[i]->set_last_frame(0);
+            int right_tiles = 0;
+            for (int step = 1; step <= 3; ++step)
+            {
+                Vector3 test_pos = Vector3Add(group_center, Vector3Scale(side_dir, DUNGEON_TILE * step));
+                if (is_tile_walkable_at(test_pos)) right_tiles++;
+                else break;
+            }
+
+            std::vector<float> offsets;
+            if (count == 2)
+            {
+                offsets = { -0.75f, 0.75f };
+            }
+            else if (count == 3)
+            {
+                offsets = { -1.1f, 0.0f, 1.1f };
+            }
+            else
+            {
+                offsets = { -1.5f, -0.5f, 0.5f, 1.5f };
+            }
+
+            float min_safe = -1.0f - (DUNGEON_TILE * left_tiles) + 0.45f;
+            float max_safe = 1.0f + (DUNGEON_TILE * right_tiles) - 0.45f;
+
+            if (offsets.front() < min_safe)
+            {
+                float shift = min_safe - offsets.front();
+                for (float& off : offsets) off += shift;
+            }
+            if (offsets.back() > max_safe)
+            {
+                float shift = offsets.back() - max_safe;
+                for (float& off : offsets) off -= shift;
+            }
+
+            for (int i = 0; i < count && i < static_cast<int>(offsets.size()); ++i)
+            {
+                Vector3 pos = Vector3Add(group_center, Vector3Scale(side_dir, offsets[i]));
+                pos.y = group[i]->get_position().y;
+                group[i]->set_position(pos);
+
+                Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, pos));
+                to_cam.y = 0.0f;
+                group[i]->set_forward(to_cam);
+                group[i]->set_last_frame(0);
+            }
+        }
     }
 }
 
@@ -398,83 +547,179 @@ void battle::join_battle(enemy* e, bool comes_from_left)
 
     e->exp = this->exp;
 
-    int max_capacity = get_max_combat_capacity();
+    const float DUNGEON_TILE = 2.0f;
+    const Vector3 CARDINAL_DIRS[4] = {
+        {  1.0f, 0.0f,  0.0f },
+        { -1.0f, 0.0f,  0.0f },
+        {  0.0f, 0.0f,  1.0f },
+        {  0.0f, 0.0f, -1.0f }
+    };
 
-    if (static_cast<int>(active_enemies.size()) >= max_capacity)
+    Vector3 raw_diff = Vector3Subtract(e->get_position(), combat_player_pos);
+    raw_diff.y = 0.0f;
+    Vector3 best_card = combat_facing_dir;
+    float best_dot = -999.0f;
+    float diff_len = Vector3Length(raw_diff);
+    Vector3 norm_diff = (diff_len > 0.001f) ? Vector3Scale(raw_diff, 1.0f / diff_len) : combat_facing_dir;
+
+    for (int i = 0; i < 4; ++i)
     {
-        queued_enemies.push_back(e);
-        int queue_slot = static_cast<int>(queued_enemies.size());
-        const float DUNGEON_TILE = 2.0f;
-
-        Vector3 queue_pos = Vector3Add(combat_enemy_center, Vector3Scale(combat_facing_dir, DUNGEON_TILE * queue_slot));
-        queue_pos.y = e->get_position().y;
-        e->set_position(queue_pos);
-
-        Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, queue_pos));
-        to_cam.y = 0.0f;
-        e->set_forward(to_cam);
-        e->set_last_frame(0);
-
-        gamestate::gameLogs.push_back(e->get_name() + " waits behind the opponent!");
-    }
-    else
-    {
-        if (comes_from_left)
+        float d = Vector3DotProduct(norm_diff, CARDINAL_DIRS[i]);
+        if (d > best_dot)
         {
-            active_enemies.insert(active_enemies.begin(), e);
+            best_dot = d;
+            best_card = CARDINAL_DIRS[i];
+        }
+    }
+
+    float dot_front = Vector3DotProduct(best_card, combat_facing_dir);
+    if (dot_front > 0.8f)
+    {
+        int max_capacity = get_max_combat_capacity();
+        int front_count = 0;
+        for (enemy* act : active_enemies)
+        {
+            if (act == nullptr || act->is_dead()) continue;
+            Vector3 d = Vector3Normalize(Vector3Subtract(act->get_position(), combat_player_pos));
+            d.y = 0.0f;
+            if (Vector3DotProduct(d, combat_facing_dir) > 0.8f) front_count++;
+        }
+
+        if (front_count >= max_capacity)
+        {
+            queued_enemies.push_back(e);
+            int queue_slot = static_cast<int>(queued_enemies.size());
+            Vector3 queue_pos = Vector3Add(combat_enemy_center, Vector3Scale(combat_facing_dir, DUNGEON_TILE * queue_slot));
+            queue_pos.y = e->get_position().y;
+            e->set_position(queue_pos);
+
+            Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, queue_pos));
+            to_cam.y = 0.0f;
+            e->set_forward(to_cam);
+            e->set_last_frame(0);
+
+            gamestate::gameLogs.push_back(e->get_name() + " waits behind the opponent!");
         }
         else
         {
-            active_enemies.push_back(e);
+            if (comes_from_left)
+            {
+                active_enemies.insert(active_enemies.begin(), e);
+            }
+            else
+            {
+                active_enemies.push_back(e);
+            }
+
+            reposition_active_enemies();
+            gamestate::gameLogs.push_back(e->get_name() + " joined the fight!");
+        }
+    }
+    else
+    {
+        // Flank
+        bool flank_occupied = false;
+        for (enemy* act : active_enemies)
+        {
+            if (act == nullptr || act->is_dead()) continue;
+            Vector3 d = Vector3Normalize(Vector3Subtract(act->get_position(), combat_player_pos));
+            d.y = 0.0f;
+            if (Vector3DotProduct(d, best_card) > 0.8f)
+            {
+                flank_occupied = true;
+                break;
+            }
         }
 
-        reposition_active_enemies();
-        gamestate::gameLogs.push_back(e->get_name() + " joined the fight!");
+        if (!flank_occupied)
+        {
+            Vector3 flank_pos = Vector3Add(combat_player_pos, Vector3Scale(best_card, DUNGEON_TILE));
+            flank_pos.y = e->get_position().y;
+            e->set_position(flank_pos);
+
+            Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, flank_pos));
+            to_cam.y = 0.0f;
+            e->set_forward(to_cam);
+            e->set_last_frame(0);
+
+            active_enemies.push_back(e);
+            reposition_active_enemies();
+            gamestate::gameLogs.push_back(e->get_name() + " attacks from the flank!");
+        }
+        else
+        {
+            queued_enemies.push_back(e);
+            Vector3 queue_pos = Vector3Add(combat_player_pos, Vector3Scale(best_card, DUNGEON_TILE * 2.0f));
+            queue_pos.y = e->get_position().y;
+            e->set_position(queue_pos);
+
+            Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, queue_pos));
+            to_cam.y = 0.0f;
+            e->set_forward(to_cam);
+            e->set_last_frame(0);
+
+            gamestate::gameLogs.push_back(e->get_name() + " waits on the flank!");
+        }
     }
 }
 
 void battle::tick_reinforcements()
 {
     Vector3 player_right = Vector3Normalize(Vector3CrossProduct(combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
+    const float COMBAT_RADIUS = 2.4f;
 
     for (auto it = incoming_reinforcements.begin(); it != incoming_reinforcements.end(); )
     {
         it->rounds_to_arrive--;
 
-        it->current_path_step = std::min(
+        int next_step = std::min(
             static_cast<int>(it->path.size()) - 1,
             it->current_path_step + it->steps_per_round
         );
 
-        if (it->current_path_step >= 0 && it->current_path_step < static_cast<int>(it->path.size()))
+        bool reached_combat = (it->rounds_to_arrive <= 0);
+
+        if (next_step >= 0 && next_step < static_cast<int>(it->path.size()))
         {
-            GridPosition node = it->path[it->current_path_step];
+            GridPosition node = it->path[next_step];
             float world_x = (node.x - 4) * 0.5f + 0.25f;
             float world_z = node.z * 0.5f + 0.25f;
-            Vector3 new_pos = { world_x, it->enemy_ptr->get_position().y, world_z };
-            it->enemy_ptr->set_position(new_pos);
+            Vector3 test_pos = { world_x, it->enemy_ptr->get_position().y, world_z };
 
-            Vector3 dir_to_p = Vector3Normalize(Vector3Subtract(combat_player_pos, new_pos));
-            dir_to_p.y = 0.0f;
-            if (Vector3Length(dir_to_p) > 0.0f)
+            float dist_to_player = Vector3Distance(test_pos, combat_player_pos);
+            if (dist_to_player <= COMBAT_RADIUS)
             {
-                it->enemy_ptr->set_forward(dir_to_p);
+                reached_combat = true;
             }
+            else
+            {
+                it->current_path_step = next_step;
+                it->enemy_ptr->set_position(test_pos);
 
-            Vector3 to_cur = Vector3Subtract(new_pos, combat_player_pos);
-            to_cur.y = 0.0f;
-            it->is_approaching_from_left = (Vector3DotProduct(to_cur, player_right) < 0.0f);
+                Vector3 dir_to_p = Vector3Normalize(Vector3Subtract(combat_player_pos, test_pos));
+                dir_to_p.y = 0.0f;
+                if (Vector3Length(dir_to_p) > 0.0f)
+                {
+                    it->enemy_ptr->set_forward(dir_to_p);
+                }
+
+                Vector3 to_cur = Vector3Subtract(test_pos, combat_player_pos);
+                to_cur.y = 0.0f;
+                it->is_approaching_from_left = (Vector3DotProduct(to_cur, player_right) < 0.0f);
+            }
+        }
+        else
+        {
+            reached_combat = true;
         }
 
-        if (it->rounds_to_arrive <= 0)
+        if (reached_combat)
         {
             join_battle(it->enemy_ptr, it->is_approaching_from_left);
             it = incoming_reinforcements.erase(it);
         }
         else
         {
-            gamestate::gameLogs.push_back(it->enemy_ptr->get_name() + " gets closer from the " +
-                (it->is_approaching_from_left ? "left" : "right") + "! (" + std::to_string(it->rounds_to_arrive) + " rounds)");
             ++it;
         }
     }
@@ -511,33 +756,253 @@ void battle::handle_dead_enemies()
 
         gamestate::gameLogs.push_back(e->get_name() + " has been defeated!");
         std::erase(pending_enemy_actions, e);
+
+        // Find which direction the dead enemy was in
+        Vector3 dead_dir = Vector3Normalize(Vector3Subtract(e->get_position(), combat_player_pos));
+        dead_dir.y = 0.0f;
+
         std::erase(active_enemies, e);
-    }
 
-    size_t max_active = static_cast<size_t>(get_max_combat_capacity());
-    while (!queued_enemies.empty() && active_enemies.size() < max_active)
-    {
-        enemy* next_in_line = queued_enemies.front();
-        queued_enemies.erase(queued_enemies.begin());
+        // Try to promote a queued enemy from the same direction
+        auto it = std::find_if(queued_enemies.begin(), queued_enemies.end(), [&](enemy* q) {
+            if (q == nullptr || q->is_dead()) return false;
+            Vector3 q_dir = Vector3Normalize(Vector3Subtract(q->get_position(), combat_player_pos));
+            q_dir.y = 0.0f;
+            return Vector3DotProduct(q_dir, dead_dir) > 0.8f;
+        });
 
-        active_enemies.push_back(next_in_line);
-        gamestate::gameLogs.push_back(next_in_line->get_name() + " steps forward from the queue into battle!");
-    }
-
-    const float DUNGEON_TILE = 2.0f;
-    for (size_t q = 0; q < queued_enemies.size(); ++q)
-    {
-        Vector3 q_pos = Vector3Add(combat_enemy_center, Vector3Scale(combat_facing_dir, DUNGEON_TILE * (q + 1)));
-        q_pos.y = queued_enemies[q]->get_position().y;
-        queued_enemies[q]->set_position(q_pos);
-
-        Vector3 to_cam = Vector3Normalize(Vector3Subtract(combat_player_pos, q_pos));
-        to_cam.y = 0.0f;
-        queued_enemies[q]->set_forward(to_cam);
-        queued_enemies[q]->set_last_frame(0);
+        if (it != queued_enemies.end())
+        {
+            enemy* next_in_line = *it;
+            queued_enemies.erase(it);
+            active_enemies.push_back(next_in_line);
+            gamestate::gameLogs.push_back(next_in_line->get_name() + " steps into battle!");
+        }
+        else if (!queued_enemies.empty() && active_enemies.empty())
+        {
+            enemy* next_in_line = queued_enemies.front();
+            queued_enemies.erase(queued_enemies.begin());
+            active_enemies.push_back(next_in_line);
+            gamestate::gameLogs.push_back(next_in_line->get_name() + " steps into battle!");
+        }
     }
 
     reposition_active_enemies();
+
+    // If active_enemies has living enemies, but none in front of current camera facing:
+    // Auto-turn towards the nearest living enemy so the player is not facing an empty wall
+    bool facing_any = false;
+    for (enemy* e : active_enemies)
+    {
+        if (e != nullptr && !e->is_dead())
+        {
+            Vector3 d = Vector3Normalize(Vector3Subtract(e->get_position(), combat_player_pos));
+            d.y = 0.0f;
+            if (Vector3DotProduct(d, combat_facing_dir) > 0.5f)
+            {
+                facing_any = true;
+                break;
+            }
+        }
+    }
+
+    if (!facing_any && !active_enemies.empty())
+    {
+        enemy* next_e = active_enemies[0];
+        Vector3 d = Vector3Normalize(Vector3Subtract(next_e->get_position(), combat_player_pos));
+        set_combat_facing(d);
+    }
+}
+
+void battle::set_combat_facing(Vector3 new_dir)
+{
+    new_dir.y = 0.0f;
+    if (fabsf(new_dir.x) >= fabsf(new_dir.z))
+    {
+        new_dir.x = (new_dir.x >= 0.0f) ? 1.0f : -1.0f;
+        new_dir.z = 0.0f;
+    }
+    else
+    {
+        new_dir.x = 0.0f;
+        new_dir.z = (new_dir.z >= 0.0f) ? 1.0f : -1.0f;
+    }
+
+    combat_facing_dir = new_dir;
+    const float DUNGEON_TILE = 2.0f;
+    float cam_y = (exp != nullptr) ? exp->camera.target.y : combat_enemy_center.y;
+    combat_enemy_center = Vector3Add(combat_player_pos, Vector3Scale(combat_facing_dir, DUNGEON_TILE));
+    combat_enemy_center.y = cam_y;
+
+    if (exp != nullptr)
+    {
+        exp->camera.position.x = combat_player_pos.x;
+        exp->camera.position.z = combat_player_pos.z;
+        exp->camera.target = combat_enemy_center;
+    }
+
+    for (enemy* e : active_enemies)
+    {
+        if (e != nullptr)
+        {
+            e->set_hovered_body_part(BodyPart::NONE);
+        }
+    }
+}
+
+bool battle::is_direction_valid(Vector3 dir) const
+{
+    if (exp == nullptr) return false;
+
+    const float DUNGEON_TILE = 2.0f;
+    Vector3 tile_pos = Vector3Add(combat_player_pos, Vector3Scale(dir, DUNGEON_TILE));
+
+    if (is_tile_walkable_at(tile_pos))
+    {
+        return true;
+    }
+
+    for (enemy* e : active_enemies)
+    {
+        if (e != nullptr && !e->is_dead())
+        {
+            Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
+            diff.y = 0.0f;
+            if (Vector3Length(diff) > 0.1f && Vector3DotProduct(Vector3Normalize(diff), dir) > 0.8f)
+            {
+                return true;
+            }
+        }
+    }
+
+    for (enemy* e : queued_enemies)
+    {
+        if (e != nullptr && !e->is_dead())
+        {
+            Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
+            diff.y = 0.0f;
+            if (Vector3Length(diff) > 0.1f && Vector3DotProduct(Vector3Normalize(diff), dir) > 0.8f)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+Vector3 battle::get_next_turn_right_dir() const
+{
+    Vector3 player_right = Vector3Normalize(Vector3CrossProduct(combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
+    Vector3 dir_behind = Vector3Scale(combat_facing_dir, -1.0f);
+    Vector3 dir_left = Vector3Scale(player_right, -1.0f);
+
+    Vector3 candidates[3] = { player_right, dir_behind, dir_left };
+
+    for (int i = 0; i < 3; ++i)
+    {
+        if (is_direction_valid(candidates[i]))
+        {
+            if (i == 2)
+            {
+                // Left is the only open direction; right turn cannot reach it directly
+                return { 0.0f, 0.0f, 0.0f };
+            }
+            return candidates[i];
+        }
+    }
+
+    return { 0.0f, 0.0f, 0.0f };
+}
+
+Vector3 battle::get_next_turn_left_dir() const
+{
+    Vector3 player_right = Vector3Normalize(Vector3CrossProduct(combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
+    Vector3 dir_behind = Vector3Scale(combat_facing_dir, -1.0f);
+    Vector3 dir_left = Vector3Scale(player_right, -1.0f);
+
+    Vector3 candidates[3] = { dir_left, dir_behind, player_right };
+
+    for (int i = 0; i < 3; ++i)
+    {
+        if (is_direction_valid(candidates[i]))
+        {
+            if (i == 2)
+            {
+                // Right is the only open direction; left turn cannot reach it directly
+                return { 0.0f, 0.0f, 0.0f };
+            }
+            return candidates[i];
+        }
+    }
+
+    return { 0.0f, 0.0f, 0.0f };
+}
+
+bool battle::can_turn_left() const
+{
+    Vector3 next_dir = get_next_turn_left_dir();
+    return (Vector3Length(next_dir) > 0.1f);
+}
+
+bool battle::can_turn_right() const
+{
+    Vector3 next_dir = get_next_turn_right_dir();
+    return (Vector3Length(next_dir) > 0.1f);
+}
+
+void battle::turn_camera_left()
+{
+    Vector3 next_dir = get_next_turn_left_dir();
+    if (Vector3Length(next_dir) > 0.1f)
+    {
+        set_combat_facing(next_dir);
+    }
+}
+
+void battle::turn_camera_right()
+{
+    Vector3 next_dir = get_next_turn_right_dir();
+    if (Vector3Length(next_dir) > 0.1f)
+    {
+        set_combat_facing(next_dir);
+    }
+}
+
+bool battle::has_enemy_on_left() const
+{
+    if (!can_turn_left()) return false;
+
+    Vector3 next_dir = get_next_turn_left_dir();
+    for (enemy* e : active_enemies)
+    {
+        if (e == nullptr || e->is_dead()) continue;
+        Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
+        diff.y = 0.0f;
+        if (Vector3Length(diff) < 0.1f) continue;
+        Vector3 dir = Vector3Normalize(diff);
+
+        if (Vector3DotProduct(dir, next_dir) > 0.6f) return true;
+    }
+    return false;
+}
+
+bool battle::has_enemy_on_right() const
+{
+    if (!can_turn_right()) return false;
+
+    Vector3 next_dir = get_next_turn_right_dir();
+    for (enemy* e : active_enemies)
+    {
+        if (e == nullptr || e->is_dead()) continue;
+        Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
+        diff.y = 0.0f;
+        if (Vector3Length(diff) < 0.1f) continue;
+        Vector3 dir = Vector3Normalize(diff);
+
+        if (Vector3DotProduct(dir, next_dir) > 0.6f) return true;
+    }
+    return false;
 }
 
 bool battle::is_fight_finished() const
@@ -555,6 +1020,21 @@ bool battle::is_fight_finished() const
 
 enemy* battle::get_current_target()
 {
+    // Prefer enemy currently in front of the camera
+    for (enemy* e : active_enemies)
+    {
+        if (e != nullptr && !e->is_dead())
+        {
+            Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
+            diff.y = 0.0f;
+            if (Vector3Length(diff) > 0.1f && Vector3DotProduct(Vector3Normalize(diff), combat_facing_dir) > 0.5f)
+            {
+                return e;
+            }
+        }
+    }
+
+    // Fallback: any living active enemy
     for (enemy* e : active_enemies)
     {
         if (e != nullptr && !e->is_dead())
@@ -589,6 +1069,19 @@ int battle::player_turn()
         return 0;
     }
 
+    // Keyboard rotation for camera (A/D or Left/Right or Q/E)
+    if (!waiting_for_enemy && !click_cooldown)
+    {
+        if (IsKeyPressed(KEY_A) || IsKeyPressed(KEY_LEFT) || IsKeyPressed(KEY_Q))
+        {
+            turn_camera_left();
+        }
+        else if (IsKeyPressed(KEY_D) || IsKeyPressed(KEY_RIGHT) || IsKeyPressed(KEY_E))
+        {
+            turn_camera_right();
+        }
+    }
+
     if (this->attack_clicked)
     {
         if (IsKeyPressed(KEY_ESCAPE))
@@ -613,6 +1106,15 @@ int battle::player_turn()
             to_cam.y = 0.0f;
             e->set_forward(to_cam);
             e->set_last_frame(0);
+
+            // Only allow targeting enemies in front of the camera (facing direction)
+            Vector3 to_e = Vector3Subtract(e->get_position(), exp->camera.position);
+            to_e.y = 0.0f;
+            if (Vector3DotProduct(Vector3Normalize(to_e), combat_facing_dir) < 0.4f)
+            {
+                e->set_hovered_body_part(BodyPart::NONE);
+                continue;
+            }
 
             Texture2D tex = (e->get_id() == 2) ? textures.pimpek : textures.ghoul;
             auto params = e->get_render_params(tex);
@@ -712,49 +1214,157 @@ int battle::player_turn()
 
 int battle::enemy_turn()
 {
-    enemy_cooldown -= GetFrameTime();
-    if (enemy_cooldown <= 0.0f)
+    float dt = GetFrameTime();
+
+    const float FLASH_DURATION = 0.30f;
+    const float STRIKE_DELAY   = 0.45f;
+
+    if (!turn_start_effects_processed)
     {
-        if (!turn_start_effects_processed)
+        enemy_cooldown -= dt;
+        if (enemy_cooldown > 0.0f)
         {
-            turn_start_effects_processed = true;
-            p_ref.process_turn_start_effects(this->exp);
+            return 0;
+        }
+
+        turn_start_effects_processed = true;
+        p_ref.process_turn_start_effects(this->exp);
+        if (p_ref.is_dead())
+        {
+            waiting_for_enemy = false;
+            pending_enemy_actions.clear();
+            return 0;
+        }
+
+        enemy_phase = EnemyAttackPhase::INIT_NEXT_ENEMY;
+    }
+
+    switch (enemy_phase)
+    {
+    case EnemyAttackPhase::INIT_NEXT_ENEMY:
+    {
+        while (!pending_enemy_actions.empty())
+        {
+            current_turn_enemy = pending_enemy_actions.front();
+            pending_enemy_actions.erase(pending_enemy_actions.begin());
+
+            if (current_turn_enemy != nullptr && !current_turn_enemy->is_dead())
+            {
+                // Auto-face camera toward attacking enemy so player sees their limb flash and strike
+                Vector3 to_att = Vector3Subtract(current_turn_enemy->get_position(), combat_player_pos);
+                to_att.y = 0.0f;
+                if (Vector3Length(to_att) > 0.1f)
+                {
+                    Vector3 att_dir = Vector3Normalize(to_att);
+                    if (Vector3DotProduct(att_dir, combat_facing_dir) < 0.7f)
+                    {
+                        set_combat_facing(att_dir);
+                    }
+                }
+
+                if (!global_fx.is_playing && p_ref.queued_damage > 0)
+                {
+                    current_turn_enemy->take_damage((int)p_ref.queued_damage, &p_ref, false, false, p_ref.queued_hit_part, this->exp);
+                    p_ref.queued_damage = 0.0f;
+                    p_ref.queued_hit_part = BodyPart::NONE;
+                }
+
+                if (current_turn_enemy->is_dead()) continue;
+
+                current_turn_enemy->process_turn_start_effects(this->exp);
+                if (current_turn_enemy->is_dead()) continue;
+
+                current_enemy_attacks = current_turn_enemy->decide_attacks();
+                current_attack_index = 0;
+
+                if (!current_enemy_attacks.empty())
+                {
+                    BodyPart first_part = current_enemy_attacks[0];
+                    current_turn_enemy->set_hovered_body_part(first_part);
+
+                    enemy_phase = EnemyAttackPhase::FLASH_LIMB;
+                    attack_phase_timer = FLASH_DURATION;
+                    return 0;
+                }
+            }
+        }
+
+        waiting_for_enemy = false;
+        turn_start_effects_processed = false;
+        pending_enemy_actions.clear();
+        current_turn_enemy = nullptr;
+        current_enemy_attacks.clear();
+        p_ref.is_guard = false;
+
+        tick_reinforcements();
+        handle_dead_enemies();
+        return 0;
+    }
+
+    case EnemyAttackPhase::FLASH_LIMB:
+    {
+        attack_phase_timer -= dt;
+        if (attack_phase_timer <= 0.0f)
+        {
+            if (current_turn_enemy != nullptr && !current_turn_enemy->is_dead())
+            {
+                current_turn_enemy->set_hovered_body_part(BodyPart::NONE);
+
+                if (current_attack_index < current_enemy_attacks.size())
+                {
+                    BodyPart attacking_part = current_enemy_attacks[current_attack_index];
+                    current_turn_enemy->perform_strike(attacking_part, p_ref);
+                }
+            }
+
             if (p_ref.is_dead())
             {
+                if (current_turn_enemy) current_turn_enemy->set_hovered_body_part(BodyPart::NONE);
                 waiting_for_enemy = false;
                 pending_enemy_actions.clear();
                 return 0;
             }
+
+            enemy_phase = EnemyAttackPhase::RECOVERY_PAUSE;
+            attack_phase_timer = STRIKE_DELAY;
         }
+        return 0;
+    }
 
-        while (!pending_enemy_actions.empty())
+    case EnemyAttackPhase::RECOVERY_PAUSE:
+    {
+        attack_phase_timer -= dt;
+        if (attack_phase_timer <= 0.0f)
         {
-            enemy* e = pending_enemy_actions.front();
-            pending_enemy_actions.erase(pending_enemy_actions.begin());
+            current_attack_index++;
 
-            if (e != nullptr && !e->is_dead())
+            if (current_turn_enemy != nullptr && !current_turn_enemy->is_dead() &&
+                current_attack_index < current_enemy_attacks.size())
             {
-                int dmg = e->execute_ai_turn(p_ref);
-                if (p_ref.is_dead())
-                {
-                    waiting_for_enemy = false;
-                    pending_enemy_actions.clear();
-                    return dmg;
-                }
+                BodyPart next_part = current_enemy_attacks[current_attack_index];
+                current_turn_enemy->set_hovered_body_part(next_part);
 
-                // Delay after this opponent's attack before next opponent or player turn
-                enemy_cooldown = 1.0f;
-                return dmg;
+                enemy_phase = EnemyAttackPhase::FLASH_LIMB;
+                attack_phase_timer = FLASH_DURATION;
+            }
+            else
+            {
+                if (current_turn_enemy)
+                {
+                    current_turn_enemy->set_hovered_body_part(BodyPart::NONE);
+                }
+                current_turn_enemy = nullptr;
+                current_enemy_attacks.clear();
+                current_attack_index = 0;
+
+                enemy_phase = EnemyAttackPhase::INIT_NEXT_ENEMY;
             }
         }
+        return 0;
+    }
 
-        // All active enemies have finished their attacks and delays
-        waiting_for_enemy = false;
-        turn_start_effects_processed = false;
-        pending_enemy_actions.clear();
-
-        tick_reinforcements();
-        handle_dead_enemies();
+    default:
+        break;
     }
 
     return 0;

@@ -22,7 +22,7 @@ public:
 
 	static std::vector<std::string> gameLogs;
 	std::vector<floating_text> active_texts;
-	void spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit = false, bool is_bleed = false);
+	void spawn_floating_text(Vector3 pos, const std::string& text, bool is_crit = false, bool is_bleed = false, Color custom_color = BLANK);
 	void update_and_draw_floating_texts(Camera3D current_camera);
 
 	bool showMenu = false;
@@ -72,13 +72,15 @@ public:
 	
 	void generate_floor(int floor_id);
 	void change_floor(int floor_id);
+	int find_deepest_room(int floor_id, int start_room_id = 1);
+	void ensure_trapdoor_in_deepest_room(int floor_id);
 
 	std::unique_ptr<object> create_world_object(const ObjectSpawnInfo& info);
 	void spawn_object(ObjectSpawnInfo info);
 
 	void apply_collision(Vector3 stara_pos);
 	void apply_pathfinding(enemy* e);
-	std::vector<GridPosition> find_path(int startX, int startZ, int targetX, int targetZ, enemy* current_enemy = nullptr);
+	std::vector<GridPosition> find_path(int startX, int startZ, int targetX, int targetZ, enemy* current_enemy = nullptr, bool ignore_other_enemies = false);
 	bool is_walkable(int x, int y);
 	bool is_walkable_subgrid(int gridX, int gridZ);
 	bool is_near_wall(int gridX, int gridZ);
@@ -142,6 +144,7 @@ public:
 	enemy& e_ref;
 
 	battle(player& p, enemy& e);
+	virtual ~battle();
 
 	exploration* exp = nullptr;
 
@@ -165,6 +168,19 @@ public:
 	float enemy_cooldown = 0.0;
 	float player_cooldown = 0.0;
 
+	enum class EnemyAttackPhase {
+		IDLE,
+		INIT_NEXT_ENEMY,
+		FLASH_LIMB,
+		RECOVERY_PAUSE
+	};
+
+	EnemyAttackPhase enemy_phase = EnemyAttackPhase::INIT_NEXT_ENEMY;
+	enemy* current_turn_enemy = nullptr;
+	std::vector<BodyPart> current_enemy_attacks;
+	size_t current_attack_index = 0;
+	float attack_phase_timer = 0.0f;
+
 	void draw() override;
 
 	void initiate_fight_view();
@@ -182,6 +198,17 @@ public:
 	void reposition_active_enemies();
 	void handle_dead_enemies();
 	bool is_fight_finished() const;
+
+	void turn_camera_left();
+	void turn_camera_right();
+	void set_combat_facing(Vector3 new_dir);
+	bool has_enemy_on_left() const;
+	bool has_enemy_on_right() const;
+	bool is_direction_valid(Vector3 dir) const;
+	Vector3 get_next_turn_left_dir() const;
+	Vector3 get_next_turn_right_dir() const;
+	bool can_turn_left() const;
+	bool can_turn_right() const;
 
 	enemy* get_current_target();
 	enemy& get_enemy();
@@ -228,7 +255,7 @@ public:
 
 class map_state : public gamestate
 {
-private:
+private: 
 	
 	gamestate* previous_state;
 	

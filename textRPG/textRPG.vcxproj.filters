@@ -93,6 +93,18 @@
     <ClCompile Include="exploration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="combat\StatusEffect.cpp">
+      <Filter>Source Files\combat</Filter>
+    </ClCompile>
+    <ClCompile Include="combat\BleedEffect.cpp">
+      <Filter>Source Files\combat</Filter>
+    </ClCompile>
+    <ClCompile Include="combat\PlagueEffect.cpp">
+      <Filter>Source Files\combat</Filter>
+    </ClCompile>
+    <ClCompile Include="combat\StatusEffectFactory.cpp">
+      <Filter>Source Files\combat</Filter>
+    </ClCompile>
     <ClCompile Include="combat\Limb.cpp">
       <Filter>Source Files\combat</Filter>
     </ClCompile>
@@ -156,6 +168,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\combat\BodyPart.h">
+      <Filter>Header Files\combat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\combat\StatusEffect.h">
+      <Filter>Header Files\combat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\combat\BleedEffect.h">
+      <Filter>Header Files\combat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\combat\PlagueEffect.h">
+      <Filter>Header Files\combat</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\combat\StatusEffectFactory.h">
       <Filter>Header Files\combat</Filter>
     </ClInclude>
     <ClInclude Include="..\include\combat\Limb.h">

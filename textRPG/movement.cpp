@@ -145,7 +145,7 @@ static bool is_in_list(const std::vector<tile_path>& list, int x, int z)
 	return find_in_list(list, x, z) != -1;
 }
 
-std::vector<GridPosition> exploration::find_path(int startX, int startZ, int targetX, int targetZ, enemy* current_enemy)
+std::vector<GridPosition> exploration::find_path(int startX, int startZ, int targetX, int targetZ, enemy* current_enemy, bool ignore_other_enemies)
 {
     std::vector<GridPosition> path;
 
@@ -165,7 +165,7 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
     std::vector<OccupiedEnemy> other_enemies;
 
     float nodeSize = 0.5f;
-    if (current_floor_id >= 0 && current_floor_id < static_cast<int>(floors.size()))
+    if (!ignore_other_enemies && current_floor_id >= 0 && current_floor_id < static_cast<int>(floors.size()))
     {
         for (enemy* other : floors[current_floor_id].active_enemies)
         {
