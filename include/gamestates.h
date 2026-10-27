@@ -84,6 +84,7 @@ public:
 	bool is_walkable(int x, int y);
 	bool is_walkable_subgrid(int gridX, int gridZ);
 	bool is_near_wall(int gridX, int gridZ);
+	bool has_line_of_sight(Vector3 start, Vector3 end);
 
 	void update_enemies();
 
@@ -152,6 +153,7 @@ public:
 	std::vector<enemy*> queued_enemies;
 	std::vector<ReinforcementEnemy> incoming_reinforcements;
 	std::vector<enemy*> pending_enemy_actions;
+	std::vector<enemy*> unconfirmed_reinforcements;
 	bool turn_start_effects_processed = false;
 
 	Vector3 combat_facing_dir = { 0.0f, 0.0f, 1.0f };

@@ -44,7 +44,7 @@ void exploration::apply_collision(Vector3 stara_pos)
 
     float p_hitbox = 0.25f;
 
-    // Test wzdłuż osi X
+    // Test wzdĹ‚uĹĽ osi X
     int check_x = static_cast<int>((camera.position.x + (camera.position.x > stara_pos.x ? p_hitbox : -p_hitbox)) / 2.0f) + 1;
     int current_z = static_cast<int>(camera.position.z / 2.0f);
 
@@ -55,7 +55,7 @@ void exploration::apply_collision(Vector3 stara_pos)
         camera.target.x -= delta_x;
     }
 
-    // Test wzdłuż osi Z
+    // Test wzdĹ‚uĹĽ osi Z
     int current_x = static_cast<int>(camera.position.x / 2.0f) + 1;
     int check_z = static_cast<int>((camera.position.z + (camera.position.z > stara_pos.z ? p_hitbox : -p_hitbox)) / 2.0f);
 
@@ -122,6 +122,34 @@ bool exploration::is_near_wall(int gridX, int gridZ)
     return false;
 }
 
+bool exploration::has_line_of_sight(Vector3 start, Vector3 end)
+{
+    float dist = Vector3Distance(start, end);
+    if (dist < 0.05f) return true;
+
+    float stepSize = 0.20f;
+    int steps = static_cast<int>(std::ceil(dist / stepSize));
+    if (steps < 2) steps = 2;
+
+    Vector3 dir = Vector3Scale(Vector3Subtract(end, start), 1.0f / (float)steps);
+
+    Vector3 current = start;
+    for (int i = 0; i <= steps; ++i)
+    {
+        int dungeonX = static_cast<int>(std::floor(current.x / 2.0f)) + 1;
+        int dungeonZ = static_cast<int>(std::floor(current.z / 2.0f));
+
+        if (!is_walkable(dungeonX, dungeonZ))
+        {
+            return false;
+        }
+
+        current = Vector3Add(current, dir);
+    }
+
+    return true;
+}
+
 static int CalculateHeuristic(int startX, int startZ, int targetX, int targetZ)
 {
 	int dx = std::abs(startX - targetX);
@@ -149,7 +177,56 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
 {
     std::vector<GridPosition> path;
 
-    if (!is_walkable_subgrid(targetX, targetZ) || (startX == targetX && startZ == targetZ))
+    if (startX == targetX && startZ == targetZ)
+    {
+        return path;
+    }
+
+    // Jesli docelowy kafelek gracza nie jest osiagalny (np. gracz stoi przy scianie/obiekcie),
+    // szukamy najblizszego chodzalnego kafelka w otoczeniu gracza
+    if (!is_walkable_subgrid(targetX, targetZ))
+    {
+        int bestDistSq = 999999;
+        int bestX = targetX;
+        int bestZ = targetZ;
+        bool foundWalkable = false;
+
+        for (int r = 1; r <= 4; ++r)
+        {
+            for (int dx = -r; dx <= r; ++dx)
+            {
+                for (int dz = -r; dz <= r; ++dz)
+                {
+                    int tx = targetX + dx;
+                    int tz = targetZ + dz;
+                    if (is_walkable_subgrid(tx, tz))
+                    {
+                        int distSq = dx * dx + dz * dz;
+                        if (distSq < bestDistSq)
+                        {
+                            bestDistSq = distSq;
+                            bestX = tx;
+                            bestZ = tz;
+                            foundWalkable = true;
+                        }
+                    }
+                }
+            }
+            if (foundWalkable) break;
+        }
+
+        if (foundWalkable)
+        {
+            targetX = bestX;
+            targetZ = bestZ;
+        }
+        else
+        {
+            return path;
+        }
+    }
+
+    if (startX == targetX && startZ == targetZ)
     {
         return path;
     }
@@ -202,6 +279,9 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
 
     openList.push_back(startNode);
 
+    tile_path bestNode = startNode;
+    int bestH = startNode.hCost;
+
     const GridPosition directions[8] = {
         { 0, -1}, { 0,  1}, {-1,  0}, { 1,  0}, // Góra, Dół, Lewo, Prawo
         {-1, -1}, { 1, -1}, {-1,  1}, { 1,  1}  // Skosy
@@ -212,13 +292,20 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
         size_t bestIndex = 0;
         for (size_t i = 1; i < openList.size(); i++)
         {
-            if (openList[i].fCost() < openList[bestIndex].fCost())
+            if (openList[i].fCost() < openList[bestIndex].fCost() ||
+               (openList[i].fCost() == openList[bestIndex].fCost() && openList[i].hCost < openList[bestIndex].hCost))
             {
                 bestIndex = i;
             }
         }
 
         tile_path current = openList[bestIndex];
+
+        if (current.hCost < bestH)
+        {
+            bestH = current.hCost;
+            bestNode = current;
+        }
 
         if (current.x == targetX && current.z == targetZ)
         {
@@ -260,9 +347,11 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
                 continue;
             }
 
+            // Zapobieganie scinaniu rogow scian przez ruch po skosie:
+            // Obaj prostopadli sasiedzi musza byc wolni
             if (i >= 4)
             {
-                if (!is_walkable_subgrid(current.x + directions[i].x, current.z) &&
+                if (!is_walkable_subgrid(current.x + directions[i].x, current.z) ||
                     !is_walkable_subgrid(current.x, current.z + directions[i].z))
                 {
                     continue;
@@ -316,7 +405,7 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
             int moveCost = (i < 4) ? 10 : 14;
             if (is_near_wall(nX, nZ))
             {
-                moveCost += 50; 
+                moveCost += 20; 
             }
             moveCost += enemy_proximity_cost;
             int newGCost = current.gCost + moveCost;
@@ -342,6 +431,34 @@ std::vector<GridPosition> exploration::find_path(int startX, int startZ, int tar
         }
     }
 
+    // Jesli nie udalo sie dotrzec bezposrednio do celu, zwracamy najblizsza mozliwa sciezke prowadzaca w strone gracza
+    if (bestNode.x != startX || bestNode.z != startZ)
+    {
+        tile_path temp = bestNode;
+        while (!(temp.x == startX && temp.z == startZ))
+        {
+            path.push_back({ temp.x, temp.z });
+
+            if (temp.parent.x == startX && temp.parent.z == startZ)
+            {
+                break;
+            }
+
+            int parentIndex = find_in_list(closedList, temp.parent.x, temp.parent.z);
+            if (parentIndex != -1)
+            {
+                temp = closedList[parentIndex];
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        std::reverse(path.begin(), path.end());
+        return path;
+    }
+
     return path;
 }
 
@@ -354,7 +471,8 @@ void exploration::apply_pathfinding(enemy* e)
     Vector3 playerPos = this->bohater.get_position();
 
     float distanceToPlayer = Vector3Distance(enemyPos, playerPos);
-    if (distanceToPlayer <= 0.6f)
+    // Bezposredni krok do gracza tylko wtedy, gdy nie ma miedzy nimi sciany (jest linia wzroku)
+    if (distanceToPlayer <= 0.6f && has_line_of_sight(enemyPos, playerPos))
     {
         Vector3 moveDir = Vector3Normalize(Vector3Subtract(playerPos, enemyPos));
         if (moveDir.x != 0.0f || moveDir.z != 0.0f)
@@ -378,7 +496,8 @@ void exploration::apply_pathfinding(enemy* e)
     {
         Vector3 nextTileWorld;
 
-        if (path.size() == 1)
+        // Do gracza idziemy bezposrednio tylko wtedy, gdy ostatni krok ma wolna linie wzroku
+        if (path.size() == 1 && has_line_of_sight(enemyPos, playerPos))
         {
             nextTileWorld = playerPos;
         }

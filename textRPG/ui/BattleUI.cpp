@@ -4,9 +4,11 @@
 #include "entities/Player.h"
 #include "entities/Enemy.h"
 #include "raylib.h"
+#include "raymath.h"
 #include "rlgl.h"
 #include <string>
 #include <cmath>
+#include <algorithm>
 
 BodyStatusUI body_UI;
 
@@ -144,54 +146,34 @@ void draw_battle_ui(battle* fight)
 		}
 	}
 
-	//BUTTONS (< and >)
-	float button_width = 64.0f;
-	float button_height = 100.0f;
-	float button_y = (GAME_HEIGHT - button_height) * 0.45f;
-	float pulse = (sinf((float)GetTime() * 8.0f) + 1.0f) * 0.5f; 
+	// STRZALKI (< i >)
+	float arrow_box_size = 90.0f;
+	float arrow_y = (GAME_HEIGHT - arrow_box_size) * 0.45f;
+	float pulse = (sinf((float)GetTime() * 8.0f) + 1.0f) * 0.5f;
 
 	bool can_left = fight->can_turn_left();
 	bool can_right = fight->can_turn_right();
 	bool has_left = fight->has_enemy_on_left();
 	bool has_right = fight->has_enemy_on_right();
 
-	Rectangle left_btn_rec = { 35.0f, button_y, button_width, button_height };
-	Rectangle right_btn_rec = { GAME_WIDTH - button_width - 35.0f, button_y, button_width, button_height };
+	Rectangle left_hitbox = { 35.0f, arrow_y, arrow_box_size, arrow_box_size };
+	Rectangle right_hitbox = { GAME_WIDTH - arrow_box_size - 35.0f, arrow_y, arrow_box_size, arrow_box_size };
 
-	// --- LEFT BUTTON ---
+	// --- LEWA STRZALKA ---
 	if (can_left)
 	{
-		bool is_left_hovered = CheckCollisionPointRec(mouse, left_btn_rec);
-		if (has_left)
-		{
-			Color left_bg = is_left_hovered ? Fade(RED, 0.85f) : Fade(MAROON, 0.55f + 0.35f * pulse);
-			Color left_border = is_left_hovered ? YELLOW : Fade(RED, 0.8f + 0.2f * pulse);
-			DrawRectangleRec(left_btn_rec, left_bg);
-			DrawRectangleLinesEx(left_btn_rec, 3.0f, left_border);
+		bool is_left_hovered = CheckCollisionPointRec(mouse, left_hitbox);
+		Color arrow_col_left = is_left_hovered ? (has_left ? YELLOW : WHITE)
+		                                       : (has_left ? Fade(RED, 0.75f + 0.25f * pulse) : Fade(LIGHTGRAY, 0.70f));
 
-			Vector2 arrow_size = MeasureTextEx(cabin_sketch_font, "<", 48, 1);
-			DrawTextEx(cabin_sketch_font, "<", { left_btn_rec.x + (button_width - arrow_size.x) * 0.5f, left_btn_rec.y + 12.0f }, 48, 1, YELLOW);
+		Vector2 arrow_size_l = MeasureTextEx(cabin_sketch_font, "<", 90.0f, 1.0f);
+		Vector2 arrow_pos_l = {
+			left_hitbox.x + (arrow_box_size - arrow_size_l.x) * 0.5f,
+			left_hitbox.y + (arrow_box_size - arrow_size_l.y) * 0.5f
+		};
 
-			Vector2 key_hint_size = MeasureTextEx(cabin_sketch_font, "[A]", 20, 1);
-			DrawTextEx(cabin_sketch_font, "[A]", { left_btn_rec.x + (button_width - key_hint_size.x) * 0.5f, left_btn_rec.y + 68.0f }, 20, 1, YELLOW);
-
-			// Warning indicator above button
-			Vector2 alert_size = MeasureTextEx(cabin_sketch_font, "!", 44, 1);
-			DrawTextEx(cabin_sketch_font, "!", { left_btn_rec.x + (button_width - alert_size.x) * 0.5f, left_btn_rec.y - 42.0f }, 44, 1, is_left_hovered ? YELLOW : RED);
-		}
-		else
-		{
-			Color left_bg = is_left_hovered ? Fade(GRAY, 0.6f) : Fade(BLACK, 0.35f);
-			Color left_border = is_left_hovered ? WHITE : DARKGRAY;
-			DrawRectangleRec(left_btn_rec, left_bg);
-			DrawRectangleLinesEx(left_btn_rec, 2.0f, left_border);
-
-			Vector2 arrow_size = MeasureTextEx(cabin_sketch_font, "<", 48, 1);
-			DrawTextEx(cabin_sketch_font, "<", { left_btn_rec.x + (button_width - arrow_size.x) * 0.5f, left_btn_rec.y + 12.0f }, 48, 1, is_left_hovered ? WHITE : LIGHTGRAY);
-
-			Vector2 key_hint_size = MeasureTextEx(cabin_sketch_font, "[A]", 20, 1);
-			DrawTextEx(cabin_sketch_font, "[A]", { left_btn_rec.x + (button_width - key_hint_size.x) * 0.5f, left_btn_rec.y + 68.0f }, 20, 1, is_left_hovered ? WHITE : GRAY);
-		}
+		DrawTextEx(cabin_sketch_font, "<", { arrow_pos_l.x + 2.0f, arrow_pos_l.y + 2.0f }, 90.0f, 1.0f, Fade(BLACK, 0.85f));
+		DrawTextEx(cabin_sketch_font, "<", arrow_pos_l, 90.0f, 1.0f, arrow_col_left);
 
 		if (is_left_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !fight->waiting_for_enemy && !fight->click_cooldown)
 		{
@@ -199,40 +181,21 @@ void draw_battle_ui(battle* fight)
 		}
 	}
 
-	// --- RIGHT BUTTON ---
+	// --- PRAWA STRZALKA ---
 	if (can_right)
 	{
-		bool is_right_hovered = CheckCollisionPointRec(mouse, right_btn_rec);
-		if (has_right)
-		{
-			Color right_bg = is_right_hovered ? Fade(RED, 0.85f) : Fade(MAROON, 0.55f + 0.35f * pulse);
-			Color right_border = is_right_hovered ? YELLOW : Fade(RED, 0.8f + 0.2f * pulse);
-			DrawRectangleRec(right_btn_rec, right_bg);
-			DrawRectangleLinesEx(right_btn_rec, 3.0f, right_border);
+		bool is_right_hovered = CheckCollisionPointRec(mouse, right_hitbox);
+		Color arrow_col_right = is_right_hovered ? (has_right ? YELLOW : WHITE)
+		                                         : (has_right ? Fade(RED, 0.75f + 0.25f * pulse) : Fade(LIGHTGRAY, 0.70f));
 
-			Vector2 arrow_size = MeasureTextEx(cabin_sketch_font, ">", 48, 1);
-			DrawTextEx(cabin_sketch_font, ">", { right_btn_rec.x + (button_width - arrow_size.x) * 0.5f, right_btn_rec.y + 12.0f }, 48, 1, YELLOW);
+		Vector2 arrow_size_r = MeasureTextEx(cabin_sketch_font, ">", 90.0f, 1.0f);
+		Vector2 arrow_pos_r = {
+			right_hitbox.x + (arrow_box_size - arrow_size_r.x) * 0.5f,
+			right_hitbox.y + (arrow_box_size - arrow_size_r.y) * 0.5f
+		};
 
-			Vector2 key_hint_size = MeasureTextEx(cabin_sketch_font, "[D]", 20, 1);
-			DrawTextEx(cabin_sketch_font, "[D]", { right_btn_rec.x + (button_width - key_hint_size.x) * 0.5f, right_btn_rec.y + 68.0f }, 20, 1, YELLOW);
-
-			// Warning indicator above button
-			Vector2 alert_size = MeasureTextEx(cabin_sketch_font, "!", 44, 1);
-			DrawTextEx(cabin_sketch_font, "!", { right_btn_rec.x + (button_width - alert_size.x) * 0.5f, right_btn_rec.y - 42.0f }, 44, 1, is_right_hovered ? YELLOW : RED);
-		}
-		else
-		{
-			Color right_bg = is_right_hovered ? Fade(GRAY, 0.6f) : Fade(BLACK, 0.35f);
-			Color right_border = is_right_hovered ? WHITE : DARKGRAY;
-			DrawRectangleRec(right_btn_rec, right_bg);
-			DrawRectangleLinesEx(right_btn_rec, 2.0f, right_border);
-
-			Vector2 arrow_size = MeasureTextEx(cabin_sketch_font, ">", 48, 1);
-			DrawTextEx(cabin_sketch_font, ">", { right_btn_rec.x + (button_width - arrow_size.x) * 0.5f, right_btn_rec.y + 12.0f }, 48, 1, is_right_hovered ? WHITE : LIGHTGRAY);
-
-			Vector2 key_hint_size = MeasureTextEx(cabin_sketch_font, "[D]", 20, 1);
-			DrawTextEx(cabin_sketch_font, "[D]", { right_btn_rec.x + (button_width - key_hint_size.x) * 0.5f, right_btn_rec.y + 68.0f }, 20, 1, is_right_hovered ? WHITE : GRAY);
-		}
+		DrawTextEx(cabin_sketch_font, ">", { arrow_pos_r.x + 2.0f, arrow_pos_r.y + 2.0f }, 90.0f, 1.0f, Fade(BLACK, 0.85f));
+		DrawTextEx(cabin_sketch_font, ">", arrow_pos_r, 90.0f, 1.0f, arrow_col_right);
 
 		if (is_right_hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT) && !fight->waiting_for_enemy && !fight->click_cooldown)
 		{
@@ -240,31 +203,116 @@ void draw_battle_ui(battle* fight)
 		}
 	}
 
-	// LICZNIK NADCHODZACYCH WZMOCNIEN (REINFORCEMENTS TIMER) - PO PRAWEJ STRONIE, BEZ CZERWONEGO KONTURU
-	if (!fight->incoming_reinforcements.empty())
+	// WYKRZYKNIKI
+	enum class CornerAlert {
+		NONE_ALERT,
+		YELLOW_ALERT,
+		RED_ALERT,
+		PULSE_ALERT
+	};
+	CornerAlert left_alert = CornerAlert::NONE_ALERT;
+	CornerAlert right_alert = CornerAlert::NONE_ALERT;
+
+	Vector3 player_right = Vector3Normalize(Vector3CrossProduct(fight->combat_facing_dir, { 0.0f, 1.0f, 0.0f }));
+
+	auto upgrade_alert = [](CornerAlert current, CornerAlert next_alert) -> CornerAlert {
+		if (current == CornerAlert::PULSE_ALERT || next_alert == CornerAlert::PULSE_ALERT) return CornerAlert::PULSE_ALERT;
+		if (current == CornerAlert::RED_ALERT || next_alert == CornerAlert::RED_ALERT) return CornerAlert::RED_ALERT;
+		if (current == CornerAlert::YELLOW_ALERT || next_alert == CornerAlert::YELLOW_ALERT) return CornerAlert::YELLOW_ALERT;
+		return CornerAlert::NONE_ALERT;
+	};
+
+	for (const auto& rein : fight->incoming_reinforcements)
 	{
-		float rein_box_w = 90.0f;
-		float rein_box_h = 52.0f;
-		float rein_box_x = GAME_WIDTH - rein_box_w - 60.0f;
-		float rein_box_y = 50.0f;
+		if (rein.enemy_ptr == nullptr || rein.enemy_ptr->is_dead()) continue;
 
-		for (size_t i = 0; i < fight->incoming_reinforcements.size(); ++i)
-		{
-			const auto& rein = fight->incoming_reinforcements[i];
-			if (rein.enemy_ptr == nullptr) continue;
+		Vector3 to_e = Vector3Subtract(rein.enemy_ptr->get_position(), fight->combat_player_pos);
+		to_e.y = 0.0f;
+		float dist = Vector3Length(to_e);
+		Vector3 dir = (dist > 0.01f) ? Vector3Scale(to_e, 1.0f / dist) : fight->combat_facing_dir;
 
-			float current_y = rein_box_y + (i * (rein_box_h + 10.0f));
+		float dot_front = Vector3DotProduct(dir, fight->combat_facing_dir);
+		if (dot_front > 0.35f) continue;
 
-			const char* rein_text = TextFormat("! %d", rein.rounds_to_arrive);
-			Vector2 text_size = MeasureTextEx(cabin_sketch_font, rein_text, 36, 1);
-			Vector2 text_pos = {
-				rein_box_x + (rein_box_w - text_size.x) * 0.5f,
-				current_y + (rein_box_h - text_size.y) * 0.5f
-			};
+		float dot_side = Vector3DotProduct(to_e, player_right);
+		bool is_left = (dot_side < 0.0f);
+		if (dot_side == 0.0f) is_left = rein.is_approaching_from_left;
 
-			DrawTextEx(cabin_sketch_font, rein_text, text_pos, 50, 1, YELLOW);
-		}
+		CornerAlert alert = (rein.rounds_to_arrive >= 2) ? CornerAlert::YELLOW_ALERT : CornerAlert::RED_ALERT;
+		if (is_left) left_alert = upgrade_alert(left_alert, alert);
+		else right_alert = upgrade_alert(right_alert, alert);
 	}
+
+	for (auto it = fight->unconfirmed_reinforcements.begin(); it != fight->unconfirmed_reinforcements.end(); )
+	{
+		enemy* e = *it;
+		if (e == nullptr || e->is_dead())
+		{
+			it = fight->unconfirmed_reinforcements.erase(it);
+			continue;
+		}
+
+		Vector3 to_e = Vector3Subtract(e->get_position(), fight->combat_player_pos);
+		to_e.y = 0.0f;
+		float dist = Vector3Length(to_e);
+		Vector3 dir = (dist > 0.01f) ? Vector3Scale(to_e, 1.0f / dist) : fight->combat_facing_dir;
+
+		float dot_front = Vector3DotProduct(dir, fight->combat_facing_dir);
+		bool is_in_combat_with_enemy = (dot_front > 0.35f) || (fight->get_current_target() == e);
+
+		if (is_in_combat_with_enemy)
+		{
+			it = fight->unconfirmed_reinforcements.erase(it);
+			continue;
+		}
+
+		float dot_side = Vector3DotProduct(to_e, player_right);
+		bool is_left = (dot_side < 0.0f);
+		if (dot_side == 0.0f) is_left = fight->can_turn_left();
+
+		if (is_left) left_alert = upgrade_alert(left_alert, CornerAlert::PULSE_ALERT);
+		else right_alert = upgrade_alert(right_alert, CornerAlert::PULSE_ALERT);
+
+		++it;
+	}
+
+	auto draw_corner_alert = [&](CornerAlert alert, bool is_left) {
+		if (alert == CornerAlert::NONE_ALERT) return;
+
+		float base_size = 80.0f;
+		Vector2 def_size = MeasureTextEx(cabin_sketch_font, "!", base_size, 1.0f);
+
+		float pos_x = is_left ? 50.0f : (GAME_WIDTH - 50.0f - def_size.x);
+		float pos_y = 40.0f;
+
+		if (alert == CornerAlert::YELLOW_ALERT)
+		{
+			DrawTextEx(cabin_sketch_font, "!", { pos_x + 2.0f, pos_y + 2.0f }, base_size, 1.0f, Fade(BLACK, 0.85f));
+			DrawTextEx(cabin_sketch_font, "!", { pos_x, pos_y }, base_size, 1.0f, YELLOW);
+		}
+		else if (alert == CornerAlert::RED_ALERT)
+		{
+			DrawTextEx(cabin_sketch_font, "!", { pos_x + 2.0f, pos_y + 2.0f }, base_size, 1.0f, Fade(BLACK, 0.85f));
+			DrawTextEx(cabin_sketch_font, "!", { pos_x, pos_y }, base_size, 1.0f, RED);
+		}
+		else if (alert == CornerAlert::PULSE_ALERT)
+		{
+			float pulse_t = (sinf((float)GetTime() * 10.0f) + 1.0f) * 0.5f;
+			float cur_font_size = base_size * (1.0f + 0.28f * pulse_t);
+			Vector2 cur_size = MeasureTextEx(cabin_sketch_font, "!", cur_font_size, 1.0f);
+
+			Vector2 center = { pos_x + def_size.x * 0.5f, pos_y + def_size.y * 0.5f };
+			Vector2 draw_p = { center.x - cur_size.x * 0.5f, center.y - cur_size.y * 0.5f };
+
+			Color pulse_col = ColorAlphaBlend(RED, YELLOW, Fade(WHITE, pulse_t * 0.70f));
+
+			DrawTextEx(cabin_sketch_font, "!", { draw_p.x + 3.0f, draw_p.y + 3.0f }, cur_font_size, 1.0f, Fade(BLACK, 0.90f));
+			DrawTextEx(cabin_sketch_font, "!", draw_p, cur_font_size, 1.0f, pulse_col);
+		}
+	};
+
+	draw_corner_alert(left_alert, true);
+	draw_corner_alert(right_alert, false);
 
 	// PRZECIWNICY OCZEKUJACY W KOLEJCE
 	if (!fight->queued_enemies.empty())

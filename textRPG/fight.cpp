@@ -14,6 +14,13 @@
 
 
 
+static const Vector3 CARDINAL_DIRS[4] = {
+    {  1.0f, 0.0f,  0.0f },
+    { -1.0f, 0.0f,  0.0f },
+    {  0.0f, 0.0f,  1.0f },
+    {  0.0f, 0.0f, -1.0f }
+};
+
 battle::~battle()
 {
     for (auto& rein : incoming_reinforcements)
@@ -47,8 +54,8 @@ void battle::initiate_fight_view()
         target_p_pos = p_pos;
     }
 
-    // Wektor wskazujacy od gracza bezposrednio na przeciwnika w momencie inicjacji
-    Vector3 raw_diff = Vector3Subtract(e_pos, target_p_pos);
+    // Wektor wskazujacy od gracza bezposrednio na przeciwnika w momencie inicjacji (rzeczywiste pozycje)
+    Vector3 raw_diff = Vector3Subtract(e_pos, p_pos);
     raw_diff.y = 0.0f;
 
     Vector3 norm_raw = { 0.0f, 0.0f, 1.0f };
@@ -75,7 +82,7 @@ void battle::initiate_fight_view()
         Vector3 cand_dir = CARDINAL_DIRS[i];
         Vector3 cand_e_pos = Vector3Add(target_p_pos, Vector3Scale(cand_dir, DUNGEON_TILE));
 
-        if (!is_tile_walkable_at(cand_e_pos))
+        if (!is_tile_walkable_at(cand_e_pos) || (exp != nullptr && !exp->has_line_of_sight(target_p_pos, cand_e_pos)))
         {
             continue;
         }
@@ -119,13 +126,34 @@ void battle::initiate_fight_view()
 
     if (!found_walkable)
     {
-        if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
+        target_p_pos = p_pos;
+        for (int i = 0; i < 4; i++)
         {
-            final_dir.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
+            Vector3 cand_dir = CARDINAL_DIRS[i];
+            Vector3 cand_e_pos = Vector3Add(target_p_pos, Vector3Scale(cand_dir, DUNGEON_TILE));
+            if (is_tile_walkable_at(cand_e_pos) && (exp == nullptr || exp->has_line_of_sight(target_p_pos, cand_e_pos)))
+            {
+                float dot = Vector3DotProduct(norm_raw, cand_dir);
+                float dist_to_actual = Vector3Distance(cand_e_pos, e_pos);
+                float score = (dot * 100.0f) - (dist_to_actual * 25.0f);
+                if (score > best_score)
+                {
+                    best_score = score;
+                    final_dir = cand_dir;
+                    found_walkable = true;
+                }
+            }
         }
-        else
+        if (!found_walkable)
         {
-            final_dir.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
+            if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
+            {
+                final_dir.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
+            }
+            else
+            {
+                final_dir.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
+            }
         }
     }
 
@@ -156,6 +184,7 @@ void battle::initiate_fight_view()
     queued_enemies.clear();
     incoming_reinforcements.clear();
     pending_enemy_actions.clear();
+    unconfirmed_reinforcements.clear();
     turn_start_effects_processed = false;
     active_enemies.push_back(&e);
 
@@ -199,24 +228,44 @@ void battle::scan_reinforcements()
         }
 
         // If other_e is already adjacent to the player (distance <= 3.0f, ~1 dungeon tile)
-        if (dist_to_battle <= 3.0f)
+        if (dist_to_battle <= 3.0f && exp != nullptr && exp->has_line_of_sight(combat_player_pos, other_pos))
         {
             Vector3 raw_diff = Vector3Subtract(other_pos, combat_player_pos);
             raw_diff.y = 0.0f;
-            Vector3 best_card = { 0.0f, 0.0f, 0.0f };
-            if (fabsf(raw_diff.x) >= fabsf(raw_diff.z))
+            float raw_len = Vector3Length(raw_diff);
+            Vector3 norm_diff = (raw_len > 0.001f) ? Vector3Scale(raw_diff, 1.0f / raw_len) : combat_facing_dir;
+
+            Vector3 best_card = combat_facing_dir;
+            float best_dot = -999.0f;
+            bool found_cand = false;
+
+            for (int i = 0; i < 4; ++i)
             {
-                best_card.x = (raw_diff.x >= 0.0f) ? 1.0f : -1.0f;
+                Vector3 test_cand = Vector3Add(combat_player_pos, Vector3Scale(CARDINAL_DIRS[i], DUNGEON_TILE));
+                test_cand.y = other_pos.y;
+                if (!is_tile_walkable_at(test_cand) || !exp->has_line_of_sight(combat_player_pos, test_cand))
+                {
+                    continue;
+                }
+
+                float d = Vector3DotProduct(norm_diff, CARDINAL_DIRS[i]);
+                if (d > best_dot)
+                {
+                    best_dot = d;
+                    best_card = CARDINAL_DIRS[i];
+                    found_cand = true;
+                }
             }
-            else
+
+            if (!found_cand)
             {
-                best_card.z = (raw_diff.z >= 0.0f) ? 1.0f : -1.0f;
+                continue;
             }
 
             Vector3 cand_pos = Vector3Add(combat_player_pos, Vector3Scale(best_card, DUNGEON_TILE));
             cand_pos.y = other_pos.y;
 
-            if (is_tile_walkable_at(cand_pos))
+            if (is_tile_walkable_at(cand_pos) && exp->has_line_of_sight(combat_player_pos, cand_pos))
             {
                 other_e->exp = this->exp;
                 other_e->set_position(cand_pos);
@@ -280,8 +329,9 @@ void battle::scan_reinforcements()
             {
                 float wx = (path[p_idx].x - 4) * 0.5f + 0.25f;
                 float wz = path[p_idx].z * 0.5f + 0.25f;
-                float d = Vector3Distance({ wx, combat_player_pos.y, wz }, combat_player_pos);
-                if (d <= COMBAT_RADIUS)
+                Vector3 step_pt = { wx, combat_player_pos.y, wz };
+                float d = Vector3Distance(step_pt, combat_player_pos);
+                if (d <= COMBAT_RADIUS && (exp == nullptr || exp->has_line_of_sight(step_pt, combat_player_pos)))
                 {
                     steps_to_combat = static_cast<int>(p_idx + 1);
                     break;
@@ -440,19 +490,38 @@ void battle::reposition_active_enemies()
         Vector3 diff = Vector3Subtract(e->get_position(), combat_player_pos);
         diff.y = 0.0f;
 
-        int best_idx = 0;
+        int best_idx = -1;
         float best_dot = -999.0f;
         float diff_len = Vector3Length(diff);
         Vector3 norm_diff = (diff_len > 0.001f) ? Vector3Scale(diff, 1.0f / diff_len) : combat_facing_dir;
 
         for (int i = 0; i < 4; ++i)
         {
+            Vector3 test_tile = Vector3Add(combat_player_pos, Vector3Scale(CARDINAL_DIRS[i], DUNGEON_TILE));
+            if (!is_tile_walkable_at(test_tile) || (exp != nullptr && !exp->has_line_of_sight(combat_player_pos, test_tile)))
+            {
+                continue;
+            }
+
             float d = Vector3DotProduct(norm_diff, CARDINAL_DIRS[i]);
             if (d > best_dot)
             {
                 best_dot = d;
                 best_idx = i;
             }
+        }
+
+        if (best_idx == -1)
+        {
+            for (int i = 0; i < 4; ++i)
+            {
+                if (Vector3DotProduct(combat_facing_dir, CARDINAL_DIRS[i]) > 0.8f)
+                {
+                    best_idx = i;
+                    break;
+                }
+            }
+            if (best_idx == -1) best_idx = 0;
         }
         dir_groups[best_idx].push_back(e);
     }
@@ -515,6 +584,14 @@ void battle::reposition_active_enemies()
             float min_safe = -1.0f - (DUNGEON_TILE * left_tiles) + 0.45f;
             float max_safe = 1.0f + (DUNGEON_TILE * right_tiles) - 0.45f;
 
+            float current_span = offsets.back() - offsets.front();
+            float safe_span = max_safe - min_safe;
+            if (current_span > safe_span && current_span > 0.001f)
+            {
+                float scale = safe_span / current_span;
+                for (float& off : offsets) off *= scale;
+            }
+
             if (offsets.front() < min_safe)
             {
                 float shift = min_safe - offsets.front();
@@ -564,6 +641,12 @@ void battle::join_battle(enemy* e, bool comes_from_left)
 
     for (int i = 0; i < 4; ++i)
     {
+        Vector3 test_cand = Vector3Add(combat_player_pos, Vector3Scale(CARDINAL_DIRS[i], DUNGEON_TILE));
+        if (!is_tile_walkable_at(test_cand) || (exp != nullptr && !exp->has_line_of_sight(combat_player_pos, test_cand)))
+        {
+            continue;
+        }
+
         float d = Vector3DotProduct(norm_diff, CARDINAL_DIRS[i]);
         if (d > best_dot)
         {
@@ -573,6 +656,16 @@ void battle::join_battle(enemy* e, bool comes_from_left)
     }
 
     float dot_front = Vector3DotProduct(best_card, combat_facing_dir);
+    if (dot_front <= 0.8f)
+    {
+        Vector3 test_flank = Vector3Add(combat_player_pos, Vector3Scale(best_card, DUNGEON_TILE));
+        test_flank.y = e->get_position().y;
+        if (!is_tile_walkable_at(test_flank) || (exp != nullptr && !exp->has_line_of_sight(combat_player_pos, test_flank)))
+        {
+            best_card = combat_facing_dir;
+            dot_front = 1.0f;
+        }
+    }
     if (dot_front > 0.8f)
     {
         int max_capacity = get_max_combat_capacity();
@@ -677,7 +770,7 @@ void battle::tick_reinforcements()
             it->current_path_step + it->steps_per_round
         );
 
-        bool reached_combat = (it->rounds_to_arrive <= 0);
+        bool reached_combat = false;
 
         if (next_step >= 0 && next_step < static_cast<int>(it->path.size()))
         {
@@ -687,7 +780,8 @@ void battle::tick_reinforcements()
             Vector3 test_pos = { world_x, it->enemy_ptr->get_position().y, world_z };
 
             float dist_to_player = Vector3Distance(test_pos, combat_player_pos);
-            if (dist_to_player <= COMBAT_RADIUS)
+            bool has_los = (exp == nullptr || exp->has_line_of_sight(test_pos, combat_player_pos));
+            if ((dist_to_player <= COMBAT_RADIUS || next_step == static_cast<int>(it->path.size()) - 1) && has_los)
             {
                 reached_combat = true;
             }
@@ -710,16 +804,21 @@ void battle::tick_reinforcements()
         }
         else
         {
-            reached_combat = true;
+            reached_combat = false;
         }
 
         if (reached_combat)
         {
             join_battle(it->enemy_ptr, it->is_approaching_from_left);
+            unconfirmed_reinforcements.push_back(it->enemy_ptr);
             it = incoming_reinforcements.erase(it);
         }
         else
         {
+            if (it->rounds_to_arrive <= 0)
+            {
+                it->rounds_to_arrive = 1;
+            }
             ++it;
         }
     }

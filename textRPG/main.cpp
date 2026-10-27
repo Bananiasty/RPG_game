@@ -100,7 +100,7 @@ int main()
                     }
 
                     float dystans = Vector3Distance(world.camera.position, current_enemy->get_position());
-                    if (dystans < 1.2f)
+                    if (dystans < 1.2f && world.has_line_of_sight(world.camera.position, current_enemy->get_position()))
                     {
                         current_state = 2;
                         current_fight = new battle(bohater, *current_enemy);
